@@ -1,3 +1,3 @@
 export type * from "./types";
 export * from "./fakes";
-export { PrintQueue, type PrintJob } from "./print-queue";
+export { PrintQueue, exponentialBackoff, type PrintJob, type PrintQueueOptions } from "./print-queue";

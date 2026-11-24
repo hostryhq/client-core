@@ -1,0 +1,11 @@
+<INIT><FONT 0><ALIGN C><BOLD 1><SIZE w1h2><INVERT 1>*** CANCEL ***
+<ALIGN L><SIZE w1h1><INVERT 0>KITCHEN                    13:02
+<SIZE w3h3>T6
+<BOLD 0><SIZE w1h1>Dine-in   Waiter: Ravi   Bill 1
+KOT K2-014
+--------------------------------
+<SIZE w1h2> 1 x Vada
+<SIZE w1h1>--------------------------------
+<BOLD 1><SIZE w1h2>Reason: Wrong item
+<BOLD 0><SIZE w1h1>Note: Allergy - no peanuts
+<FEED 4>

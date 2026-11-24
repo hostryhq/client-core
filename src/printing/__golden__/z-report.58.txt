@@ -1,0 +1,30 @@
+<INIT><FONT 0><ALIGN C><BOLD 1><SIZE w1h2>Z-REPORT Z/2026-11-24/A07
+<BOLD 0><SIZE w1h1>Anand Bhavan - Main Road
+<ALIGN L>Business date 24-11-2026
+Closed 23:40 by Meena
+--------------------------------
+Gross                  41,200.00
+Discounts              -1,240.00
+Net                    39,960.00
+Service charge              0.00
+CGST 2.5%                 480.00
+SGST 2.5%                 480.00
+Round-off                  -0.35
+<BOLD 1>TOTAL               Rs 40,919.65
+<BOLD 0>--------------------------------
+Bills 96   Covers 210
+Average 426.25
+Cash 21,000.00  UPI 17,500.00
+Card 2,419.65
+Dine-in 31,000.00
+Counter 8,000.00
+Takeaway 1,919.65
+Voids 2  Cancels 3  Comps 1
+Refunds 0  Credit notes 1
+Series A07: A07/2627/000101 to
+000196 (96)
+Series A08: open tail after
+000041 (device revoked)
+Shift variances: Asha -150.00
+Unpaid bills carried: 2
+<FEED 4>

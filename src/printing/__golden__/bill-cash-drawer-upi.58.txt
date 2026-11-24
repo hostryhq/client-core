@@ -1,0 +1,35 @@
+<INIT><FONT 0><DRAWER pin=0 25 250><ALIGN C><BOLD 1><SIZE w1h2>TAX INVOICE
+<SIZE w1h1>Anand Foods Pvt Ltd
+<BOLD 0>12 Main Road, Gudalur
+GSTIN 33ABCDE1234F1Z5
+FSSAI 12345678901234
+<ALIGN L>--------------------------------
+<BOLD 1>Inv A07/2627/000123
+<BOLD 0>24-11-2026 13:05
+Table T6  Dine-in  Waiter Ravi
+Bill 1
+Guest: Sea Foods Ltd
+GSTIN 33AAAAA0000A1Z5
+--------------------------------
+Item           Qt   Rate  Amount
+--------------------------------
+Masala Dosa     3  80.00  240.00
+Filter Coffee   2  30.00   60.00
+--------------------------------
+Subtotal                  300.00
+Taxable (5%)              300.00
+CGST 2.5%                   7.50
+SGST 2.5%                   7.50
+--------------------------------
+<BOLD 1>TOTAL                  Rs 315.00
+<BOLD 0>--------------------------------
+<ALIGN C>Scan to pay (UPI)
+<QR fn41 32 00><QR fn43 05><QR fn45 31><QR STORE upi://pay?pa=anand@bank&pn=Anand&am=315.00&cu=INR><QR fn51 30>
+<ALIGN L>Cash                      400.00
+Change                     85.00
+--------------------------------
+Place of supply: Tamil Nadu
+Reverse charge: No
+Cashier: Asha
+<ALIGN C>Thank you. Visit again.
+<ALIGN L><FEED 4>

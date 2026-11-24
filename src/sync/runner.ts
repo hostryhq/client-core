@@ -1,0 +1,211 @@
+import type { KeyRing } from "./crypto";
+import type { SyncEngine } from "./engine";
+import {
+  fromWireVector,
+  toWireVector,
+  type HeldSlot,
+  type SyncTransport,
+  TransportError,
+} from "./transport";
+import type { HeldItem, SyncClient, SyncStatus, Unsubscribe } from "./types";
+
+export type RunnerConfig = {
+  engine: SyncEngine;
+  /** LAN hub transport (configured URL; discovery is the hub's and the shell's job). Optional. */
+  hub?: SyncTransport;
+  /** Cloud gateway transport. Optional (a LAN-only test, or before activation). */
+  cloud?: SyncTransport;
+  /** Credential key ring: credentials served with pulled ops are ingested before ops are verified. */
+  keyRing?: KeyRing;
+  /** Relay every origin's ops (the hub role). Devices push only their own, plus the re-offer after a restore. */
+  relayAll?: boolean;
+  now?: () => number;
+  random?: () => number;
+  /** Idle interval between rounds when running in the background. Default 15 s. */
+  intervalMs?: number;
+  /** Pull and push batch cap. Default 500 ops. */
+  batch?: number;
+  /** Called with errors a round hit; the UI never needs them, the log does. */
+  onError?: (e: unknown) => void;
+};
+
+const HUB_FAILOVER_TRIES = 3;
+const HUB_FAILOVER_MS = 10_000;
+const HUB_PROBE_MS = 15_000;
+const MAX_BATCHES = 200;
+
+const toHeld = (h: HeldSlot[], origin: string): HeldItem[] => h.filter((s) => s.origin === origin).map((s) => ({ stream: s.stream, seq: s.seq, code: s.code }));
+
+/**
+ * Background sync runner (ADR-0002 S10, S12). A device has one upstream at a time: the hub when
+ * reachable, otherwise the cloud. Each round is hello, push, pull; every step is safe to repeat and
+ * resumes by version vector, so a cut connection costs nothing. The UI never awaits this.
+ */
+export class SyncRunner implements SyncClient {
+  private readonly e: SyncEngine;
+  private readonly now: () => number;
+  private readonly random: () => number;
+  private timer: ReturnType<typeof setTimeout> | undefined;
+  private running = false;
+  private inflight: Promise<void> | undefined;
+  private hubFailures = 0;
+  private hubFirstFailureAt = 0;
+  private hubRetryAt = 0;
+  private failures = 0;
+
+  constructor(private readonly cfg: RunnerConfig) {
+    this.e = cfg.engine;
+    this.now = cfg.now ?? Date.now;
+    this.random = cfg.random ?? Math.random;
+  }
+
+  start(): void {
+    if (this.running) return;
+    this.running = true;
+    const tick = (): void => {
+      if (!this.running) return;
+      void this.syncNow().finally(() => {
+        if (!this.running) return;
+        const base = this.cfg.intervalMs ?? 15_000;
+        const backoff = Math.min(base * 2 ** Math.min(this.failures, 4), 120_000);
+        this.timer = setTimeout(tick, backoff * (0.75 + this.random() * 0.5)); // jittered
+      });
+    };
+    tick();
+  }
+
+  stop(): void {
+    this.running = false;
+    if (this.timer) clearTimeout(this.timer);
+  }
+
+  status(): SyncStatus {
+    return this.e.status();
+  }
+
+  onStatus(listener: (status: SyncStatus) => void): Unsubscribe {
+    return this.e.onStatus(listener);
+  }
+
+  /** Runs one round now. Concurrent calls share the round in flight. Never throws. */
+  syncNow(): Promise<void> {
+    this.inflight ??= this.round().finally(() => {
+      this.inflight = undefined;
+    });
+    return this.inflight;
+  }
+
+  private pickUpstream(): Array<"hub" | "cloud"> {
+    const order: Array<"hub" | "cloud"> = [];
+    const { hub, cloud } = this.cfg;
+    const hubDue = hub && this.now() >= this.hubRetryAt;
+    // Fail over to the cloud after 3 tries or 10 s; probe the hub again every 15 s (S12).
+    const hubDown = this.hubFailures >= HUB_FAILOVER_TRIES || (this.hubFailures > 0 && this.now() - this.hubFirstFailureAt >= HUB_FAILOVER_MS);
+    if (hub && hubDue) order.push("hub");
+    if (cloud && (!hub || hubDown || !hubDue)) order.push("cloud");
+    return order;
+  }
+
+  private async round(): Promise<void> {
+    await this.e.sealIfDue().catch(this.cfg.onError);
+    const order = this.pickUpstream();
+    for (const kind of order) {
+      const transport = kind === "hub" ? this.cfg.hub : this.cfg.cloud;
+      if (!transport) continue;
+      try {
+        await this.exchange(kind, transport);
+        if (kind === "hub") this.hubFailures = 0;
+        this.failures = 0;
+        this.e.setConnectivity({ online: true, upstream: kind, lastSyncAt: new Date(this.now()).toISOString() });
+        return;
+      } catch (err) {
+        this.cfg.onError?.(err);
+        if (kind === "hub") {
+          if (this.hubFailures === 0) this.hubFirstFailureAt = this.now();
+          this.hubFailures++;
+          if (this.hubFailures >= HUB_FAILOVER_TRIES) this.hubRetryAt = this.now() + HUB_PROBE_MS;
+        }
+        // A non-retriable error is a bug or a refusal; it is still reported but must not spin.
+        if (!(err instanceof TransportError) || err.retriable) continue;
+      }
+    }
+    this.failures++;
+    this.e.setConnectivity({ online: false, upstream: "none" });
+  }
+
+  /** hello, then push until nothing is left, then pull until `more` is false. */
+  private async exchange(kind: "hub" | "cloud", t: SyncTransport): Promise<void> {
+    const e = this.e;
+    const batch = this.cfg.batch ?? 500;
+    const vectors: Record<string, Record<string, number>> = {};
+    const cloudVec: Record<string, Record<string, number>> = {};
+    for (const s of e.streams) {
+      vectors[s] = await e.vector(s);
+      cloudVec[s] = e.upstreamVector("cloud", s);
+    }
+
+    const hello = await t.hello({
+      protocol: 1,
+      vector: toWireVector(vectors),
+      ...(e.lastEpoch ? { epoch: e.lastEpoch } : {}),
+      cloud_vector: toWireVector(cloudVec),
+    });
+    await e.noteUpstreamTime(kind, hello.time);
+    const upstream = fromWireVector(hello.vector);
+    if (kind === "cloud") {
+      await e.noteCloudHello(hello.epoch ?? "genesis", upstream);
+      for (const s of e.streams) await e.noteUpstream("cloud", s, upstream[s] ?? {});
+    } else {
+      // The hub tells us what it holds (at_hub) and what the cloud last confirmed to it (in_cloud).
+      for (const s of e.streams) await e.noteUpstream("hub", s, upstream[s] ?? {}, true);
+      const viaHub = fromWireVector(hello.cloud_vector);
+      for (const s of e.streams) if (viaHub[s]) await e.noteUpstream("cloud", s, viaHub[s]!);
+    }
+
+    const scope = this.cfg.relayAll || (kind === "cloud" && e.needsReoffer) ? "all" : "own";
+    for (const stream of e.streams) {
+      let have = { ...(upstream[stream] ?? {}) };
+      for (let i = 0; i < MAX_BATCHES; i++) {
+        const { items, seals } = await e.outbox(stream, have, scope, batch);
+        if (items.length === 0) break;
+        const res = await t.push({ items, seals });
+        const accepted = fromWireVector(res.vector)[stream] ?? {};
+        await e.noteUpstream(kind, stream, accepted, kind === "hub");
+        if (res.held?.length) await e.setHeld(mergeHeld(e.heldOps(), toHeld(res.held, e.deviceId)));
+        const before = JSON.stringify(have);
+        have = { ...have, ...accepted };
+        if (JSON.stringify(have) === before) break; // refused or no progress: do not spin; next round retries
+      }
+    }
+    if (kind === "cloud" && e.needsReoffer) await e.reofferDone();
+
+    // Pull until caught up.
+    for (let i = 0; i < MAX_BATCHES; i++) {
+      const cur: Record<string, Record<string, number>> = {};
+      for (const s of e.streams) cur[s] = await e.vector(s);
+      const res = await t.pull({
+        vector: toWireVector(cur),
+        streams: e.streams,
+        placeholders: await e.placeholders(),
+        limit: batch,
+      });
+      if (res.creds?.length && this.cfg.keyRing) await this.cfg.keyRing.ingest(res.creds);
+      let progress = res.items.length === 0;
+      for (const s of e.streams) {
+        const items = res.items.filter((it) => it.stream === s);
+        if (items.length === 0) continue;
+        const r = await e.applyRemote(s, items, res.seals ?? []);
+        if (r.applied > 0 || r.skipped > 0) progress = true;
+        if (r.rejected.length) this.cfg.onError?.(new Error(`pull rejected: ${JSON.stringify(r.rejected)}`));
+      }
+      await e.setHeld(toHeld(res.own_held ?? [], e.deviceId));
+      if (!res.more || !progress) break;
+    }
+  }
+}
+
+function mergeHeld(cur: HeldItem[], add: HeldItem[]): HeldItem[] {
+  const m = new Map(cur.map((h) => [`${h.stream}|${h.seq}`, h]));
+  for (const h of add) m.set(`${h.stream}|${h.seq}`, h);
+  return [...m.values()];
+}

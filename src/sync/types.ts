@@ -46,30 +46,78 @@ export type OpEnvelope = {
   pack_v: string;
   /** Approval id, when the action needed one. */
   approval?: string;
+  /** Opaque PIN-derived session or action proof (ADR-0005 s7-8); only the cloud checks it. */
+  proof?: string;
   intent: string;
   intent_v: number;
   /** RFC 3339 UTC. */
   at: string;
+  /** The legal document number this op allocates (S7), if any. The series code is the part before the first slash. */
+  doc?: { type: string; number: string };
   muts: Mutation[];
-  /** Personal data; outside the op hash. */
-  pii?: Record<string, unknown>;
+};
+
+/**
+ * An op or a placeholder on the wire (svc-sync `syncproto.Item`). `body` is the canonical JSON text of the
+ * op without `pii`; every relay forwards those exact bytes and `h` is SHA-256 of them. No `body` means
+ * placeholder: the slot advances the vector but its content is not delivered. `pii` is outside the hash.
+ */
+export type WireItem = {
+  origin: string;
+  stream: string;
+  seq: number;
+  h: string;
+  body?: string;
+  pii?: unknown;
 };
 
 /** Highest contiguous seq held, per `origin` (per stream). Resume is by version vector. */
 export type VersionVector = Record<string, number>;
 
-/** Verdicts the gateway can return for a pushed op (ADR-0002 S11); nothing is silently dropped. */
-export type OpState = "accepted" | "accepted_flagged" | "quarantined" | "voided";
+/** Where one of this device's own ops is (ADR-0002 S12 item 6). "Sent to kitchen" needs `at_hub` or `in_cloud`. */
+export type DeliveryState = "local" | "at_hub" | "in_cloud";
+
+/**
+ * The only things a device is told about a held op of its own (ADR-0002 A1.2, provisional). Never a flag
+ * or a proof verdict: a flagged op is "simply accepted" to its origin. A voided op arrives as `sync.void`.
+ */
+export type HeldCode = "pending" | "held_manager" | "held_support";
+export type HeldItem = { stream: string; seq: number; code: HeldCode };
+
+/** Sync indicator states; match `sync.*` in docs/design/tokens.json (icon + label, never colour alone). */
+export type SyncState = "synced" | "pending" | "offline" | "conflict";
 
 /** What every screen that matters shows (offline-first-sync invariant 9). */
 export type SyncStatus = {
+  /** Some upstream (hub or cloud) answered on the last round. */
   online: boolean;
-  /** Ops written locally and not yet acknowledged upstream. */
+  /** Own ops written locally and not yet at any upstream (`local`). */
   pendingOps: number;
-  /** Ops needing attention (quarantined or voided); never dropped silently. */
+  /** Own ops at the hub but not yet confirmed by the cloud. */
+  atHubOps: number;
+  /** Own ops held for a manager or support, or refused (voided), plus open conflicts; never dropped silently. */
   attentionOps: number;
+  /** Own configuration ops the cloud is still checking (`pending`). */
+  checkingOps: number;
+  /** Which upstream is in use. */
+  upstream: "hub" | "cloud" | "none";
+  /** Single state for the indicator: conflict > offline > pending > synced. */
+  state: SyncState;
+  /** Device clock differs from upstream time by more than 2 minutes: show the "clock wrong" banner. */
+  clockWrong: boolean;
+  /** The device key is unusable; nothing is recorded until recovery (ADR-0002 A1.3). */
+  keyLost: boolean;
   lastSyncAt?: string;
 };
+
+/** A seal: the origin's signature over the hash of its op at `seq` (ADR-0002 S17). */
+export type Seal = { origin: string; stream: string; seq: number; h: string; kid: string; sig: string };
+
+/** Identity of an op. */
+export type OpRef = { origin: string; stream: string; seq: number };
+
+/** Fixes the tail of a key-lost origin; signed by the adopting device's new key (ADR-0002 A1.3 item 4). */
+export type Attestation = { origin: string; stream: string; seq: number; h: string; by: string; rec: string; kid: string; sig: string };
 
 export type Unsubscribe = () => void;
 

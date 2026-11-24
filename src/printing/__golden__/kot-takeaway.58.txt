@@ -1,0 +1,14 @@
+<INIT><FONT 0><BOLD 1>KITCHEN                    13:02
+<SIZE w2h2>TAKEAWAY #27
+<BOLD 0><SIZE w1h1>Bill 1
+KOT K2-014
+--------------------------------
+<SIZE w1h2> 3 x Masala Dosa
+<SIZE w1h1>    Less spicy
+<SIZE w1h2> 2 x Filter Coffee
+<SIZE w1h1>    Sugar less
+<SIZE w1h2> 1 x Parotta Half
+<SIZE w1h1>    + Extra gravy
+--------------------------------
+Note: Allergy - no peanuts
+<FEED 4>

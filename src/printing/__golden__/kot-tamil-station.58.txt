@@ -1,0 +1,11 @@
+<INIT><FONT 0><BOLD 1>KITCHEN                    13:02
+<SIZE w3h3>T6
+<BOLD 0><SIZE w1h1>Dine-in   Waiter: Ravi   Bill 1
+KOT K2-014
+--------------------------------
+<RASTER m=0 bytesPerRow=48 rows=128 fnv=99cdddc2><RASTER m=0 bytesPerRow=48 rows=18 fnv=1637f410>    Less spicy
+<RASTER m=0 bytesPerRow=48 rows=128 fnv=289f6623><RASTER m=0 bytesPerRow=48 rows=18 fnv=0e61c37e>    Sugar less
+<RASTER m=0 bytesPerRow=48 rows=128 fnv=cebb9728><RASTER m=0 bytesPerRow=48 rows=18 fnv=d912951f>    + Extra gravy
+--------------------------------
+Note: Allergy - no peanuts
+<FEED 4>

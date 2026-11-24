@@ -1,0 +1,30 @@
+<INIT><FONT 0><ALIGN C><BOLD 1><SIZE w1h2>BILL OF SUPPLY
+<SIZE w1h1>Anand Foods Pvt Ltd
+<BOLD 0>12 Main Road, Gudalur
+GSTIN 33ABCDE1234F1Z5
+FSSAI 12345678901234
+<ALIGN L>--------------------------------
+<BOLD 1>Inv A07/2627/000123
+<BOLD 0>24-11-2026 13:05
+Table T6  Dine-in  Waiter Ravi
+Bill 1
+--------------------------------
+Item           Qt   Rate  Amount
+--------------------------------
+Masala Dosa     3  80.00  240.00
+Filter Coffee   2  30.00   60.00
+--------------------------------
+Subtotal                  300.00
+--------------------------------
+<BOLD 1>TOTAL                  Rs 300.00
+<BOLD 0>--------------------------------
+UPI                       300.00
+--------------------------------
+Place of supply: Tamil Nadu
+Reverse charge: No
+Composition taxable person, not
+eligible to collect tax on
+supplies
+Cashier: Asha
+<ALIGN C>Thank you. Visit again.
+<ALIGN L><FEED 4>

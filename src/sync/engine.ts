@@ -250,13 +250,15 @@ export class SyncEngine {
         (tx.get(T.head, this.headId(stream)) as Head | undefined) ??
         ({ id: this.headId(stream), tenant_id: this.tenantId, seq: 0, h: await genesisHash(this.deviceId, stream), sealedSeq: 0, sealedAt: this.now() } as Head);
       const nowMs = this.correctedNow();
-      let doc: OpEnvelope["doc"];
+      // An op may take several legal numbers in this one transaction (bill.rebill: a credit note and the new bills);
+      // they commit with the op or not at all, so no number is burnt or duplicated.
+      const allocated: NonNullable<OpEnvelope["doc"]>[] = [];
       const muts = spec.build({
         now: nowMs,
         number: (docType) => {
-          if (doc) throw new Error("record: an op allocates at most one legal number");
-          doc = { type: docType, number: allocateNumber(tx, this.tenantId, docType, nowMs) };
-          return doc.number;
+          const d = { type: docType, number: allocateNumber(tx, this.tenantId, docType, nowMs) };
+          allocated.push(d);
+          return d.number;
         },
         get: (e, id) => tx.get(e, id),
         list: (e) => tx.list(e),
@@ -282,7 +284,9 @@ export class SyncEngine {
         intent: spec.intent,
         intent_v: spec.intentV ?? 1,
         at: new Date(nowMs).toISOString(),
-        ...(doc ? { doc } : {}),
+        // `doc` is the first number (what a reader that knows one number sees); `docs` lists all of them when there are several.
+        ...(allocated.length ? { doc: allocated[0]! } : {}),
+        ...(allocated.length > 1 ? { docs: allocated } : {}),
         // Empty `f` and `prev` are omitted, as the Go side omits them, so both encoders give the same bytes.
         muts: muts.map((m) => ({
           e: m.e,

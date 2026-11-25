@@ -14,7 +14,20 @@ export type Policy =
   /** Forward-only status of one instance: the highest declared rank wins. */
   | "rank"
   /** Signed deltas; the value is the sum. Stock, loyalty points. */
-  | "delta";
+  | "delta"
+  /**
+   * One policy per field (`fields`): immutable after insert, lww, lww with review, forward-only rank, or delta.
+   * Entities such as `check` and `order_line`, which a till edits while the kitchen and the bill move them forward.
+   */
+  | "mixed";
+
+export type FieldPolicy = "immutable" | "lww" | "lww_review" | "rank" | "delta";
+
+export type FieldRule = {
+  policy: FieldPolicy;
+  /** rank: values, lowest first. */
+  order?: string[];
+};
 
 export type DocType = "tax_invoice" | "bill_of_supply" | "plain_bill" | "credit_note";
 
@@ -33,7 +46,17 @@ export type EntitySchema = {
   docType?: DocType;
   /** Money or tax: only modelled as append facts; invariants are checked by detectors, never merged. */
   guarded?: boolean;
+  /** mixed: the policy of each declared field. A field not declared here is ignored (invariant 8). */
+  fields?: Record<string, FieldRule>;
 };
+
+/** `review` of a mixed entity is the set of its lww_review fields. */
+export function reviewFields(s: EntitySchema): string[] {
+  if (s.policy !== "mixed") return s.review ?? [];
+  return Object.entries(s.fields ?? {})
+    .filter(([, r]) => r.policy === "lww_review")
+    .map(([k]) => k);
+}
 
 export class SchemaRegistry {
   private byName = new Map<string, EntitySchema>();

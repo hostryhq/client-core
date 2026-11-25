@@ -15,9 +15,10 @@ export {
   type SealVerifier,
   type Signer,
 } from "./crypto";
-export { DEMO_SCHEMAS, SchemaRegistry, demoRegistry, type DocType, type EntitySchema, type Policy } from "./schema";
+export { DEMO_SCHEMAS, SchemaRegistry, demoRegistry, reviewFields, type DocType, type EntitySchema, type FieldPolicy, type FieldRule, type Policy } from "./schema";
+export { restaurantRegistry, restaurantSchemas, restaurantFields, restaurantIdRule, type EntityDef } from "./restaurant";
 export { SeriesError, financialYear, formatNumber, type SeriesGrant, type SeriesState } from "./series";
-export { detect, type Violation } from "./detectors";
+export { detect, seriesGaps, type SeriesGap, type Violation } from "./detectors";
 export { visible, type ConflictRow } from "./apply";
 export {
   KeyLostError,

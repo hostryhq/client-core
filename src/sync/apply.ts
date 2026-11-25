@@ -1,6 +1,6 @@
 import type { Row, StoreTx } from "../store";
 import { compareStamp } from "./hlc";
-import type { EntitySchema, SchemaRegistry } from "./schema";
+import { reviewFields, type EntitySchema, type SchemaRegistry } from "./schema";
 import type { Hlc, Mutation, OpEnvelope, OpRef } from "./types";
 
 /** Internal tables. Underscore-prefixed fields of domain rows are internal and never sent. */
@@ -57,7 +57,7 @@ function winner(cands: Cand[]): Cand {
 }
 
 /** Recompute visible values of a row from its candidates, skipping voided ops. A row with no candidate does not exist. */
-function recompute(tx: StoreTx, row: Row & { _g?: Groups }): void {
+function recompute(tx: StoreTx, row: Row & { _g?: Groups }, mixed = false): void {
   const g: Groups = row._g ?? {};
   for (const f of Object.keys(g)) {
     const live = g[f]!.filter((c) => !tx.get(T.void, c.i));
@@ -70,6 +70,7 @@ function recompute(tx: StoreTx, row: Row & { _g?: Groups }): void {
     if (f !== TOMB) row[f] = winner(live).v;
   }
   row._g = g;
+  if (mixed) return; // a mixed row has no tombstone: it is never "deleted", whatever order its ops arrive in
   const t = g[TOMB];
   row.deleted = !t || winner(t).v !== false;
 }
@@ -102,7 +103,7 @@ export type ConflictRow = Row & {
 };
 
 function detectConflicts(tx: StoreTx, schema: EntitySchema, rowId: string, g: Groups, ctx: ApplyCtx): void {
-  for (const f of schema.review ?? []) {
+  for (const f of reviewFields(schema)) {
     const cands = g[f] ?? [];
     for (let a = 0; a < cands.length; a++) {
       for (let b = a + 1; b < cands.length; b++) {
@@ -127,6 +128,95 @@ function detectConflicts(tx: StoreTx, schema: EntitySchema, rowId: string, g: Gr
   }
 }
 
+/**
+ * Mixed-policy entity (check, order_line): each field follows its own rule, so replaying or reordering ops gives the
+ * same row. Immutable fields come from the insert (two inserts of one id, a client bug, keep the lower stamp);
+ * lww and lww_review fields keep candidates by (hlc, origin) as in an lww entity, with `prev` for review fields;
+ * rank fields only move forward; delta fields add up. The mutation kind says what the writer meant; the field's
+ * policy decides what happens, and a field that does not accept the kind is ignored.
+ */
+function applyMixed(
+  ctx: ApplyCtx,
+  op: OpEnvelope,
+  m: Mutation,
+  schema: EntitySchema,
+  existing: Row | undefined,
+  f: Record<string, unknown>,
+  i: string,
+  out: ApplyResult,
+  tx: StoreTx,
+): void {
+  if (m.k === "del" || m.k === "undel") {
+    out.ignored.push(`${m.e}: ${m.k} ignored`);
+    return;
+  }
+  const row = (existing ?? { id: m.id, tenant_id: ctx.tenantId, _g: {} }) as Row & { _g: Groups; _ih?: string; _io?: string };
+  row._g ??= {};
+  const g = row._g;
+  const rules = schema.fields ?? {};
+
+  let takesImmutable = false;
+  if (m.k === "insert") {
+    // A lower stamp replaces the immutable fields of an earlier insert of the same id, so every node settles on one.
+    takesImmutable = row._ih === undefined || compareStamp(op.hlc, op.origin, row._ih, row._io as string) < 0;
+    if (takesImmutable) {
+      for (const [k, r] of Object.entries(rules)) if (r.policy === "immutable") delete row[k];
+      row._ih = op.hlc;
+      row._io = op.origin;
+    }
+  }
+
+  for (const [k, v] of Object.entries(f)) {
+    const r = rules[k];
+    if (!r) {
+      out.ignored.push(`${m.e}.${k}: unknown field`);
+      continue;
+    }
+    switch (r.policy) {
+      case "immutable":
+        if (m.k !== "insert") out.ignored.push(`${m.e}.${k}: immutable, ${m.k} ignored`);
+        else if (takesImmutable) row[k] = v;
+        break;
+      case "lww":
+      case "lww_review": {
+        if (m.k !== "insert" && m.k !== "set") {
+          out.ignored.push(`${m.e}.${k}: ${m.k} ignored`);
+          break;
+        }
+        const list = (g[k] ??= []);
+        if (!list.some((c) => c.i === i)) {
+          const p = m.k === "set" ? m.prev?.[k] : undefined;
+          list.push({ h: op.hlc, o: op.origin, i, v, ...(p !== undefined ? { p } : {}) });
+        }
+        break;
+      }
+      case "rank": {
+        if (m.k === "delta") {
+          out.ignored.push(`${m.e}.${k}: delta ignored`);
+          break;
+        }
+        const order = r.order ?? [];
+        const nr = order.indexOf(v as string);
+        const cr = row[k] === undefined ? -1 : order.indexOf(row[k] as string);
+        if (nr > cr) row[k] = v; // never backwards; an unknown value (-1) never wins
+        break;
+      }
+      case "delta": {
+        if (m.k !== "insert" && m.k !== "delta") {
+          out.ignored.push(`${m.e}.${k}: ${m.k} ignored`);
+          break;
+        }
+        if (typeof v === "number" && Number.isInteger(v)) row[k] = ((row[k] as number | undefined) ?? 0) + v;
+        break;
+      }
+    }
+  }
+  trim(g, ctx, reviewFields(schema));
+  detectConflicts(tx, schema, m.id, g, ctx);
+  recompute(tx, row, true);
+  tx.put(m.e, row);
+}
+
 export type ApplyResult = { ignored: string[] };
 
 /** Apply one mutation. Pure function of (row state, op); commutative and idempotent under each policy. */
@@ -142,6 +232,10 @@ function applyMutation(tx: StoreTx, ctx: ApplyCtx, op: OpEnvelope, m: Mutation, 
   const f = clean(m.f);
 
   switch (schema.policy) {
+    case "mixed": {
+      applyMixed(ctx, op, m, schema, existing, f, i, out, tx);
+      return;
+    }
     case "append": {
       if (m.k !== "insert") {
         out.ignored.push(`${m.e}: append entities are immutable, ${m.k} ignored`);
@@ -217,7 +311,7 @@ function applyMutation(tx: StoreTx, ctx: ApplyCtx, op: OpEnvelope, m: Mutation, 
         out.ignored.push(`${m.e}: ${m.k} ignored`);
         return;
       }
-      trim(g, ctx, schema.review);
+      trim(g, ctx, reviewFields(schema));
       detectConflicts(tx, schema, m.id, g, ctx);
       recompute(tx, row);
       tx.put(m.e, row);
@@ -234,7 +328,11 @@ export function applyMutations(tx: StoreTx, ctx: ApplyCtx, op: OpEnvelope): Appl
 
 /** True when the op changes last-writer-wins master data (the only ops that depend on the clock for correctness). */
 export function touchesLww(ctx: ApplyCtx, op: OpEnvelope): boolean {
-  return op.muts.some((m) => ctx.schemas.get(m.e)?.policy === "lww");
+  return op.muts.some((m) => {
+    const s = ctx.schemas.get(m.e);
+    if (s?.policy === "lww") return true;
+    return s?.policy === "mixed" && Object.values(s.fields ?? {}).some((r) => r.policy === "lww" || r.policy === "lww_review");
+  });
 }
 
 /**
@@ -246,10 +344,11 @@ export function applyVoidTo(tx: StoreTx, ctx: ApplyCtx, target: OpRef, appliedOp
   tx.put(T.void, { id, tenant_id: ctx.tenantId });
   if (appliedOp) {
     for (const m of appliedOp.muts) {
-      if (ctx.schemas.get(m.e)?.policy !== "lww") continue;
+      const pol = ctx.schemas.get(m.e)?.policy;
+      if (pol !== "lww" && pol !== "mixed") continue;
       const row = tx.get(m.e, m.id) as (Row & { _g?: Groups }) | undefined;
       if (row) {
-        recompute(tx, row);
+        recompute(tx, row, pol === "mixed");
         tx.put(m.e, row);
       }
     }

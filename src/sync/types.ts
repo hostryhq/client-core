@@ -54,6 +54,13 @@ export type OpEnvelope = {
   at: string;
   /** The legal document number this op allocates (S7), if any. The series code is the part before the first slash. */
   doc?: { type: string; number: string };
+  /**
+   * Every legal number the op allocates, in allocation order, when there is more than one (bill.rebill: the credit
+   * note, then the replacement bills). `doc` is then `docs[0]`. Absent for zero or one number, so existing ops and
+   * vectors are byte-identical. Additive; svc-sync and go-common must read it before a gateway accepts a re-bill
+   * (ADR needed: op envelope with several document numbers).
+   */
+  docs?: Array<{ type: string; number: string }>;
   muts: Mutation[];
 };
 

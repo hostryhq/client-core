@@ -26,3 +26,8 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 - `ids.ts`: `uuidv7()` for client-generated IDs.
 
 Generated types last synced from api-specs branch `feat/phase1-api-specs` (identity, tenancy; phase 2: admin, billing, catalog, orders from `feat/phase2-specs`).
+
+## Testing entry and seeding
+- `@hostry/client-core/testing` exports the sync simulator (`FakeNode` hub and cloud, `makeWorld`, `authorBatch`/`deliver`, `runScenario`). For tests only.
+- Seeding: a row put straight into the store (`store.transact(tx => tx.put(...))`) is supported for `lww` entities. The first `set` or `del` adopts it with the lowest stamp, so it keeps showing and its other fields survive; real ops outrank it. A seeded row is local only (it makes no op, so other devices do not get it); to configure other devices record an op.
+- `rank` mutations apply on entity-level rank entities (`seating`, `shift`, `business_day`, `kot_line`) like `set`, forward only.

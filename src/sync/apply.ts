@@ -60,6 +60,21 @@ function winner(cands: Cand[]): Cand {
   return w;
 }
 
+/** Stamp below every real one: what a row put straight into the store (no op) is worth against ops. */
+const SEED: Cand = { h: "", o: "", i: "_seed|_seed|0", v: undefined };
+
+/**
+ * A row put straight into the store (seeding) has no candidates. Adopt it: its present fields and its existence become
+ * candidates with the lowest stamp, so the first `set` or `del` neither hides it nor drops its other fields, and any
+ * real op outranks the seed.
+ */
+function adoptSeeded(row: Row & { _g?: Groups }): void {
+  const g: Groups = {};
+  for (const [k, v] of Object.entries(row)) if (!reserved(k)) g[k] = [{ ...SEED, v }];
+  g[TOMB] = [{ ...SEED, v: false }];
+  row._g = g;
+}
+
 /** Recompute visible values of a row from its candidates, skipping voided ops. A row with no candidate does not exist. */
 function recompute(tx: StoreTx, row: Row & { _g?: Groups }, mixed = false): void {
   const g: Groups = row._g ?? {};
@@ -292,6 +307,7 @@ function applyMutation(tx: StoreTx, ctx: ApplyCtx, op: OpEnvelope, m: Mutation, 
     }
     case "lww": {
       const row = (existing ?? { id: m.id, tenant_id: ctx.tenantId, _g: {} }) as Row & { _g: Groups };
+      if (existing && !existing._g) adoptSeeded(row);
       row._g ??= {};
       const g = row._g;
       const add = (field: string, v: unknown, p?: Hlc): void => {

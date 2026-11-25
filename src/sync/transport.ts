@@ -25,6 +25,8 @@ export type HelloRequest = {
   unbound?: OpRef[];
   /** Chain conflicts recorded and not yet reported; sent at a direct cloud hello (A2.8 item 1.4). */
   chain_conflicts?: ChainConflict[];
+  /** Cloud-signed pii erasures this node applied (direct cloud hello only). */
+  pii_erased?: OpRef[];
 };
 
 export type HelloResponse = {

@@ -48,3 +48,15 @@ export {
   type SyncTransport,
 } from "./transport";
 export { SyncRunner, type RunnerConfig } from "./runner";
+export {
+  PII_SALT_BYTES,
+  PII_SALT_PREFIX,
+  commitPii,
+  openPii,
+  stripSalts,
+  type OpenedPii,
+  type PiiCommit,
+  type PiiValues,
+  type PiiWire,
+  type RandomBytes,
+} from "./pii-commit";

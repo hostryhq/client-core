@@ -22,6 +22,8 @@ export const T = {
   unbound: "_s_unbound",
   /** Recorded chain conflicts, one row per (origin, stream, kind of upstream) (A2.8 item 1.4). */
   cc: "_s_cc",
+  /** Erasures applied here and not yet acknowledged in a direct cloud hello: row per op. */
+  piiack: "_s_piiack",
 } as const;
 
 export const opId = (r: OpRef): string => `${r.stream}|${r.origin}|${r.seq}`;

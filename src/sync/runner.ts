@@ -165,6 +165,7 @@ export class SyncRunner implements SyncClient {
     if (kind === "cloud") {
       await e.noteCloudHello(hello.epoch ?? "genesis", upstream);
       await e.markConflictsReported(extras.chain_conflicts ?? []);
+      await e.clearErasureAcks(extras.pii_erased ?? []);
       await e.resolveUnbound(hello.unbound_h ?? []);
       for (const s of e.streams) await e.noteUpstream("cloud", s, upstream[s] ?? {});
     } else {

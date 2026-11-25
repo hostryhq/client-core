@@ -148,8 +148,11 @@ export class FakeNode {
 
   // ---- protocol --------------------------------------------------------------------------------
 
+  /** Every hello request this node received, in order. */
+  readonly hellos: HelloRequest[] = [];
+
   async hello(req?: HelloRequest): Promise<HelloResponse> {
-    void req; // the fake answers from its own state
+    if (req) this.hellos.push(req); // the fake answers from its own state; what a node sent is kept for tests
     this.fault("hello", "before");
     const res: HelloResponse = {
       protocol: 1,
@@ -366,6 +369,16 @@ export class FakeNode {
     const k = `${stream}|${origin}`;
     this.st.seals.set(k, [...(this.st.seals.get(k) ?? []), await makeSeal(signer, origin, stream, seq, h)]);
     return { origin, stream, seq };
+  }
+
+  /** Cloud erases the personal data of an op: drops values and salts it holds and emits a cloud-signed `sync.pii.erase`. */
+  async erasePii(ref: OpRef): Promise<OpRef> {
+    const s = this.origins(ref.stream).get(ref.origin)?.[ref.seq - 1];
+    if (!s) throw new Error("erasePii: no such slot");
+    delete s.item.pii;
+    return this.emit(ref.stream, "sync.pii.erase", [
+      { e: "pii_erase", id: `${ref.stream}|${ref.origin}|${ref.seq}`, k: "insert", f: { origin: ref.origin, stream: ref.stream, seq: ref.seq } },
+    ]);
   }
 
   private emitVoid(target: OpRef): Promise<OpRef> {

@@ -5,6 +5,8 @@
  * api-specs/sync/; replace these hand-written types with generated ones when that lands.
  */
 
+import type { PiiCommit } from "./pii-commit";
+
 /** 16-char lowercase hex: 48-bit Unix ms plus 16-bit counter. Sorts as text. */
 export type Hlc = string;
 
@@ -55,6 +57,8 @@ export type OpEnvelope = {
   /** The legal document number this op allocates (S7), if any. The series code is the part before the first slash. */
   doc?: { type: string; number: string };
   muts: Mutation[];
+  /** Salted per-field commitments of the op's personal data (pii-commit.ts); the values travel beside the op. */
+  pii_c?: PiiCommit;
 };
 
 /**

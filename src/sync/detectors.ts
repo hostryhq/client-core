@@ -21,7 +21,13 @@ export async function detect(store: LocalStore): Promise<Violation[]> {
   for (const p of payments) {
     const bill = p.bill_id as string | undefined;
     const amount = p.amount_paise as number | undefined;
-    if (bill && typeof amount === "number") paid.set(bill, (paid.get(bill) ?? 0) + amount); // refunds are negative payments
+    if (bill && typeof amount === "number") paid.set(bill, (paid.get(bill) ?? 0) + amount); // a negative payment is a refund too
+  }
+  // `refund` rows carry a positive amount for the bill they return money against (soak T7).
+  for (const r of await store.list("refund")) {
+    const bill = r.bill_id as string | undefined;
+    const amount = r.amount_paise as number | undefined;
+    if (bill && typeof amount === "number") paid.set(bill, (paid.get(bill) ?? 0) - amount);
   }
   for (const b of bills) {
     const total = b.total_paise as number | undefined;

@@ -96,6 +96,10 @@ export const DEMO_SCHEMAS: EntitySchema[] = [
   { name: "conflict_ack", policy: "append" },
   /** An offline activation of a dormant series (ADR-0002 S7); append, flagged for the owner by the cloud. */
   { name: "series_activation", policy: "append" },
+  /** Control record of `session.open` (api-specs sync/intents control.yaml): `type` pin, strong or device. The gateway types the session from it. */
+  { name: "session", policy: "append" },
+  /** Control record of `approval.grant`: approver, permission, requester, action_hash, target, reason. The gateway verifies the approval proof from it. */
+  { name: "approval", policy: "append" },
 ];
 
 export const demoRegistry = (): SchemaRegistry => new SchemaRegistry(DEMO_SCHEMAS);

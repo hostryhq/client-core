@@ -172,6 +172,8 @@ describe("documents -> ops -> multi-device sync (Phase 2 integration)", () => {
     await expect(bad(() => [{ e: "kot", id: "k", k: "insert", f: {} }])).rejects.toThrow(/entity_not_allowed/);
     await expect(bad(() => [{ e: "bill", id: "b", k: "set", f: {} }])).rejects.toThrow(/kind_not_allowed/);
     await expect(bad(() => [{ e: "bill", id: "b", k: "insert", f: { nonsense: 1 } }])).rejects.toThrow(/unknown_field/);
+    // A name an approval binds is not a field: only declared fields pass (replacement_total_paise is declared on credit_note, not on bill).
+    await expect(bad(() => [{ e: "bill", id: "b", k: "insert", f: { replacement_total_paise: 1 } }])).rejects.toThrow(/unknown_field/);
     await expect(writer.record({ intent: "bill.finalize", build: () => [] })).rejects.toThrow(/number_missing/);
     await expect(writer.record({ intent: "payment.record", build: (c) => { c.number("tax_invoice"); return []; } })).rejects.toThrow(/number_not_allowed/);
     await expect(writer.record({ intent: "bill.finalize", build: (c) => { c.number("credit_note"); return []; } })).rejects.toThrow(/number_not_allowed/);

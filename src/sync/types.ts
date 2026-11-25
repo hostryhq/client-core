@@ -119,6 +119,13 @@ export type OpRef = { origin: string; stream: string; seq: number };
 /** Fixes the tail of a key-lost origin; signed by the adopting device's new key (ADR-0002 A1.3 item 4). */
 export type Attestation = { origin: string; stream: string; seq: number; h: string; by: string; rec: string; kid: string; sig: string };
 
+/**
+ * Gateway endorsement of one op of the released unsealed tail of a key-lost origin (ADR-0002 A2.1). Not a
+ * seal: own domain tag, own list. Valid only together with the identity-signed `recovers` credential and
+ * the adopting device's attestation.
+ */
+export type Endorsement = { origin: string; stream: string; seq: number; h: string; rec: string; kid: string; sig: string };
+
 export type Unsubscribe = () => void;
 
 /** Stub for the background sync client. UI never awaits it; writes go to the local store first. */

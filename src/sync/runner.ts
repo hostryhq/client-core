@@ -117,6 +117,11 @@ export class SyncRunner implements SyncClient {
         if (kind === "hub") this.hubFailures = 0;
         this.failures = 0;
         this.e.setConnectivity({ online: true, upstream: kind, lastSyncAt: new Date(this.now()).toISOString() });
+        // After a cloud restore a hub may hold only placeholders: the origin must also reach the cloud
+        // directly while the re-offer flag is set (S16 item 4). A cloud failure here is not a hub failure.
+        if (kind === "hub" && this.cfg.cloud && this.e.needsReoffer) {
+          await this.exchange("cloud", this.cfg.cloud).catch(this.cfg.onError);
+        }
         return;
       } catch (err) {
         this.cfg.onError?.(err);
@@ -160,14 +165,20 @@ export class SyncRunner implements SyncClient {
       for (const s of e.streams) await e.noteUpstream("hub", s, upstream[s] ?? {}, true);
       const viaHub = fromWireVector(hello.cloud_vector);
       for (const s of e.streams) if (viaHub[s]) await e.noteUpstream("cloud", s, viaHub[s]!);
+      await e.noteHubEpoch(hello.epoch);
     }
 
     const scope = this.cfg.relayAll || (kind === "cloud" && e.needsReoffer) ? "all" : "own";
+    let drained = true;
     for (const stream of e.streams) {
       let have = { ...(upstream[stream] ?? {}) };
+      let done = false;
       for (let i = 0; i < MAX_BATCHES; i++) {
         const { items, seals } = await e.outbox(stream, have, scope, batch);
-        if (items.length === 0) break;
+        if (items.length === 0) {
+          done = true;
+          break;
+        }
         const res = await t.push({ items, seals });
         const accepted = fromWireVector(res.vector)[stream] ?? {};
         await e.noteUpstream(kind, stream, accepted, kind === "hub");
@@ -176,8 +187,10 @@ export class SyncRunner implements SyncClient {
         have = { ...have, ...accepted };
         if (JSON.stringify(have) === before) break; // refused or no progress: do not spin; next round retries
       }
+      if (!done) drained = false;
     }
-    if (kind === "cloud" && e.needsReoffer) await e.reofferDone();
+    // Only a direct cloud hello that leaves nothing to push closes a re-offer (A2.2 item 3).
+    if (kind === "cloud" && drained && e.needsReoffer) await e.reofferDone();
 
     // Pull until caught up.
     for (let i = 0; i < MAX_BATCHES; i++) {
@@ -194,7 +207,7 @@ export class SyncRunner implements SyncClient {
       for (const s of e.streams) {
         const items = res.items.filter((it) => it.stream === s);
         if (items.length === 0) continue;
-        const r = await e.applyRemote(s, items, res.seals ?? []);
+        const r = await e.applyRemote(s, items, res.seals ?? [], { endorsements: res.endorsements ?? [], attestations: res.attestations ?? [] });
         if (r.applied > 0 || r.skipped > 0) progress = true;
         if (r.rejected.length) this.cfg.onError?.(new Error(`pull rejected: ${JSON.stringify(r.rejected)}`));
       }

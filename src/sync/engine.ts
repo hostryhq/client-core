@@ -26,6 +26,7 @@ import type { SchemaRegistry, DocType } from "./schema";
 import { allocateNumber, putGrants, type SeriesGrant } from "./series";
 import type {
   Attestation,
+  Endorsement,
   ClockMode,
   DeliveryState,
   HeldItem,
@@ -103,6 +104,8 @@ type OpRow = Row & {
   placeholder?: boolean;
   state: "applied" | "clock_quarantined" | "void_skipped" | "opaque" | "placeholder";
   own?: boolean;
+  /** Accepted under a gateway endorsement, not a seal: "a holder of device.recover released this op" (A2.1 item 4). */
+  unsealed?: boolean;
 };
 
 const rowOp = (r: OpRow): OpEnvelope | undefined => (r.body === undefined ? undefined : (JSON.parse(r.body) as OpEnvelope));
@@ -155,6 +158,8 @@ export class SyncEngine {
   private clockqCount = 0;
   private epoch: string | undefined;
   private reoffer = false;
+  /** The newest epoch this device has finished re-offering under (A2.2); open while it differs from `epoch`. */
+  private reofferedEpoch: string | undefined;
   private skewMs = 0;
   private skewSource: "none" | "hub" | "cloud" = "none";
   private conn: { online: boolean; upstream: "hub" | "cloud" | "none"; lastSyncAt?: string } = {
@@ -193,6 +198,7 @@ export class SyncEngine {
     }
     e.epoch = (await store.get(T.meta, "epoch"))?.v as string | undefined;
     e.reoffer = ((await store.get(T.meta, "reoffer"))?.v as boolean | undefined) ?? false;
+    e.reofferedEpoch = (await store.get(T.meta, "reoffered_epoch"))?.v as string | undefined;
     e.refused = new Set(((await store.get(T.meta, "refused"))?.list as string[] | undefined) ?? []);
     e.held = ((await store.get(T.held, "own"))?.items as HeldItem[] | undefined) ?? [];
     for (const s of e.streams) {
@@ -415,8 +421,9 @@ export class SyncEngine {
     return this.epoch;
   }
 
+  /** True while a re-offer is open: the epoch heard from any upstream differs from the one last re-offered under (A2.2). */
   get needsReoffer(): boolean {
-    return this.reoffer;
+    return this.reoffer || (this.epoch !== undefined && this.reofferedEpoch !== undefined && this.reofferedEpoch !== this.epoch);
   }
 
   /**
@@ -424,7 +431,7 @@ export class SyncEngine {
    * us before, means the cloud was restored: forget its old confirmations and re-offer retained ops.
    */
   async noteCloudHello(epoch: string, vectors: Record<string, VersionVector>): Promise<{ restored: boolean }> {
-    let restored = this.epoch !== undefined && this.epoch !== epoch;
+    let restored = (this.reofferedEpoch !== undefined && this.reofferedEpoch !== epoch) || (this.epoch !== undefined && this.epoch !== epoch);
     for (const s of this.streams) {
       const known = this.deliv.get(s)?.cloud ?? {};
       for (const [o, n] of Object.entries(known)) if ((vectors[s]?.[o] ?? 0) < n) restored = true;
@@ -432,19 +439,41 @@ export class SyncEngine {
     if (restored) {
       for (const s of this.streams) await this.noteUpstream("cloud", s, vectors[s] ?? {}, true);
     }
+    const first = this.reofferedEpoch === undefined && !restored;
     await this.store.transact((tx) => {
       tx.put(T.meta, { id: "epoch", tenant_id: this.tenantId, v: epoch });
       if (restored) tx.put(T.meta, { id: "reoffer", tenant_id: this.tenantId, v: true });
+      if (first) tx.put(T.meta, { id: "reoffered_epoch", tenant_id: this.tenantId, v: epoch });
     });
     this.epoch = epoch;
     if (restored) this.reoffer = true;
+    if (first) this.reofferedEpoch = epoch;
     return { restored };
   }
 
+  /**
+   * Called with a hub's hello: its `epoch` is the cloud epoch. A hub's word may OPEN a re-offer (the worst a
+   * lying hub causes is one extra push); only a direct cloud hello with nothing left to push closes it
+   * (A2.2). The first epoch ever heard is taken as already re-offered under.
+   */
+  async noteHubEpoch(epoch: string | undefined): Promise<void> {
+    if (!epoch || this.epoch === epoch) return;
+    const first = this.epoch === undefined && this.reofferedEpoch === undefined;
+    this.epoch = epoch;
+    if (first) this.reofferedEpoch = epoch;
+    await this.store.transact((tx) => {
+      tx.put(T.meta, { id: "epoch", tenant_id: this.tenantId, v: epoch });
+      if (first) tx.put(T.meta, { id: "reoffered_epoch", tenant_id: this.tenantId, v: epoch });
+    });
+  }
+
+  /** Closes the re-offer: persists the epoch it was done under. Call only after a direct cloud hello left nothing to push. */
   async reofferDone(): Promise<void> {
     this.reoffer = false;
+    this.reofferedEpoch = this.epoch;
     await this.store.transact((tx) => {
       tx.put(T.meta, { id: "reoffer", tenant_id: this.tenantId, v: false });
+      if (this.epoch !== undefined) tx.put(T.meta, { id: "reoffered_epoch", tenant_id: this.tenantId, v: this.epoch });
     });
   }
 
@@ -599,7 +628,7 @@ export class SyncEngine {
    * seal. Ops that are not are refused and the vector does not advance past them. Idempotent: an op at or
    * below the vector is skipped. A placeholder only advances the vector (A1.2).
    */
-  async applyRemote(stream: string, items: WireItem[], seals: Seal[]): Promise<RemoteResult> {
+  async applyRemote(stream: string, items: WireItem[], seals: Seal[], proofs: { endorsements?: Endorsement[]; attestations?: Attestation[] } = {}): Promise<RemoteResult> {
     const result: RemoteResult = { applied: 0, skipped: 0, rejected: [], gaps: [] };
     if (!this.streams.includes(stream)) {
       result.rejected.push({ origin: "", seq: 0, reason: "stream not bound to this device" });
@@ -682,6 +711,17 @@ export class SyncEngine {
             break;
           }
         }
+        // Released tail of a key-lost origin (A2.1): no seal will ever cover it. Each op needs a gateway
+        // endorsement, the identity-signed `recovers` credential and the adopting device's attestation.
+        const endorsed = new Set<number>();
+        if (covered < chain.length && proofs.endorsements?.length) {
+          for (let j = covered; j < chain.length; j++) {
+            const link = chain[j]!;
+            if (!link.op || !(await this.endorsedTail(link.it, proofs, chain, cur))) break;
+            endorsed.add(j);
+            covered = j + 1;
+          }
+        }
         if (covered < chain.length) {
           result.rejected.push({
             origin,
@@ -697,7 +737,7 @@ export class SyncEngine {
             result.rejected.push({ origin, seq: it.seq, reason: "tenant mismatch" });
             break;
           } else {
-            await this.applyOne(tx, ctx, op, it, true);
+            await this.applyOne(tx, ctx, op, it, true, endorsed.has(chain.findIndex((c) => c.it === it)));
             result.applied++;
           }
           cur = it.seq;
@@ -713,12 +753,45 @@ export class SyncEngine {
     return result;
   }
 
+  /** Ops accepted under a gateway endorsement: marked `unsealed` in local audit views (A2.1 item 4). */
+  async unsealedOps(): Promise<OpRef[]> {
+    const out: OpRef[] = [];
+    for (const r of (await this.store.list(T.op)) as OpRow[]) {
+      const op = r.unsealed ? rowOp(r) : undefined;
+      if (op) out.push({ origin: op.origin, stream: op.stream, seq: op.seq });
+    }
+    return out.sort((x, y) => x.seq - y.seq);
+  }
+
   /** Placeholder slots this node holds, so it can name them in a pull and receive them once released. */
   async placeholders(): Promise<OpRef[]> {
     return (await this.store.list(T.ph)).map((r) => ({ origin: r.origin as string, stream: r.stream as string, seq: r.seq as number }));
   }
 
-  private async applyOne(tx: StoreTx, ctx: ApplyCtx, op: OpEnvelope, it: WireItem, fresh: boolean): Promise<void> {
+  /**
+   * The three-part rule of A2.1 item 3 for one op of an unsealed tail. `chain` holds the chain-verified
+   * ops being applied, so an attestation whose seq is in this batch is checked against the op we hold.
+   */
+  private async endorsedTail(it: WireItem, proofs: { endorsements?: Endorsement[]; attestations?: Attestation[] }, chain: Array<{ it: WireItem }>, cur: number): Promise<boolean> {
+    const v = this.verifier;
+    if (!v.verifyEndorsement || !v.recoveredBy) return false;
+    const e = (proofs.endorsements ?? []).find((x) => x.origin === it.origin && x.stream === it.stream && x.seq === it.seq && x.h === it.h);
+    if (!e || !(await v.verifyEndorsement(e))) return false;
+    const y = v.recoveredBy(it.origin);
+    if (!y) return false;
+    for (const a of proofs.attestations ?? []) {
+      if (a.origin !== it.origin || a.stream !== it.stream || a.rec !== e.rec || a.by !== y || it.seq > a.seq) continue;
+      if (!(await v.verify(y, a.kid, attestationMessage(a), a.sig))) continue;
+      // The op we hold at the attested seq, once we hold it, must carry the attested hash.
+      const inBatch = chain.find((c) => c.it.seq === a.seq);
+      const held = inBatch ? inBatch.it.h : a.seq <= cur ? ((await this.store.get(T.op, opRowId({ origin: it.origin, stream: it.stream, seq: a.seq }))) as OpRow | undefined)?.h : undefined;
+      if (held !== undefined && held !== a.h) continue;
+      return true;
+    }
+    return false;
+  }
+
+  private async applyOne(tx: StoreTx, ctx: ApplyCtx, op: OpEnvelope, it: WireItem, fresh: boolean, unsealed = false): Promise<void> {
     const ref: OpRef = { origin: op.origin, stream: op.stream, seq: op.seq };
     const row: OpRow = {
       id: opRowId(ref),
@@ -727,6 +800,7 @@ export class SyncEngine {
       ...(it.pii !== undefined ? { pii: it.pii } : {}),
       h: it.h,
       state: "applied",
+      ...(unsealed ? { unsealed: true } : {}),
     };
     if (op.v !== 1) {
       row.state = "opaque"; // newer protocol: keep, do not interpret (invariant 8)

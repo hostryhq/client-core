@@ -1,6 +1,6 @@
 import { canonicalize } from "./canonical";
 import { b64url, fromB64url, importPublicKey, sha256Hex, verifyRaw, type CredentialEnvelope, type Signer } from "./crypto";
-import type { Attestation, HeldCode, OpRef, Seal, VersionVector, WireItem } from "./types";
+import type { Attestation, Endorsement, HeldCode, OpRef, Seal, VersionVector, WireItem } from "./types";
 
 /**
  * Wire types of Sync Protocol v1. They mirror svc-sync `syncproto` (the Go side owns the format; the
@@ -53,6 +53,9 @@ export type PullResponse = {
   epoch?: string;
   items: WireItem[];
   seals?: Seal[];
+  /** Gateway endorsements for a released unsealed tail (A2.1), with the attestation that goes with them. */
+  endorsements?: Endorsement[];
+  attestations?: Attestation[];
   creds?: CredentialEnvelope[];
   more: boolean;
   /** The complete current list of the caller's own held slots (A1.2). */

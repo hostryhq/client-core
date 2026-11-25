@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { InMemoryStore } from "../store";
@@ -23,7 +24,7 @@ import { HttpTransport, bearerAuth, lanAuth } from "./transport";
  */
 type Fixture = {
   cloud_url: string;
-  hub_url?: string;
+  hub_url: string;
   tenant_id: string;
   outlet_id: string;
   identity_pub: string;
@@ -54,7 +55,7 @@ describe.skipIf(!ready)(
           engine,
           keyRing: ring,
           cloud: new HttpTransport({ baseUrl: f.cloud_url, auth: bearerAuth(() => d.token) }),
-          ...(f.hub_url ? { hub: new HttpTransport({ baseUrl: f.hub_url, auth: lanAuth({ cred: d.cred, signer, identityPub: f.identity_pub, outlet: f.outlet_id }) }) } : {}),
+          hub: new HttpTransport({ baseUrl: f.hub_url, auth: lanAuth({ cred: d.cred, signer, identityPub: f.identity_pub, outlet: f.outlet_id }) }),
         });
         nodes.push({ d, engine, runner });
       }
@@ -70,7 +71,7 @@ describe.skipIf(!ready)(
         for (const n of nodes) await n.runner.syncNow();
         const vs = await Promise.all(nodes.map((n) => n.engine.vector()));
         const safe = nodes.every((n) => n.engine.status().state === "synced");
-        if (safe && JSON.stringify(vs[0]) === JSON.stringify(vs[1])) break;
+        if (safe && isDeepStrictEqual(vs[0], vs[1])) break;
         if (Date.now() > deadline) throw new Error(`no convergence: ${JSON.stringify(vs)} ${JSON.stringify(nodes.map((n) => n.engine.status()))}`);
         await new Promise((r) => setTimeout(r, 500));
       }

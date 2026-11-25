@@ -189,6 +189,39 @@ describe("cloud restore and the epoch (ADR-0002 S16)", () => {
   });
 });
 
+describe("re-offer through a hub (ADR-0002 S16 item 4)", () => {
+  it("a device whose upstream is a hub also reaches the cloud directly after a restore", async () => {
+    const w = await makeWorld();
+    const a = await w.addDevice("devA", { withHub: true });
+    await a.engine.recordMuts("x", order("a1"));
+    await a.runner.syncNow(); // to the hub only; the hub has not relayed it to the cloud
+    expect(w.cloud.seqs(OUTLET, "devA")).toEqual([]);
+    (w.hub as unknown as { st: { epoch: string } }).st.epoch = "epoch-2"; // the hub reports a restored cloud
+    await a.runner.syncNow(); // hub hello shows the new epoch: flag set, then the device offers to the cloud directly
+    expect(w.cloud.seqs(OUTLET, "devA")).toEqual([1]);
+    expect(a.engine.needsReoffer).toBe(false);
+  });
+
+  it("RS2: stays open while the cloud route is cut, across a restart and hub syncs; only a direct cloud hello closes it", async () => {
+    const w = await makeWorld();
+    let a = await w.addDevice("devA", { withHub: true });
+    await a.engine.recordMuts("x", order("a1"));
+    await a.runner.syncNow();
+    (w.hub as unknown as { st: { epoch: string } }).st.epoch = "epoch-2";
+    a.cloudLink.up = false;
+    await a.runner.syncNow(); // hub opens it; the cloud is unreachable
+    expect(a.engine.needsReoffer).toBe(true);
+    a = await w.reopen(a);
+    expect(a.engine.needsReoffer).toBe(true); // persisted (reoffered_epoch differs from the epoch heard)
+    await a.runner.syncNow();
+    expect(a.engine.needsReoffer).toBe(true); // the hub cannot close it
+    a.cloudLink.up = true;
+    await a.runner.syncNow();
+    expect(a.engine.needsReoffer).toBe(false);
+    expect(w.cloud.seqs(OUTLET, "devA")).toEqual([1]);
+  });
+});
+
 describe("what a device is told about its own ops (ADR-0002 A1.2, provisional)", () => {
   const policy = (op: { intent: string }) =>
     op.intent === "hold.manager" ? { hold: "held_manager" as const } : op.intent === "hold.support" ? { hold: "held_support" as const } : op.intent === "hold.pending" ? { hold: "pending" as const } : undefined;

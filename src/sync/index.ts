@@ -7,6 +7,7 @@ export {
   genesisHash,
   makeSeal,
   sealMessage,
+  endorsementMessage,
   sha256Hex,
   verifySeal,
   type Credential,

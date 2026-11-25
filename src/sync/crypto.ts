@@ -40,6 +40,11 @@ export function attestationMessage(a: { origin: string; stream: string; seq: num
   return `hostry-attest-v1\n${a.origin}\n${a.stream}\n${a.seq}\n${a.h}\n${a.by}\n${a.rec}`;
 }
 
+/** Text a gateway endorsement signature covers (ADR-0002 A2.1). */
+export function endorsementMessage(e: { origin: string; stream: string; seq: number; h: string; rec: string }): string {
+  return `hostry-endorse-v1\n${e.origin}\n${e.stream}\n${e.seq}\n${e.h}\n${e.rec}`;
+}
+
 /** Signs with the device key. The keystore-backed version lives in the shell; this is the contract. */
 export interface Signer {
   readonly kid: string;
@@ -52,6 +57,10 @@ export interface Signer {
 /** Resolves an origin's public key (from its identity-signed credential) and checks a signature. */
 export interface SealVerifier {
   verify(origin: string, kid: string, message: string, sig: string): Promise<boolean>;
+  /** Gateway endorsement signature under a current op-signing key (A2.1). */
+  verifyEndorsement?(e: { origin: string; stream: string; seq: number; h: string; rec: string; kid: string; sig: string }): Promise<boolean>;
+  /** The device id whose identity-signed credential carries `recovers: origin`, if this node holds one. */
+  recoveredBy?(origin: string): string | undefined;
 }
 
 const P256 = { name: "ECDSA", namedCurve: "P-256" } as const;
@@ -124,6 +133,7 @@ export async function verifyRaw(key: CryptoKey, message: string, sig: string): P
 export class KeyRing implements SealVerifier {
   private keys = new Map<string, CryptoKey>();
   private cloudKeys = new Map<string, CryptoKey>();
+  private recovers = new Map<string, string>();
 
   constructor(private readonly identityPub?: string) {}
 
@@ -134,6 +144,20 @@ export class KeyRing implements SealVerifier {
   /** The gateway's op-signing key, which seals every `cloud-<epoch>` origin. */
   async addCloudKey(kid: string, pubB64: string): Promise<void> {
     this.cloudKeys.set(kid, await importPublicKey(pubB64));
+  }
+
+  /** Emergency rotation: a revoked op-signing key no longer verifies new endorsements or cloud seals (A2.1 item 6). */
+  revokeCloudKey(kid: string): void {
+    this.cloudKeys.delete(kid);
+  }
+
+  recoveredBy(origin: string): string | undefined {
+    return this.recovers.get(origin);
+  }
+
+  async verifyEndorsement(e: { origin: string; stream: string; seq: number; h: string; rec: string; kid: string; sig: string }): Promise<boolean> {
+    const key = this.cloudKeys.get(e.kid);
+    return key ? verifyRaw(key, endorsementMessage(e), e.sig) : false;
   }
 
   /**
@@ -147,12 +171,15 @@ export class KeyRing implements SealVerifier {
     for (const e of envelopes) {
       if (!(await verifyRaw(idKey, `hostry-cred-v1\n${canonicalize(e.cred)}`, e.sig))) continue;
       await this.add(e.cred.device_id, e.cred.kid, e.cred.pub);
+      if (e.cred.recovers) this.recovers.set(e.cred.recovers, e.cred.device_id);
       n++;
     }
     return n;
   }
 
   async verify(origin: string, kid: string, message: string, sig: string): Promise<boolean> {
+    // A seal under an op-signing key is valid only for a `cloud-<epoch>` origin (A2.1); a device origin needs
+    // its own key. Cloud keys come only from the signed pack, never from hello.
     const key = origin.startsWith("cloud-") ? this.cloudKeys.get(kid) : this.keys.get(`${origin}|${kid}`);
     return key ? verifyRaw(key, message, sig) : false;
   }

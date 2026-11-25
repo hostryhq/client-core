@@ -104,6 +104,35 @@ export class PrintService {
     return true;
   }
 
+  /**
+   * Personal data was erased (sync.pii.erase): drops every queued job whose bytes contain one of the erased strings
+   * (UTF-8, as the text path writes them) and every held late ticket that names one. Returns jobs dropped. A document
+   * printed as a raster image holds no searchable text: such a job is matched by its kind only if `alsoKinds` lists it.
+   */
+  purgeStrings(values: readonly string[], alsoKinds: readonly string[] = []): number {
+    if (values.length === 0 && alsoKinds.length === 0) return 0;
+    const needles = values.map((v) => new TextEncoder().encode(v));
+    const has = (b: Uint8Array, n: Uint8Array): boolean => {
+      outer: for (let i = 0; i + n.length <= b.length; i++) {
+        for (let j = 0; j < n.length; j++) if (b[i + j] !== n[j]) continue outer;
+        return true;
+      }
+      return false;
+    };
+    let dropped = 0;
+    for (const e of this.printers.values()) {
+      dropped += e.queue.purge((j) => (j.kind !== undefined && alsoKinds.includes(j.kind)) || needles.some((n) => n.length > 0 && has(j.payload, n)));
+    }
+    for (const [id, t] of [...this.late]) {
+      const text = JSON.stringify(t.doc);
+      if (values.some((v) => v.length > 0 && text.includes(v))) {
+        this.late.delete(id);
+        dropped++;
+      }
+    }
+    return dropped;
+  }
+
   /** Try every printer's queue. Returns the total jobs printed. Call on a timer and on reconnect. */
   async flush(printerId?: string): Promise<number> {
     const targets = printerId ? [this.entry(printerId)] : [...this.printers.values()];

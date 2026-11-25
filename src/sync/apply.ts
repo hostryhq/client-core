@@ -22,6 +22,8 @@ export const T = {
   unbound: "_s_unbound",
   /** Recorded chain conflicts, one row per (origin, stream, kind of upstream) (A2.8 item 1.4). */
   cc: "_s_cc",
+  /** Erasures applied here and not yet acknowledged in a direct cloud hello: row per op. */
+  piiack: "_s_piiack",
 } as const;
 
 export const opId = (r: OpRef): string => `${r.stream}|${r.origin}|${r.seq}`;
@@ -383,4 +385,40 @@ export function visible(row: Row): Row {
   const out: Row = { id: row.id, tenant_id: row.tenant_id };
   for (const [k, v] of Object.entries(row)) if (!k.startsWith("_") && k !== "deleted") out[k] = v;
   return out;
+}
+
+/**
+ * Removes the personal values an erased op put into rows (sync.pii.erase): each named field leaves its row, the
+ * candidates that op wrote for it are dropped (the field falls back to the best remaining candidate, if any), and
+ * a conflict record that holds the op's value is blanked. Idempotent. The op's commitments are not touched here.
+ */
+export function eraseRowFields(tx: StoreTx, ref: OpRef, values: Record<string, Record<string, Record<string, unknown>>>): void {
+  const i = opId(ref);
+  for (const [e, rows] of Object.entries(values)) {
+    for (const [id, fields] of Object.entries(rows)) {
+      const row = tx.get(e, id) as (Row & { _g?: Groups }) | undefined;
+      for (const f of Object.keys(fields)) {
+        if (row) {
+          const cands = row._g?.[f];
+          if (cands) {
+            const left = cands.filter((c) => c.i !== i);
+            if (left.length) {
+              row._g![f] = left;
+              row[f] = winner(left).v;
+            } else {
+              delete row._g![f];
+              delete row[f];
+            }
+          } else {
+            delete row[f];
+          }
+        }
+        for (const c of tx.list(T.conflict) as ConflictRow[]) {
+          if (c.entity !== e || c.row_id !== id || c.field !== f) continue;
+          if (c.lo === i || c.hi === i) tx.put(T.conflict, { ...c, ...(c.hi === i ? { winner: null } : {}), ...(c.lo === i ? { loser: null } : {}) });
+        }
+      }
+      if (row) tx.put(e, row);
+    }
+  }
 }

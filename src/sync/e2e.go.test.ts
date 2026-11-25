@@ -32,6 +32,7 @@ type Fixture = {
   devices: Array<{ device_id: string; kid: string; pub: string; pkcs8: string; cred: CredentialEnvelope; token: string; series?: SeriesGrant[] }>;
 };
 
+const PHONE = "+919800011122";
 const path = process.env.SYNC_E2E_FIXTURE;
 const ready = !!path && existsSync(path);
 const fx: Fixture | undefined = ready ? (JSON.parse(readFileSync(path!, "utf8")) as Fixture) : undefined;
@@ -60,8 +61,13 @@ describe.skipIf(!ready)(
         nodes.push({ d, engine, runner });
       }
       for (const [i, n] of nodes.entries()) {
-        await n.engine.recordMuts("order.create", [{ e: "order", id: `e2e-o${i}`, k: "insert", f: { table: `T${i}` } }]);
-        await n.engine.recordMuts("stock.out", [{ e: "stock_level", id: "e2e-s1", k: "delta", f: { qty_milli: -1000 * (i + 1) } }]);
+        // Device 0 attaches personal data with salted commitments in the sealed body; the gateway drops pii without them.
+        await n.engine.record({
+          intent: "order.create",
+          ...(i === 0 ? { pii: { order: { "e2e-o0": { customer_phone: PHONE } } } } : {}),
+          build: () => [{ e: "order", id: `e2e-o${i}`, k: "insert", f: { table: `T${i}` } }],
+        });
+        // No stock op: the gateway registry no longer carries the PoC stock intent (it would be held for a manager).
         if (n.d.series?.length) {
           await n.engine.record({ intent: "bill.finalize", build: (c) => [{ e: "bill", id: `e2e-b${i}`, k: "insert", f: { order_id: `e2e-o${i}`, total_paise: 25_000, number: c.number("tax_invoice") } }] });
         }
@@ -79,8 +85,9 @@ describe.skipIf(!ready)(
       expect(hashes[0]).toBe(hashes[1]);
       const numbers = (await nodes[0]!.engine.rows("bill")).map((b) => b.number as string);
       expect(new Set(numbers).size).toBe(numbers.length);
-      expect((await nodes[0]!.engine.rows("stock_level"))[0]?.qty_milli).toBe(-3000);
       for (const n of nodes) expect(n.engine.status().attentionOps).toBe(0);
+      // Personal data of device 0 went with its op through hub and cloud. The gateway stores it only if it verifies against
+      // the commitment in the sealed body (checked by reading its op_pii table); pulls do not serve pii back to devices.
     }, 60_000);
   },
 );

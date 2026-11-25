@@ -2,6 +2,7 @@ import { uuidv7 } from "../ids";
 import type { LocalStore, Row, StoreTx } from "../store";
 import {
   applyMutations,
+  eraseRowFields,
   applyVoidTo,
   opId,
   opRowId,
@@ -23,6 +24,7 @@ import {
 } from "./crypto";
 import { HlcClock, MAX_FUTURE_MS, unpackHlc } from "./hlc";
 import { MAX_OP_BODY_BYTES, MAX_PII_BYTES, OpTooLargeError, splitPii, utf8Bytes, withPii, type PiiObject } from "./pii";
+import { commitPii, openPii, stripSalts, systemRandom, type PiiValues, type RandomBytes } from "./pii-commit";
 import type { SchemaRegistry, DocType } from "./schema";
 import { allocateNumber, putGrants, type SeriesGrant } from "./series";
 import type {
@@ -67,6 +69,13 @@ export type EngineConfig = {
   /** A device holding unpushed ops seals its head at least this often (ADR-0002 A1.3 item 8). Default 5 min. */
   sealIntervalMs?: number;
   newId?: () => string;
+  /** Randomness of pii salts; injectable for tests. Default crypto.getRandomValues. */
+  randomBytes?: RandomBytes;
+  /**
+   * Called after a cloud-signed erasure removed personal data from this node, with the values that were removed, so
+   * other local holders (print spool, caches outside the sync store) can purge them too. The values are for matching only.
+   */
+  onPiiErased?: (e: { ref: OpRef; values: PiiValues }) => void;
 };
 
 export type OpSession = { actor: string; sid: string };
@@ -122,6 +131,11 @@ export const DIRECT_CLOUD_INTERVAL_MS = 24 * 60 * 60 * 1000;
 /** Most slots listed in one hello `unbound`, and in one pull `stale_seals`. */
 const MAX_UNBOUND = 500;
 const MAX_STALE_SEALS = 200;
+/** Most erasures acknowledged in one hello (the gateway reads 500). */
+const MAX_PII_ACKS = 500;
+const PII_ERASE_INTENT = "sync.pii.erase";
+const PII_ERASE_RECORD = "pii_erase";
+const piiErasedId = (r: OpRef): string => `pii_erased:${opId(r)}`;
 
 type CcRow = Row & { origin: string; stream: string; seq: number; held: string; seen?: string; src: "cloud" | "relay"; reported: boolean };
 const ccId = (origin: string, stream: string, src: string): string => `${origin}|${stream}|${src}`;
@@ -178,6 +192,9 @@ export class SyncEngine {
   private readonly verifier: SealVerifier;
   private readonly now: () => number;
   private readonly newId: () => string;
+  private readonly random: RandomBytes;
+  private readonly onPiiErased: ((e: { ref: OpRef; values: PiiValues }) => void) | undefined;
+  private erasedNow: Array<{ ref: OpRef; values: PiiValues }> = [];
   private readonly packVersion: string;
   private readonly clockMode: ClockMode;
   private readonly sealIntervalMs: number;
@@ -211,6 +228,8 @@ export class SyncEngine {
     this.verifier = cfg.verifier;
     this.now = cfg.now ?? Date.now;
     this.newId = cfg.newId ?? (() => uuidv7(this.now));
+    this.random = cfg.randomBytes ?? systemRandom;
+    this.onPiiErased = cfg.onPiiErased;
     this.packVersion = cfg.packVersion;
     this.clockMode = cfg.clockMode ?? "sync";
     this.sealIntervalMs = cfg.sealIntervalMs ?? 5 * 60 * 1000;
@@ -334,11 +353,14 @@ export class SyncEngine {
           ...(m.prev && Object.keys(m.prev).length ? { prev: m.prev } : {}),
         })),
       };
+      // The sealed body carries a salted commitment per personal field; values and salts travel beside it (pii-commit.ts).
+      const committed = await commitPii(pii, this.random);
+      if (committed) envelope.pii_c = committed.commits;
       const body = canonicalize(envelope);
       // Refused before anything is recorded: throwing here rolls the transaction back, legal numbers included.
       const bodyBytes = utf8Bytes(body);
       if (bodyBytes > MAX_OP_BODY_BYTES) throw new OpTooLargeError("body", bodyBytes, MAX_OP_BODY_BYTES);
-      const piiBytes = pii ? utf8Bytes(JSON.stringify(pii)) : 0;
+      const piiBytes = committed ? utf8Bytes(JSON.stringify(committed.wire)) : 0; // as sent: values and salts
       if (piiBytes > MAX_PII_BYTES) throw new OpTooLargeError("pii", piiBytes, MAX_PII_BYTES);
       const h = await sha256Hex(body);
       const applied = JSON.parse(body) as OpEnvelope; // apply exactly what receivers will parse
@@ -347,7 +369,7 @@ export class SyncEngine {
         id: opRowId(applied),
         tenant_id: this.tenantId,
         body,
-        ...(pii ? { pii } : {}),
+        ...(committed ? { pii: committed.wire } : {}),
         h,
         state: "applied",
         own: true,
@@ -977,10 +999,47 @@ export class SyncEngine {
   }
 
   /** What every direct cloud `hello` carries besides the vectors: unbound slots and unreported chain conflicts. */
-  async helloExtras(): Promise<{ unbound?: OpRef[]; chain_conflicts?: ChainConflict[] }> {
+  async helloExtras(): Promise<{ unbound?: OpRef[]; chain_conflicts?: ChainConflict[]; pii_erased?: OpRef[] }> {
     const unbound = await this.unboundSlots();
     const conflicts = await this.chainConflicts(true);
-    return { ...(unbound.length ? { unbound } : {}), ...(conflicts.length ? { chain_conflicts: conflicts } : {}) };
+    const erased = await this.pendingErasureAcks();
+    return { ...(unbound.length ? { unbound } : {}), ...(conflicts.length ? { chain_conflicts: conflicts } : {}), ...(erased.length ? { pii_erased: erased } : {}) };
+  }
+
+  /** Erasures this node applied and has not yet told the cloud; sent in the next direct cloud hello (at most 500). */
+  async pendingErasureAcks(limit = MAX_PII_ACKS): Promise<OpRef[]> {
+    return ((await this.store.list(T.piiack)) as Array<Row & OpRef>)
+      .map((r) => ({ origin: r.origin, stream: r.stream, seq: r.seq }))
+      .sort((a, b) => (a.stream + a.origin).localeCompare(b.stream + b.origin) || a.seq - b.seq)
+      .slice(0, limit);
+  }
+
+  /** Forgets acknowledgements a direct cloud hello carried, after it succeeded. */
+  async clearErasureAcks(sent: OpRef[]): Promise<void> {
+    if (sent.length === 0) return;
+    await this.store.transact((tx) => {
+      for (const r of sent) tx.del(T.piiack, opId(r));
+    });
+  }
+
+  /**
+   * Removes the personal data of one op from this node: the values and salts of its op row (the commitments in
+   * the sealed body stay), the rows and field caches they were applied to, and later arrivals of its pii. Idempotent.
+   */
+  private erasePii(tx: StoreTx, ref: OpRef): void {
+    const row = tx.get(T.op, opRowId(ref)) as OpRow | undefined;
+    if (row?.pii !== undefined) {
+      const values = stripSalts(row.pii);
+      const { pii, ...rest } = row;
+      void pii;
+      tx.put(T.op, rest);
+      if (values) {
+        eraseRowFields(tx, ref, values); // rows, field candidates and conflict records that took the values
+        this.erasedNow.push({ ref, values });
+      }
+    }
+    tx.put(T.meta, { id: piiErasedId(ref), tenant_id: this.tenantId });
+    if (!tx.get(T.piiack, opId(ref))) tx.put(T.piiack, { id: opId(ref), tenant_id: this.tenantId, ...ref });
   }
 
   /** Marks conflicts as sent: call with the ones a direct cloud hello carried, after it succeeded. */
@@ -1099,11 +1158,14 @@ export class SyncEngine {
 
   private async applyOne(tx: StoreTx, ctx: ApplyCtx, op: OpEnvelope, it: WireItem, fresh: boolean, unsealed = false): Promise<void> {
     const ref: OpRef = { origin: op.origin, stream: op.stream, seq: op.seq };
+    // Personal data is kept only if it matches the commitments of the sealed body; an erased op keeps none.
+    const erased = tx.get(T.meta, piiErasedId(ref)) !== undefined;
+    const opened = erased || it.pii === undefined ? undefined : await openPii(it.pii, op.pii_c);
     const row: OpRow = {
       id: opRowId(ref),
       tenant_id: this.tenantId,
       body: it.body,
-      ...(it.pii !== undefined ? { pii: it.pii } : {}),
+      ...(opened?.verified ? { pii: opened.verified } : {}),
       h: it.h,
       state: "applied",
       ...(unsealed ? { unsealed: true } : {}),
@@ -1122,19 +1184,29 @@ export class SyncEngine {
           tx.put(T.meta, { id: "refused", tenant_id: this.tenantId, list: [...this.refused] });
         }
       }
+    } else if (op.intent === PII_ERASE_INTENT && op.origin.startsWith("cloud-")) {
+      // A cloud-signed erasure: values and salts go from the named op, its commitments stay (piic.go).
+      for (const m of op.muts) {
+        if (m.e !== PII_ERASE_RECORD || m.k !== "insert") continue;
+        const t = m.f as { origin?: string; stream?: string; seq?: number } | undefined;
+        if (t?.origin && t.stream && typeof t.seq === "number" && t.seq >= 1) this.erasePii(tx, { origin: t.origin, stream: t.stream, seq: t.seq });
+      }
     } else if (tx.get(T.void, opId(ref))) {
       row.state = "void_skipped"; // voided before it arrived: slot advances, mutations are skipped
     } else if (fresh && touchesLww(ctx, op) && (op.clk === "manual" || unpackHlc(op.hlc).ms > this.correctedNow() + MAX_FUTURE_MS)) {
       row.state = "clock_quarantined"; // LWW op with an untrusted stamp: manager review, not applied (S5)
       tx.put(T.clockq, { id: opId(ref), tenant_id: this.tenantId, origin: op.origin, stream: op.stream, seq: op.seq });
     } else {
-      applyMutations(tx, ctx, withPii(op, it.pii));
+      applyMutations(tx, ctx, withPii(op, opened?.values));
     }
     if (fresh && op.v === 1) this.clock.observe(op.hlc);
     tx.put(T.op, row);
   }
 
   private async refreshCounts(): Promise<void> {
+    const erased = this.erasedNow;
+    this.erasedNow = [];
+    for (const e of erased) this.onPiiErased?.(e);
     this.conflictCount = (await this.conflicts()).length;
     this.chainConflictCount = (await this.store.list(T.cc)).length;
     this.clockqCount = (await this.store.list(T.clockq)).length;
@@ -1173,7 +1245,7 @@ export class SyncEngine {
       const op = row && rowOp(row);
       if (!row || !op || row.state !== "clock_quarantined") return;
       const ctx = this.applyCtx(tx);
-      if (!tx.get(T.void, opId(ref))) applyMutations(tx, ctx, withPii(op, row.pii));
+      if (!tx.get(T.void, opId(ref))) applyMutations(tx, ctx, withPii(op, stripSalts(row.pii)));
       tx.put(T.op, { ...row, state: "applied" });
       tx.del(T.clockq, opId(ref));
     });

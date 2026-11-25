@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { restaurantRegistry } from "./restaurant";
+import { stripSalts } from "./pii-commit";
 import { OpTooLargeError, MAX_OP_BODY_BYTES, MAX_PII_BYTES, isPiiObject } from "./pii";
 import type { OpEnvelope } from "./types";
 import { makeWorld, OUTLET } from "./testkit/harness";
@@ -19,8 +20,8 @@ describe("personal data stays out of the hashed body (ADR-0002 S4, review M-10)"
     expect(b.items).toHaveLength(2);
     for (const it of b.items) expect(it.body).not.toMatch(/Customer|\+91/);
     expect(isPiiObject(b.items[0]!.pii)).toBe(true);
-    expect(b.items[0]!.pii).toEqual({ check: { c1: { customer_name: "A. Customer" } } });
-    expect(b.items[1]!.pii).toEqual({ check: { c1: { customer_name: "B. Customer", customer_phone: "+910000000000" } } });
+    expect(stripSalts(b.items[0]!.pii)).toEqual({ check: { c1: { customer_name: "A. Customer" } } });
+    expect(stripSalts(b.items[1]!.pii)).toEqual({ check: { c1: { customer_name: "B. Customer", customer_phone: "+910000000000" } } });
     expect(((JSON.parse(b.items[0]!.body!) as OpEnvelope).muts[0]!.f ?? {}).customer_name).toBeUndefined();
 
     // Local row and a receiving device show the name, as before; the hash does not depend on pii.

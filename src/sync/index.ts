@@ -50,3 +50,16 @@ export {
 } from "./transport";
 export { SyncRunner, type RunnerConfig } from "./runner";
 export { MAX_OP_BODY_BYTES, MAX_PII_BYTES, OpTooLargeError, isPiiObject, splitPii, withPii, type PiiObject } from "./pii";
+export {
+  PII_SALT_BYTES,
+  PII_SALT_PREFIX,
+  commitPii,
+  openPii,
+  piiStrings,
+  stripSalts,
+  type OpenedPii,
+  type PiiCommit,
+  type PiiValues,
+  type PiiWire,
+  type RandomBytes,
+} from "./pii-commit";

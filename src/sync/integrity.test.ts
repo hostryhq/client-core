@@ -114,10 +114,10 @@ describe("chain and seal (ADR-0002 S17)", () => {
     const w = await makeWorld();
     const a = await w.addDevice("devA", { withHub: false });
     const rx = await w.addDevice("rx", { withHub: false });
-    await a.engine.record({ intent: "order.create", pii: { phone: "+910000000000" }, build: () => [{ e: "order", id: "o1", k: "insert", f: {} }] });
+    await a.engine.record({ intent: "order.create", pii: { order: { o1: { phone: "+910000000000" } } }, build: () => [{ e: "order", id: "o1", k: "insert", f: {} }] });
     await a.engine.recordMuts("order.create", [{ e: "order", id: "o2", k: "insert", f: {} }]);
     const b = await authorBatch(a);
-    expect(b.items[0]!.pii).toEqual({ phone: "+910000000000" });
+    expect(b.items[0]!.pii).toEqual({ order: { o1: { phone: "+910000000000" } } });
     expect(b.items[0]!.body).not.toContain("phone");
     const erased = b.items.map((it) => ({ ...it, pii: undefined }));
     expect((await rx.engine.applyRemote(OUTLET, erased, b.seals)).applied).toBe(2);

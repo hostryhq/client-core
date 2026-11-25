@@ -22,6 +22,7 @@ import {
   type Signer,
 } from "./crypto";
 import { HlcClock, MAX_FUTURE_MS, unpackHlc } from "./hlc";
+import { MAX_OP_BODY_BYTES, MAX_PII_BYTES, OpTooLargeError, splitPii, utf8Bytes, withPii, type PiiObject } from "./pii";
 import type { SchemaRegistry, DocType } from "./schema";
 import { allocateNumber, putGrants, type SeriesGrant } from "./series";
 import type {
@@ -89,8 +90,12 @@ export type RecordSpec = {
   approval?: string;
   /** Opaque PIN-derived proof (ADR-0005); stamped by the auth layer. */
   proof?: string;
-  /** Personal data: travels beside the op, outside its hash. */
-  pii?: Record<string, unknown>;
+  /**
+   * Personal data beside the op, outside its hash, as entity -> row id -> field -> value. Fields the entity schema
+   * declares `pii` are moved here from the mutations automatically, so a builder normally passes nothing. Typed
+   * loosely so older callers still compile; anything that is not that shape (the old flat form) is ignored.
+   */
+  pii?: PiiObject | Record<string, unknown>;
   /** Runs inside the single-writer transaction; whatever it allocates commits with the op or not at all. */
   build: (ctx: BuildCtx) => Mutation[];
 };
@@ -284,7 +289,7 @@ export class SyncEngine {
       // An op may take several legal numbers in this one transaction (bill.rebill: a credit note and the new bills);
       // they commit with the op or not at all, so no number is burnt or duplicated.
       const allocated: NonNullable<OpEnvelope["doc"]>[] = [];
-      const muts = spec.build({
+      const built = spec.build({
         now: nowMs,
         number: (docType) => {
           const d = { type: docType, number: allocateNumber(tx, this.tenantId, docType, nowMs) };
@@ -295,9 +300,11 @@ export class SyncEngine {
         list: (e) => tx.list(e),
         newId: this.newId,
       });
-      for (const m of muts) {
+      for (const m of built) {
         if (!this.schemas.get(m.e)) throw new Error(`record: unknown entity ${m.e}`);
       }
+      // Personal data never enters the hashed body: declared fields move to the op's `pii` (S4).
+      const { muts, pii } = splitPii(built, this.schemas, spec.pii);
       const envelope: OpEnvelope = {
         v: 1,
         origin: this.deviceId,
@@ -328,14 +335,19 @@ export class SyncEngine {
         })),
       };
       const body = canonicalize(envelope);
+      // Refused before anything is recorded: throwing here rolls the transaction back, legal numbers included.
+      const bodyBytes = utf8Bytes(body);
+      if (bodyBytes > MAX_OP_BODY_BYTES) throw new OpTooLargeError("body", bodyBytes, MAX_OP_BODY_BYTES);
+      const piiBytes = pii ? utf8Bytes(JSON.stringify(pii)) : 0;
+      if (piiBytes > MAX_PII_BYTES) throw new OpTooLargeError("pii", piiBytes, MAX_PII_BYTES);
       const h = await sha256Hex(body);
       const applied = JSON.parse(body) as OpEnvelope; // apply exactly what receivers will parse
-      applyMutations(tx, this.applyCtx(tx), applied);
+      applyMutations(tx, this.applyCtx(tx), withPii(applied, pii));
       tx.put(T.op, {
         id: opRowId(applied),
         tenant_id: this.tenantId,
         body,
-        ...(spec.pii ? { pii: spec.pii } : {}),
+        ...(pii ? { pii } : {}),
         h,
         state: "applied",
         own: true,
@@ -1116,7 +1128,7 @@ export class SyncEngine {
       row.state = "clock_quarantined"; // LWW op with an untrusted stamp: manager review, not applied (S5)
       tx.put(T.clockq, { id: opId(ref), tenant_id: this.tenantId, origin: op.origin, stream: op.stream, seq: op.seq });
     } else {
-      applyMutations(tx, ctx, op);
+      applyMutations(tx, ctx, withPii(op, it.pii));
     }
     if (fresh && op.v === 1) this.clock.observe(op.hlc);
     tx.put(T.op, row);
@@ -1161,7 +1173,7 @@ export class SyncEngine {
       const op = row && rowOp(row);
       if (!row || !op || row.state !== "clock_quarantined") return;
       const ctx = this.applyCtx(tx);
-      if (!tx.get(T.void, opId(ref))) applyMutations(tx, ctx, op);
+      if (!tx.get(T.void, opId(ref))) applyMutations(tx, ctx, withPii(op, row.pii));
       tx.put(T.op, { ...row, state: "applied" });
       tx.del(T.clockq, opId(ref));
     });

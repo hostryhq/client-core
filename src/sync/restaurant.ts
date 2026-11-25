@@ -27,6 +27,8 @@ function toSchema(d: EntityDef): EntitySchema {
   if (d.deletable) s.deletable = true;
   if (d.guarded) s.guarded = true;
   if (d.docNumber && DOC_OF[d.name]) s.docType = DOC_OF[d.name]!;
+  const pii = Object.entries(d.fields).filter(([, r]) => r.pii).map(([k]) => k);
+  if (pii.length) s.pii = pii;
   switch (d.policy) {
     case "mixed":
       s.fields = Object.fromEntries(Object.entries(d.fields).map(([k, r]) => [k, { policy: r.policy, ...(r.order ? { order: r.order } : {}) }]));

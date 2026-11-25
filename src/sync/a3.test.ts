@@ -4,6 +4,8 @@ import { COMMIT_PREFIX, digestRowText, entityDigest } from "./digest";
 import { actionHash, actionValues, approvalProofMessage, goQuote, sessionProofMessage } from "./proof";
 import { servesPii, type DeviceKind } from "./pii-serve";
 import { DEMO_SCHEMAS, SchemaRegistry } from "./schema";
+import { InMemoryStore } from "../store";
+import { SyncEngine } from "./engine";
 import { makeWorld, OUTLET, type Device } from "./testkit/harness";
 import vectors from "./testkit/vectors-v1.json";
 import { authorBatch } from "./testkit/ship";
@@ -152,5 +154,50 @@ describe("ADR-0014 A3.1/A3.2 on the engine", () => {
     await w.cloud.erasePii({ origin: "devA", stream: OUTLET, seq: 1 });
     await w.settle();
     expect(await b.engine.piiIncomplete()).toEqual([]);
+  });
+});
+
+describe("ADR-0002 A3.5 placement: another origin's pii only where the credential says protected", () => {
+  const at = async (d: Device) => JSON.stringify(await d.store.list("_s_op"));
+
+  it("PP1: an unprotected pos pulling from hub and gateway gets commitments only; protected gets the values; own pii is kept", async () => {
+    const w = await makeWorld();
+    const a = await w.addDevice("devA", { withHub: true, schemas: piiSchemas() });
+    const prot = await w.addDevice("devP", { withHub: true, schemas: piiSchemas() });
+    const unprot = await w.addDevice("devU", { withHub: true, schemas: piiSchemas(), storeClaim: "unprotected" });
+    await a.engine.record({ intent: "order.create", pii: { order: { o1: { customer_phone: PHONE } } }, build: () => [{ e: "order", id: "o1", k: "insert", f: {} }] });
+    // the unprotected device has its own order with pii too
+    await unprot.engine.record({ intent: "order.create", pii: { order: { o2: { customer_phone: "+919811100000" } } }, build: () => [{ e: "order", id: "o2", k: "insert", f: {} }] });
+    await w.settle();
+    expect(await at(prot)).toContain(PHONE);
+    expect(await at(unprot)).not.toContain(PHONE);
+    expect(await at(unprot)).toContain("+919811100000"); // own pii unaffected
+    const ref: OpRef = { origin: "devA", stream: OUTLET, seq: 1 };
+    expect(await unprot.engine.piiIncomplete()).toEqual([{ ...ref, fields: [{ e: "order", id: "o1", f: "customer_phone" }] }]);
+    expect(await unprot.engine.piiIncomplete({ fetchable: true })).toEqual([]); // not asked for again: placement refuses it
+    // commitments are held, so the convergence hash still agrees
+    expect(await unprot.engine.stateHash()).toBe(await prot.engine.stateHash());
+  });
+
+  it("an unprotected device drops pii pushed at it directly, and refuses to fill it from a re-served op", async () => {
+    const w = await makeWorld();
+    const a = await w.addDevice("devA", { withHub: false, schemas: piiSchemas() });
+    const u = await w.addDevice("devU", { withHub: false, schemas: piiSchemas(), storeClaim: "unprotected" });
+    await a.engine.record({ intent: "order.create", pii: { order: { o1: { customer_phone: PHONE } } }, build: () => [{ e: "order", id: "o1", k: "insert", f: {} }] });
+    const batch = await authorBatch(a);
+    await u.engine.applyRemote(OUTLET, batch.items, batch.seals);
+    await u.engine.applyRemote(OUTLET, batch.items, batch.seals); // re-served with pii: must not fill
+    expect(await at(u)).not.toContain(PHONE);
+  });
+
+  it("the named dev/test switch lifts the rule", async () => {
+    const w = await makeWorld();
+    const a = await w.addDevice("devA", { withHub: false, schemas: piiSchemas() });
+    const u = await w.addDevice("devU", { withHub: false, schemas: piiSchemas(), storeClaim: "unprotected" });
+    await a.engine.record({ intent: "order.create", pii: { order: { o1: { customer_phone: PHONE } } }, build: () => [{ e: "order", id: "o1", k: "insert", f: {} }] });
+    const batch = await authorBatch(a);
+    const off = await SyncEngine.open({ store: new InMemoryStore("t1"), schemas: piiSchemas(), deviceId: "devX", outletStream: OUTLET, signer: u.signer, verifier: w.ring, packVersion: 1, storeClaim: "unprotected", placementOff: true });
+    await off.applyRemote(OUTLET, batch.items, batch.seals);
+    expect(JSON.stringify(await off.outbox(OUTLET, {}, "all", 100))).toContain(PHONE);
   });
 });

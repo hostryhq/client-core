@@ -1,5 +1,5 @@
 import { canonicalize } from "../canonical";
-import { genesisHash, makeSeal, sha256Hex, verifySeal, type SealVerifier, type SoftwareSigner } from "../crypto";
+import { genesisHash, makeSeal, sha256Hex, verifySeal, type SealVerifier, type SoftwareSigner, type StoreProtection } from "../crypto";
 import { packHlc } from "../hlc";
 import { servesPii, type DeviceKind } from "../pii-serve";
 import {
@@ -91,14 +91,14 @@ export class FakeNode {
   }
 
   /** A transport as seen by one caller; `link.up` lets a test partition that one link. */
-  connect(caller: string, link: { up: boolean } = { up: true }, kind: DeviceKind = "pos"): SyncTransport {
+  connect(caller: string, link: { up: boolean } = { up: true }, kind: DeviceKind = "pos", store: StoreProtection = "protected"): SyncTransport {
     const gate = (): void => {
       if (!this.up || !link.up) throw new TransportError(0, "network unreachable", true);
     };
     return {
       hello: async (r) => (gate(), this.hello(r)),
       push: async (r) => (gate(), this.push(r)),
-      pull: async (r) => (gate(), this.pull(r, caller, kind)),
+      pull: async (r) => (gate(), this.pull(r, caller, kind, store)),
     };
   }
 
@@ -200,8 +200,8 @@ export class FakeNode {
     return res;
   }
 
-  /** `kind` is the puller's credential kind: a `kds` is answered with no `pii` at all (ADR-0014 A3.1 item 1). */
-  async pull(req: PullRequest, caller: string, kind: DeviceKind = "pos"): Promise<PullResponse> {
+  /** `kind` and `store` are the puller's credential claims: a `kds` is answered with no `pii` at all (ADR-0014 A3.1 item 1). */
+  async pull(req: PullRequest, caller: string, kind: DeviceKind = "pos", store: StoreProtection = "protected"): Promise<PullResponse> {
     this.fault("pull", "before");
     const want = fromWireVector(req.vector);
     const limit = req.limit ?? 500;
@@ -246,7 +246,8 @@ export class FakeNode {
     }
     const res: PullResponse = {
       epoch: this.st.epoch,
-      items: servesPii(kind) ? items : items.map(withoutPii),
+      // Placement (ADR-0002 A3.5 item 2): another origin's pii goes only to a `protected` puller; its own always.
+      items: items.map((it) => (!servesPii(kind) || (store !== "protected" && it.origin !== caller) ? withoutPii(it) : it)),
       seals,
       more: items.length >= limit,
       own_held: own,

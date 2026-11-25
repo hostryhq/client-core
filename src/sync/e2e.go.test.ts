@@ -7,15 +7,17 @@ import { SyncEngine } from "./engine";
 import { SyncRunner } from "./runner";
 import { demoRegistry } from "./schema";
 import type { SeriesGrant } from "./series";
-import { HttpTransport, bearerAuth, lanAuth } from "./transport";
+import { LanTransport } from "./lan";
+import { nodeLanChannel } from "./lan-node";
+import { HttpTransport, bearerAuth } from "./transport";
 
 /**
  * End-to-end against the real Go gateway and hub from svc-sync (ADR-0002 S15 soak, reduced). It needs a
  * running stack and a fixture file describing it, so it is skipped unless SYNC_E2E_FIXTURE points at one.
  *
  * Fixture (JSON), written by whatever starts the svc-sync stack:
- *   { "cloud_url": "http://127.0.0.1:8081", "hub_url": "http://127.0.0.1:8082",
- *     "tenant_id": "t1", "outlet_id": "o1", "identity_pub": "<X9.62 base64url>",
+ *   { "cloud_url": "http://127.0.0.1:8081", "hub_url": "https://127.0.0.1:8443",
+ *     "tenant_id": "t1", "outlet_id": "o1", "identity_pub": "<X9.62 base64url>", "identity_kid": "<kid>",
  *     "cloud_keys": { "<kid>": "<X9.62 base64url>" },
  *     "devices": [ { "device_id": "dev-a", "kid": "k", "pub": "<X9.62>", "pkcs8": "<base64url PKCS#8>",
  *                    "cred": <CredentialEnvelope>, "token": "<device access token>",
@@ -28,8 +30,9 @@ type Fixture = {
   tenant_id: string;
   outlet_id: string;
   identity_pub: string;
+  identity_kid: string;
   cloud_keys: Record<string, string>;
-  devices: Array<{ device_id: string; kid: string; pub: string; pkcs8: string; cred: CredentialEnvelope; token: string; series?: SeriesGrant[] }>;
+  devices: Array<{ device_id: string; kid: string; pub: string; pkcs8: string; cred: CredentialEnvelope; /** The device's LAN credential, compact JWS (A3.4 item 1). */ cred_jws: string; token: string; series?: SeriesGrant[] }>;
 };
 
 const PHONE = "+919800011122";
@@ -49,14 +52,22 @@ describe.skipIf(!ready)(
       for (const d of f.devices.slice(0, 2)) {
         await ring.add(d.device_id, d.kid, d.pub);
         const signer = await SoftwareSigner.import(d.kid, d.pkcs8, d.pub);
-        const engine = await SyncEngine.open({ store: new InMemoryStore(f.tenant_id), schemas: demoRegistry(), deviceId: d.device_id, outletStream: stream, signer, verifier: ring, packVersion: 1 });
+        const engine = await SyncEngine.open({ store: new InMemoryStore(f.tenant_id), schemas: demoRegistry(), deviceId: d.device_id, outletStream: stream, signer, verifier: ring, packVersion: 1, placementOff: true });
         engine.session = { actor: "m1", sid: `s-${d.device_id}` };
         await engine.setSeriesGrants(d.series ?? []);
         const runner = new SyncRunner({
           engine,
           keyRing: ring,
           cloud: new HttpTransport({ baseUrl: f.cloud_url, auth: bearerAuth(() => d.token) }),
-          hub: new HttpTransport({ baseUrl: f.hub_url, auth: lanAuth({ cred: d.cred, signer, identityPub: f.identity_pub, outlet: f.outlet_id }) }),
+          hub: new LanTransport({
+            channel: nodeLanChannel({ baseUrl: f.hub_url }),
+            credential: d.cred_jws,
+            deviceId: d.device_id,
+            signer,
+            identityKeys: () => ({ [f.identity_kid]: f.identity_pub }),
+            tenantId: f.tenant_id,
+            outletId: f.outlet_id,
+          }),
         });
         nodes.push({ d, engine, runner });
       }

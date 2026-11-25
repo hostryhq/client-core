@@ -116,9 +116,15 @@ export type Credential = {
   kind: DeviceKind;
   kid: string;
   pub: string;
+  /**
+   * Where the device keeps its local store (ADR-0002 A3.5 item 1), signed by identity. Absent counts as `unprotected`, so an
+   * old credential can never widen placement.
+   */
+  store?: StoreProtection;
   recovers?: string;
   not_after: number;
 };
+export type StoreProtection = "protected" | "unprotected";
 export type CredentialEnvelope = { cred: Credential; sig: string };
 
 export async function importPublicKey(pubB64: string): Promise<CryptoKey> {

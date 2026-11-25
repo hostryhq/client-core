@@ -14,6 +14,7 @@ export {
   type CredentialEnvelope,
   type SealVerifier,
   type Signer,
+  type StoreProtection,
 } from "./crypto";
 export { DEMO_SCHEMAS, SchemaRegistry, demoRegistry, type DocType, type EntitySchema, type Policy } from "./schema";
 export { SeriesError, financialYear, formatNumber, type SeriesGrant, type SeriesState } from "./series";
@@ -36,11 +37,9 @@ export {
   TransportError,
   fromWireVector,
   bearerAuth,
-  lanAuth,
   toWireVector,
   type HelloRequest,
   type HttpAuth,
-  type LanAuthConfig,
   type HelloResponse,
   type PullRequest,
   type PullResponse,
@@ -74,3 +73,26 @@ export {
   type ApprovalProofFields,
   type SessionProofFields,
 } from "./proof";
+export {
+  HELLO_LAN_PATH,
+  LAN_SESSION_HEADER,
+  LAN_SESSION_TTL_S,
+  LanError,
+  LanTransport,
+  OPEN_LAN_SESSION_PATH,
+  browserLanChannel,
+  lanProofMessage,
+  makeLanProof,
+  spkiHash,
+  validLanToken,
+  verifyLanCredential,
+  verifyLanProof,
+  type CredentialCheck,
+  type CredentialExpect,
+  type CredentialRefusal,
+  type LanChannel,
+  type LanChannelResponse,
+  type LanErrorCode,
+  type LanProofFields,
+  type LanTransportConfig,
+} from "./lan";

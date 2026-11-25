@@ -1,6 +1,6 @@
 import { uuidv7 } from "../../ids";
 import { InMemoryStore, type LocalStore } from "../../store";
-import { KeyRing, SoftwareSigner } from "../crypto";
+import { KeyRing, SoftwareSigner, type StoreProtection } from "../crypto";
 import { SyncEngine } from "../engine";
 import { SyncRunner } from "../runner";
 import { demoRegistry, type SchemaRegistry } from "../schema";
@@ -54,7 +54,7 @@ export type World = {
   hubCloudLink: { up: boolean };
   devices: Device[];
   cloudSigner: SoftwareSigner;
-  addDevice(id: string, opts?: { clockMode?: "sync" | "manual"; schemas?: SchemaRegistry; grants?: SeriesGrant[]; store?: LocalStore; signer?: SoftwareSigner; skewMs?: number; withHub?: boolean; kind?: DeviceKind }): Promise<Device>;
+  addDevice(id: string, opts?: { clockMode?: "sync" | "manual"; schemas?: SchemaRegistry; grants?: SeriesGrant[]; store?: LocalStore; signer?: SoftwareSigner; skewMs?: number; withHub?: boolean; kind?: DeviceKind; storeClaim?: StoreProtection }): Promise<Device>;
   reopen(d: Device): Promise<Device>;
   syncDevice(d: Device): Promise<void>;
   relay(): Promise<void>;
@@ -86,7 +86,7 @@ export async function makeWorld(
 
   const newId = (): string => uuidv7(clock.now, () => Uint8Array.from({ length: 16 }, () => Math.floor(rand() * 256)));
 
-  const build = async (id: string, store: LocalStore, signer: SoftwareSigner, skewMs: number, withHub: boolean, hubLink: { up: boolean }, cloudLink: { up: boolean }, schemas: SchemaRegistry = demoRegistry(), clockMode: "sync" | "manual" = "sync", kind: DeviceKind = "pos"): Promise<Device> => {
+  const build = async (id: string, store: LocalStore, signer: SoftwareSigner, skewMs: number, withHub: boolean, hubLink: { up: boolean }, cloudLink: { up: boolean }, schemas: SchemaRegistry = demoRegistry(), clockMode: "sync" | "manual" = "sync", kind: DeviceKind = "pos", claim: StoreProtection = "protected"): Promise<Device> => {
     const engine = await SyncEngine.open({
       store,
       schemas,
@@ -98,14 +98,15 @@ export async function makeWorld(
       packVersion: 1,
       clockMode,
       deviceKind: kind,
+      storeClaim: claim,
       now: () => clock.now() + skewMs,
       newId,
     });
     engine.session = { actor: "m1", sid: `s-${id}` };
     const runner = new SyncRunner({
       engine,
-      ...(withHub ? { hub: hub.connect(id, hubLink, kind) } : {}),
-      cloud: cloud.connect(id, cloudLink, kind),
+      ...(withHub ? { hub: hub.connect(id, hubLink, kind, claim) } : {}),
+      cloud: cloud.connect(id, cloudLink, kind, claim),
       now: clock.now,
       random: rand,
     });
@@ -125,14 +126,14 @@ export async function makeWorld(
       const signer = o.signer ?? (await SoftwareSigner.generate(`k-${id}`));
       await ring.add(id, signer.kid, signer.publicB64);
       const store = o.store ?? new InMemoryStore(TENANT);
-      const d = await build(id, store, signer, o.skewMs ?? 0, o.withHub ?? true, { up: true }, { up: true }, o.schemas, o.clockMode, o.kind);
+      const d = await build(id, store, signer, o.skewMs ?? 0, o.withHub ?? true, { up: true }, { up: true }, o.schemas, o.clockMode, o.kind, o.storeClaim);
       await d.engine.setSeriesGrants(o.grants ?? []); // activation always delivers a pack
       devices.push(d);
       return d;
     },
     async reopen(d) {
       // Process restart: a new engine over the same durable store, same key and links.
-      const nd = await build(d.id, d.store, d.signer, 0, d.withHub, d.hubLink, d.cloudLink, undefined, undefined, d.engine.deviceKind);
+      const nd = await build(d.id, d.store, d.signer, 0, d.withHub, d.hubLink, d.cloudLink, undefined, undefined, d.engine.deviceKind, d.engine.storeClaim);
       devices[devices.indexOf(d)] = nd;
       return nd;
     },

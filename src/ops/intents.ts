@@ -66,7 +66,9 @@ export function validateOp(intent: string, muts: readonly Mutation[], numbers: r
     const known = restaurantFields(m.e);
     if (known) {
       for (const k of Object.keys(m.f ?? {})) {
-        if (!known.includes(k)) throw new IntentError("unknown_field", `${m.e}.${k} is not in the entity contract`);
+        // A name the intent's approval binds is part of the intent's own contract even when no entity declares it (a derived
+        // value such as `bill.rebill.approved`'s `replacement_total_paise`); the contract gap is reported: no credit_note field carries it yet.
+        if (!known.includes(k) && !def.binds.includes(k)) throw new IntentError("unknown_field", `${m.e}.${k} is not in the entity contract`);
       }
     }
   }

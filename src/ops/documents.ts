@@ -7,6 +7,7 @@ import {
   manualBookEntry,
   presentCheck,
   rebill,
+  rebillApprovedMutations,
   rebillMutations,
   type BillableLine,
   type BillLineRow,
@@ -107,16 +108,18 @@ export function rebillSpec(
     refundTender?: RefundTender;
     previousCredited?: Readonly<Record<string, number>>;
     original?: OriginalBill;
+    /** Taken with a manager's approval (after payment, or past the re-bill allowance): intent `bill.rebill.approved`, which also records `replacement_total_paise`. */
+    approved?: boolean;
   },
 ): RecordSpec {
-  return spec("bill.rebill", a, (ctx) => {
+  return spec(a.approved ? "bill.rebill.approved" : "bill.rebill", a, (ctx) => {
     const original = a.original ?? loadOriginalBill(ctx, a.billId);
     const r = rebill(depsFor(a.env, ctx), a.env.outlet, original, a.replacements, {
       ...(a.reasonCodeId ? { reasonCodeId: a.reasonCodeId } : {}),
       ...(a.refundTender ? { refundTender: a.refundTender } : {}),
       ...(a.previousCredited ? { previousCredited: a.previousCredited } : {}),
     });
-    return { muts: rebillMutations(r), result: r };
+    return { muts: a.approved ? rebillApprovedMutations(r) : rebillMutations(r), result: r };
   });
 }
 

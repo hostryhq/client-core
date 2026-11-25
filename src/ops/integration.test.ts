@@ -150,6 +150,19 @@ describe("documents -> ops -> multi-device sync (Phase 2 integration)", () => {
     expect(await seriesGaps(d.store)).toEqual([]);
   });
 
+  it("bill.rebill.approved is accepted by the writer and the engine, and the credit note carries the bound replacement total", async () => {
+    const w = await makeWorld();
+    const d = await w.addDevice("pos", { schemas: restaurantRegistry(), grants: [{ code: "A07", docType: "tax_invoice", state: "active" }, { code: "A07", docType: "credit_note", state: "active" }] });
+    const writer = new EngineOpWriter(d.engine);
+    await writer.record(finalizeBillSpec({ env: ENV, header: { order_type: "counter" }, lines: [line("a")] }));
+    const billId = (await d.engine.rows("bill"))[0]!.id;
+    const op = (await writer.record(rebillSpec({ env: ENV, billId, approved: true, replacements: [{ header: { order_type: "counter" }, lines: [line("a")] }] }))) as OpEnvelope;
+    expect(op.intent).toBe("bill.rebill.approved");
+    const bills = await d.engine.rows("bill");
+    const replacement = bills.find((b) => b.replaces_bill_id === billId)!;
+    expect(op.muts[0]).toMatchObject({ e: "credit_note", f: { bill_id: billId, replacement_total_paise: replacement.total_paise } });
+  });
+
   it("the writer refuses an op that is not what its intent allows, before anything is recorded or numbered", async () => {
     const w = await makeWorld();
     const d = await w.addDevice("pos", { schemas: restaurantRegistry(), grants: [...sale("A07")] });

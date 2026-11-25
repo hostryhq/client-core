@@ -221,4 +221,26 @@ describe("erasure reaches rows, field candidates, conflict records and the print
     expect(svc.purgeStrings(seen)).toBe(1);
     expect(q.pending().map((j) => j.id)).toEqual(["j2"]);
   });
+
+  it("customer_gstin on a check and a bill is personal data: erased on the author and a pulling device (soak X2)", async () => {
+    const w = await makeWorld();
+    const a = await w.addDevice("devA", { withHub: false, schemas: restaurantRegistry() });
+    const rx = await w.addDevice("rx", { withHub: false, schemas: restaurantRegistry() });
+    const GSTIN = "33AAAAA0000A1Z5";
+    for (const e of ["check", "bill"]) expect(restaurantRegistry().get(e)!.pii).toContain("customer_gstin");
+    await a.engine.recordMuts("check.create", check("c1", { order_type: "dine_in", status: "open", customer_gstin: GSTIN }));
+    await a.engine.recordMuts("bill.customer_details.edit", [{ e: "bill", id: "b1", k: "insert", f: { customer_gstin: GSTIN, customer_name: NAME } }]);
+    await w.syncDevice(a);
+    await w.syncDevice(rx);
+    expect(JSON.stringify(await rx.store.list("check"))).toContain(GSTIN);
+    await w.cloud.erasePii({ origin: "devA", stream: OUTLET, seq: 1 });
+    await w.cloud.erasePii({ origin: "devA", stream: OUTLET, seq: 2 });
+    await w.syncDevice(rx);
+    await w.syncDevice(a);
+    for (const d of [a, rx]) {
+      const text = JSON.stringify([await d.store.list("check"), await d.store.list("bill"), await d.store.list(T.op)]);
+      expect(text).not.toContain(GSTIN);
+      expect(text).not.toContain(NAME);
+    }
+  });
 });

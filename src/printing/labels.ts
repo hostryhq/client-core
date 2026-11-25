@@ -33,6 +33,7 @@ export const LABELS_EN = {
   "print.taxable": "Taxable value",
   "print.taxableShort": "Taxable",
   "print.serviceCharge": "Service charge",
+  "print.packing": "Packing charge",
   "print.nonGst": "Non-GST items",
   "print.roundOff": "Round-off",
   "print.total": "TOTAL",

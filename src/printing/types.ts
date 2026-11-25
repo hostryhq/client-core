@@ -56,6 +56,7 @@ export type BillDoc = {
   subtotal: Paise;
   discount?: { label: string; amount: Paise };
   serviceCharge?: Paise;
+  packingCharge?: Paise;
   nonGstSubtotal?: Paise;
   taxGroups: TaxGroup[];
   roundOff?: Paise;
@@ -85,8 +86,12 @@ export type PreBillDoc = {
   lines: DocLine[];
   subtotal: Paise;
   discount?: { label: string; amount: Paise };
+  serviceCharge?: Paise;
+  packingCharge?: Paise;
   /** Estimated tax lines from the same rule set; printed marked "(estimate)". */
   estimatedTaxes: LabelAmount[];
+  /** Signed; the round-off the bill is expected to carry. */
+  roundOff?: Paise;
   total: Paise;
   upiUri?: string;
 };

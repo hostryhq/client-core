@@ -54,6 +54,17 @@ describe("conflict policy per entity", () => {
     }
   });
 
+  it("rank: a `rank` mutation on an entity-level rank entity is applied forward-only, in any arrival order", async () => {
+    const { w, a, b } = await trio();
+    await a.engine.recordMuts("seating.open", [{ e: "seating", id: "s1", k: "insert", f: { status: "open" } }]);
+    await a.engine.recordMuts("seating.close", [{ e: "seating", id: "s1", k: "rank", f: { status: "closed" } }]);
+    await b.engine.recordMuts("seating.bill", [{ e: "seating", id: "s1", k: "rank", f: { status: "billed" } }]);
+    for (const order of [["A", "B"], ["B", "A"]] as const) {
+      const r = await hashAfter(w, [...order], a, b);
+      expect((await r.rx.engine.rows("seating"))[0]?.status).toBe("closed");
+    }
+  });
+
   it("lww: highest stamp wins per field, ties break on origin, and each field is stamped on its own", async () => {
     const { w, a, b } = await trio();
     await a.engine.recordMuts("menu.add", [{ e: "menu_item", id: "m1", k: "insert", f: { name: "Dosa", price_paise: 9000 } }]);

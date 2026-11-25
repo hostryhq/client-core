@@ -99,3 +99,14 @@ export {
   type LanProofFields,
   type LanTransportConfig,
 } from "./lan";
+export {
+  PACK_JWS_TYP,
+  identityKeysFromPack,
+  jwkToPoint,
+  verifyPackJws,
+  type IdentityJwk,
+  type IssuerEnv,
+  type PackCheck,
+  type PackClaims,
+  type PackRefusal,
+} from "./pack-jws";

@@ -119,7 +119,9 @@ export class SyncRunner implements SyncClient {
         this.e.setConnectivity({ online: true, upstream: kind, lastSyncAt: new Date(this.now()).toISOString() });
         // After a cloud restore a hub may hold only placeholders: the origin must also reach the cloud
         // directly while the re-offer flag is set (S16 item 4). A cloud failure here is not a hub failure.
-        if (kind === "hub" && this.cfg.cloud && this.e.needsReoffer) {
+        // The same goes for the A2.8 checks: a node behind a hub reaches the cloud directly at least every 24 h,
+        // and at once while an unbound slot, an unreported chain conflict or a refused cloud seal waits.
+        if (kind === "hub" && this.cfg.cloud && (this.e.needsReoffer || (await this.e.directCloudDue()))) {
           await this.exchange("cloud", this.cfg.cloud).catch(this.cfg.onError);
         }
         return;
@@ -149,16 +151,21 @@ export class SyncRunner implements SyncClient {
       cloudVec[s] = e.upstreamVector("cloud", s);
     }
 
+    // Only the cloud can check a slot taken by hash, and only it takes a conflict report (A2.8 items 1.3, 1.4).
+    const extras = kind === "cloud" ? await e.helloExtras() : {};
     const hello = await t.hello({
       protocol: 1,
       vector: toWireVector(vectors),
       ...(e.lastEpoch ? { epoch: e.lastEpoch } : {}),
       cloud_vector: toWireVector(cloudVec),
+      ...extras,
     });
     await e.noteUpstreamTime(kind, hello.time);
     const upstream = fromWireVector(hello.vector);
     if (kind === "cloud") {
       await e.noteCloudHello(hello.epoch ?? "genesis", upstream);
+      await e.markConflictsReported(extras.chain_conflicts ?? []);
+      await e.resolveUnbound(hello.unbound_h ?? []);
       for (const s of e.streams) await e.noteUpstream("cloud", s, upstream[s] ?? {});
     } else {
       // The hub tells us what it holds (at_hub) and what the cloud last confirmed to it (in_cloud).
@@ -196,18 +203,21 @@ export class SyncRunner implements SyncClient {
     for (let i = 0; i < MAX_BATCHES; i++) {
       const cur: Record<string, Record<string, number>> = {};
       for (const s of e.streams) cur[s] = await e.vector(s);
+      const stale = await e.staleSeals();
       const res = await t.pull({
         vector: toWireVector(cur),
         streams: e.streams,
         placeholders: await e.placeholders(),
+        ...(stale.length ? { stale_seals: stale } : {}),
         limit: batch,
       });
       if (res.creds?.length && this.cfg.keyRing) await this.cfg.keyRing.ingest(res.creds);
+      if (res.seal_refresh?.length) await e.refreshSeals(res.seal_refresh);
       let progress = res.items.length === 0;
       for (const s of e.streams) {
         const items = res.items.filter((it) => it.stream === s);
         if (items.length === 0) continue;
-        const r = await e.applyRemote(s, items, res.seals ?? [], { endorsements: res.endorsements ?? [], attestations: res.attestations ?? [] });
+        const r = await e.applyRemote(s, items, res.seals ?? [], { endorsements: res.endorsements ?? [], attestations: res.attestations ?? [], fromCloud: kind === "cloud" });
         if (r.applied > 0 || r.skipped > 0) progress = true;
         if (r.rejected.length) this.cfg.onError?.(new Error(`pull rejected: ${JSON.stringify(r.rejected)}`));
       }

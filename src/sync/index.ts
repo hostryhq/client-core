@@ -25,7 +25,9 @@ export {
   type BuildCtx,
   type EngineConfig,
   type RecordSpec,
+  type RemoteProofs,
   type RemoteResult,
+  DIRECT_CLOUD_INTERVAL_MS,
   type OpSession,
 } from "./engine";
 export {

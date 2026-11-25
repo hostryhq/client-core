@@ -126,6 +126,15 @@ export type Attestation = { origin: string; stream: string; seq: number; h: stri
  */
 export type Endorsement = { origin: string; stream: string; seq: number; h: string; rec: string; kid: string; sig: string };
 
+/** A slot with a hash: what the cloud states for a slot a node listed as `unbound` (A2.8 item 1.3). */
+export type SlotHash = { origin: string; stream: string; seq: number; h: string };
+
+/**
+ * A recorded chain conflict (A2.8 item 1.4): the hash this node holds at the slot and the one an upstream
+ * (or the cloud's answer) contradicted it with. `src` is the kind of upstream that contradicted it.
+ */
+export type ChainConflict = { origin: string; stream: string; seq: number; held: string; seen?: string };
+
 export type Unsubscribe = () => void;
 
 /** Stub for the background sync client. UI never awaits it; writes go to the local store first. */

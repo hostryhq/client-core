@@ -61,6 +61,8 @@ export interface SealVerifier {
   verifyEndorsement?(e: { origin: string; stream: string; seq: number; h: string; rec: string; kid: string; sig: string }): Promise<boolean>;
   /** The device id whose identity-signed credential carries `recovers: origin`, if this node holds one. */
   recoveredBy?(origin: string): string | undefined;
+  /** True while the op-signing key `kid` is in the node's pack: false marks a cloud seal under a dropped key stale (A2.8 item 2). */
+  acceptsCloudKid?(kid: string): boolean;
 }
 
 const P256 = { name: "ECDSA", namedCurve: "P-256" } as const;
@@ -153,6 +155,10 @@ export class KeyRing implements SealVerifier {
 
   recoveredBy(origin: string): string | undefined {
     return this.recovers.get(origin);
+  }
+
+  acceptsCloudKid(kid: string): boolean {
+    return this.cloudKeys.has(kid);
   }
 
   async verifyEndorsement(e: { origin: string; stream: string; seq: number; h: string; rec: string; kid: string; sig: string }): Promise<boolean> {

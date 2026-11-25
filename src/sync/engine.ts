@@ -26,6 +26,7 @@ import type { SchemaRegistry, DocType } from "./schema";
 import { allocateNumber, putGrants, type SeriesGrant } from "./series";
 import type {
   Attestation,
+  ChainConflict,
   Endorsement,
   ClockMode,
   DeliveryState,
@@ -34,6 +35,7 @@ import type {
   OpEnvelope,
   OpRef,
   Seal,
+  SlotHash,
   SyncStatus,
   Unsubscribe,
   VersionVector,
@@ -106,6 +108,31 @@ type OpRow = Row & {
   own?: boolean;
   /** Accepted under a gateway endorsement, not a seal: "a holder of device.recover released this op" (A2.1 item 4). */
   unsealed?: boolean;
+  /** Taken by hash with no seal and no neighbour that binds it (A2.8 item 1.3): never relayed, cross-checked with the cloud. */
+  unbound?: boolean;
+};
+
+/** A node behind a hub reaches the cloud directly at least this often when it can (A2.8 item 1.3). */
+export const DIRECT_CLOUD_INTERVAL_MS = 24 * 60 * 60 * 1000;
+/** Most slots listed in one hello `unbound`, and in one pull `stale_seals`. */
+const MAX_UNBOUND = 500;
+const MAX_STALE_SEALS = 200;
+
+type CcRow = Row & { origin: string; stream: string; seq: number; held: string; seen?: string; src: "cloud" | "relay"; reported: boolean };
+const ccId = (origin: string, stream: string, src: string): string => `${origin}|${stream}|${src}`;
+
+/** Inverse of `opRowId`. */
+function opRefOf(rowId: string): OpRef {
+  const [stream, origin, seq] = rowId.split("|") as [string, string, string];
+  return { stream, origin, seq: Number(seq) };
+}
+
+/** What `applyRemote` is told besides the items: proof that travels with them, and where they came from. */
+export type RemoteProofs = {
+  endorsements?: Endorsement[];
+  attestations?: Attestation[];
+  /** The batch comes from the cloud itself (a direct cloud route, or the hub's own upstream). Only the cloud may supply trailing placeholders or bodies above the sealed head (A2.8 item 1.1). */
+  fromCloud?: boolean;
 };
 
 const rowOp = (r: OpRow): OpEnvelope | undefined => (r.body === undefined ? undefined : (JSON.parse(r.body) as OpEnvelope));
@@ -155,6 +182,7 @@ export class SyncEngine {
   private held: HeldItem[] = [];
   private refused = new Set<string>();
   private conflictCount = 0;
+  private chainConflictCount = 0;
   private clockqCount = 0;
   private epoch: string | undefined;
   private reoffer = false;
@@ -208,6 +236,9 @@ export class SyncEngine {
       if (d) e.deliv.set(s, { hub: d.hub as VersionVector, cloud: d.cloud as VersionVector });
     }
     e.conflictCount = (await e.conflicts()).length;
+    e.chainConflictCount = (await store.list(T.cc)).length;
+    // First-time activation is an online step with the cloud, so the 24-hour direct-check clock starts there.
+    if (!(await store.get(T.meta, "cloud_hello_at"))) await store.transact((tx) => tx.put(T.meta, { id: "cloud_hello_at", tenant_id: store.tenantId, v: e.now() }));
     e.clockqCount = (await store.list(T.clockq)).length;
     return e;
   }
@@ -444,6 +475,9 @@ export class SyncEngine {
       tx.put(T.meta, { id: "epoch", tenant_id: this.tenantId, v: epoch });
       if (restored) tx.put(T.meta, { id: "reoffer", tenant_id: this.tenantId, v: true });
       if (first) tx.put(T.meta, { id: "reoffered_epoch", tenant_id: this.tenantId, v: epoch });
+      // A direct cloud hello: stamps the 24-hour check and clears the "refused a cloud seal" interim flag (A2.8).
+      tx.put(T.meta, { id: "cloud_hello_at", tenant_id: this.tenantId, v: this.now() });
+      tx.del(T.meta, "stale_cloud_seal");
     });
     this.epoch = epoch;
     if (restored) this.reoffer = true;
@@ -532,7 +566,7 @@ export class SyncEngine {
     const pendingOps = Math.max(0, own - hub);
     const atHubOps = Math.max(0, hub - cloud);
     const checkingOps = this.held.filter((h) => h.code === "pending").length;
-    const attentionOps = this.held.filter((h) => h.code !== "pending").length + this.refused.size + this.conflictCount + this.clockqCount;
+    const attentionOps = this.held.filter((h) => h.code !== "pending").length + this.refused.size + this.conflictCount + this.chainConflictCount + this.clockqCount;
     const state = attentionOps > 0 ? "conflict" : !this.conn.online ? "offline" : pendingOps + atHubOps + checkingOps > 0 ? "pending" : "synced";
     return {
       online: this.conn.online,
@@ -594,6 +628,7 @@ export class SyncEngine {
       for (let seq = from; seq <= to; seq++) {
         const row = (await this.store.get(T.op, opRowId({ origin, stream, seq }))) as OpRow | undefined;
         if (row?.body === undefined) break; // placeholder or gap: cannot relay what we do not hold
+        if (row.unbound && origin !== this.deviceId) break; // an unbound op, and all after it, is never relayed (A2.8 item 1.3)
         collected.push({ origin, stream, seq, h: row.h, body: row.body, ...(row.pii !== undefined ? { pii: row.pii } : {}) });
       }
       if (collected.length === 0) continue;
@@ -628,7 +663,7 @@ export class SyncEngine {
    * seal. Ops that are not are refused and the vector does not advance past them. Idempotent: an op at or
    * below the vector is skipped. A placeholder only advances the vector (A1.2).
    */
-  async applyRemote(stream: string, items: WireItem[], seals: Seal[], proofs: { endorsements?: Endorsement[]; attestations?: Attestation[] } = {}): Promise<RemoteResult> {
+  async applyRemote(stream: string, items: WireItem[], seals: Seal[], proofs: RemoteProofs = {}): Promise<RemoteResult> {
     const result: RemoteResult = { applied: 0, skipped: 0, rejected: [], gaps: [] };
     if (!this.streams.includes(stream)) {
       result.rejected.push({ origin: "", seq: 0, reason: "stream not bound to this device" });
@@ -643,14 +678,30 @@ export class SyncEngine {
         byOrigin.set(it.origin, [...(byOrigin.get(it.origin) ?? []), it]);
       }
       const freshSeals: Seal[] = [];
+      const fromCloud = proofs.fromCloud === true;
+      const src = fromCloud ? "cloud" : "relay";
+      // A cloud-origin seal under a key this node does not accept is not taken, and says so: the node reads
+      // that origin from the cloud directly until its hub has refreshed the seal (A2.8 item 2, interim rule).
+      if (this.verifier.acceptsCloudKid) {
+        for (const s of seals) {
+          if (s.stream === stream && s.origin.startsWith("cloud-") && !this.verifier.acceptsCloudKid(s.kid)) {
+            tx.put(T.meta, { id: "stale_cloud_seal", tenant_id: this.tenantId, v: true });
+          }
+        }
+      }
       for (const [origin, list] of byOrigin) {
         if (origin === this.deviceId) {
           result.skipped += list.length; // our own ops are never taken back from an upstream
           continue;
         }
+        if (tx.get(T.cc, ccId(origin, stream, src))) {
+          // A recorded conflict: nothing more of this origin from this kind of upstream (A2.8 item 1.4).
+          for (const it of list) result.rejected.push({ origin, seq: it.seq, reason: "chain_conflict" });
+          continue;
+        }
         list.sort((a, b) => a.seq - b.seq);
         let cur = vv[origin] ?? 0;
-        // A placeholder slot we hold may come back as the released op: checked against the held hash.
+        // A placeholder slot we hold may come back as the released op: bound where it can be, else marked unbound.
         const fresh: WireItem[] = [];
         for (const it of list) {
           if (it.seq > cur) {
@@ -659,18 +710,16 @@ export class SyncEngine {
           }
           const row = tx.get(T.op, opRowId(it)) as OpRow | undefined;
           if (row?.placeholder && it.body !== undefined) {
-            const op = parseBody(it);
-            if (op && (await sha256Hex(it.body)) === row.h && it.h === row.h && op.tenant_id === this.tenantId) {
-              await this.applyOne(tx, ctx, op, it, false);
-              tx.del(T.ph, opId(it));
-              result.applied++;
-            } else {
-              result.rejected.push({ origin, seq: it.seq, reason: "released op does not match placeholder hash" });
-            }
+            await this.fillPlaceholder(tx, ctx, row, it, list, seals, proofs, cur, src, result);
+          } else if (row && it.body !== undefined && it.h !== row.h && (await sha256Hex(it.body)) === it.h) {
+            // An upstream serves a body that contradicts what this node holds at the slot: never silent (A2.8 item 1.4).
+            this.noteConflict(tx, { origin, stream, seq: it.seq, held: row.h, seen: it.h }, src);
+            result.rejected.push({ origin, seq: it.seq, reason: "chain_conflict" });
           } else {
             result.skipped++;
           }
         }
+        const headRow = cur > 0 ? (tx.get(T.op, opRowId({ origin, stream, seq: cur })) as OpRow | undefined) : undefined;
         // Chain check, on the bytes as sent.
         let prev = cur === 0 ? await genesisHash(origin, stream) : (tx.get(T.op, opRowId({ origin, stream, seq: cur })) as OpRow).h;
         const chain: Array<{ it: WireItem; op?: OpEnvelope }> = [];
@@ -690,6 +739,12 @@ export class SyncEngine {
             break;
           }
           if (op.ph !== prev) {
+            if (chain.length === 0 && headRow?.unbound) {
+              // The op above does not link to the head slot we took by hash: that slot is contradicted (A2.8 item 1.2).
+              this.noteConflict(tx, { origin, stream, seq: cur, held: headRow.h, seen: op.ph }, src);
+              result.rejected.push({ origin, seq: it.seq, reason: "chain_conflict" });
+              break;
+            }
             result.rejected.push({ origin, seq: it.seq, reason: "chain broken: ph does not match previous op" });
             break;
           }
@@ -722,6 +777,8 @@ export class SyncEngine {
             covered = j + 1;
           }
         }
+        // Only the cloud may supply placeholders after the last covered slot; a relay's are refused (A2.8 item 1.1).
+        if (fromCloud) while (covered < chain.length && !chain[covered]!.op) covered++;
         if (covered < chain.length) {
           result.rejected.push({
             origin,
@@ -743,6 +800,9 @@ export class SyncEngine {
           cur = it.seq;
           vv[origin] = cur;
         }
+        // The first accepted op links to the head slot taken by hash: that binds it.
+        const first = chain[0]?.op;
+        if (covered > 0 && headRow?.unbound && first && first.ph === headRow.h) this.clearUnbound(tx, headRow);
       }
       tx.put(T.vv, { id: stream, tenant_id: this.tenantId, vv });
       await this.storeSeals(tx, freshSeals);
@@ -751,6 +811,236 @@ export class SyncEngine {
     await this.refreshCounts();
     this.emit();
     return result;
+  }
+
+  // ---- placeholders, binding and conflicts (ADR-0002 A2.8) -----------------------------------
+
+  /** Records a chain conflict once per (origin, stream, kind of upstream); the first stays. */
+  private noteConflict(tx: StoreTx, c: ChainConflict, src: "cloud" | "relay"): void {
+    const id = ccId(c.origin, c.stream, src);
+    if (tx.get(T.cc, id)) return;
+    tx.put(T.cc, { id, tenant_id: this.tenantId, ...c, src, reported: false } satisfies CcRow);
+  }
+
+  /** Removes the unbound mark of a stored slot. */
+  private clearUnbound(tx: StoreTx, row: OpRow): void {
+    if (!row.unbound) return;
+    const next: OpRow = { ...row };
+    delete next.unbound;
+    tx.put(T.op, next);
+    tx.del(T.unbound, opId(opRefOf(row.id)));
+  }
+
+  /** True when a valid seal of the slot's origin covers the slot: one stored, or one in the batch that verifies (A2.8 item 1.1). */
+  private async sealedAtOrAbove(tx: StoreTx, seals: Seal[], ref: OpRef): Promise<boolean> {
+    const stored = (tx.get(T.seal, `${ref.stream}|${ref.origin}`)?.seals as Seal[] | undefined) ?? [];
+    if (stored.some((s) => s.seq >= ref.seq)) return true;
+    for (const s of seals) {
+      if (s.origin === ref.origin && s.stream === ref.stream && s.seq >= ref.seq && (await verifySeal(this.verifier, s))) return true;
+    }
+    return false;
+  }
+
+  /**
+   * How a body that arrives over a held placeholder binds (A2.8 item 1.2), checked in order: its link to the
+   * slot below, a seal that names the slot, then the op held (or in the batch) above. Nothing to bind it
+   * means `unbound`. `seen` is the hash that contradicts the slot on a conflict.
+   */
+  private async bindSlot(tx: StoreTx, ref: OpRef, op: OpEnvelope, hb: string, batch: WireItem[], seals: Seal[]): Promise<{ r: "ok" | "unbound" } | { r: "conflict"; seen: string }> {
+    // Below: the body must chain to what the node holds at seq-1.
+    if (ref.seq === 1) {
+      if (op.ph !== (await genesisHash(ref.origin, ref.stream))) return { r: "conflict", seen: op.ph };
+    } else {
+      const lo = tx.get(T.op, opRowId({ ...ref, seq: ref.seq - 1 })) as OpRow | undefined;
+      if (lo?.h && op.ph !== lo.h) return { r: "conflict", seen: op.ph };
+    }
+    // A seal that names exactly this slot.
+    const stored = ((tx.get(T.seal, `${ref.stream}|${ref.origin}`)?.seals as Seal[] | undefined) ?? []).find((s) => s.seq === ref.seq);
+    if (stored) return stored.h === hb ? { r: "ok" } : { r: "conflict", seen: stored.h };
+    for (const s of seals) {
+      if (s.origin === ref.origin && s.stream === ref.stream && s.seq === ref.seq && (await verifySeal(this.verifier, s))) {
+        return s.h === hb ? { r: "ok" } : { r: "conflict", seen: s.h };
+      }
+    }
+    // Above: the op held at seq+1 names this slot as its predecessor. An op itself taken by hash with no binding proves nothing.
+    const up = tx.get(T.op, opRowId({ ...ref, seq: ref.seq + 1 })) as OpRow | undefined;
+    const upOp = up && !up.unbound ? rowOp(up) : undefined;
+    if (upOp) return upOp.ph === hb ? { r: "ok" } : { r: "conflict", seen: upOp.ph };
+    for (const it of batch) {
+      if (it.seq !== ref.seq + 1 || it.body === undefined || (await sha256Hex(it.body)) !== it.h) continue;
+      const b = parseBody(it);
+      if (b) return b.ph === hb ? { r: "ok" } : { r: "conflict", seen: b.ph };
+    }
+    return { r: "unbound" };
+  }
+
+  /**
+   * A body for a slot held as a placeholder (a released op, A2.8 item 1). Taken only if it hashes to the held
+   * `h`, the tenant is ours, and (unless it comes from the cloud, or under a valid endorsement) a seal covers the
+   * slot. Then bound by link, seal or the op above, else marked `unbound`. A contradiction is a `chain_conflict`.
+   */
+  private async fillPlaceholder(
+    tx: StoreTx,
+    ctx: ApplyCtx,
+    row: OpRow,
+    it: WireItem,
+    batch: WireItem[],
+    seals: Seal[],
+    proofs: RemoteProofs,
+    cur: number,
+    src: "cloud" | "relay",
+    result: RemoteResult,
+  ): Promise<void> {
+    const ref: OpRef = { origin: it.origin, stream: it.stream, seq: it.seq };
+    const reject = (reason: string): void => {
+      result.rejected.push({ origin: it.origin, seq: it.seq, reason });
+    };
+    const hb = await sha256Hex(it.body ?? "");
+    if (hb !== row.h) {
+      // The body contradicts the hash held for the slot: never silent.
+      this.noteConflict(tx, { ...ref, held: row.h, seen: hb }, src);
+      reject("chain_conflict");
+      return;
+    }
+    const op = parseBody(it);
+    if (!op) {
+      reject("body does not match its identity");
+      return;
+    }
+    if (op.tenant_id !== this.tenantId) {
+      reject("tenant mismatch");
+      return;
+    }
+    let unsealed = false;
+    let bound: boolean;
+    if ((proofs.endorsements ?? []).some((x) => x.origin === it.origin && x.stream === it.stream && x.seq === it.seq)) {
+      // An endorsement that comes with the body must pass the rule of A2.1; it also binds the slot.
+      if (!(await this.endorsedTail({ ...it, h: row.h }, proofs, batch.map((b) => ({ it: b })), cur))) {
+        reject("endorsement does not verify");
+        return;
+      }
+      unsealed = true;
+      bound = true;
+    } else {
+      if (src !== "cloud" && !(await this.sealedAtOrAbove(tx, seals, ref))) {
+        reject("unsealed"); // no placeholder is filled by hash above the origin's sealed head except by the cloud
+        return;
+      }
+      const b = await this.bindSlot(tx, ref, op, hb, batch, seals);
+      if (b.r === "conflict") {
+        this.noteConflict(tx, { ...ref, held: row.h, seen: b.seen }, src);
+        reject("chain_conflict");
+        return;
+      }
+      bound = b.r === "ok";
+    }
+    await this.applyOne(tx, ctx, op, it, false, unsealed);
+    tx.del(T.ph, opId(it));
+    if (!bound) {
+      tx.put(T.op, { ...(tx.get(T.op, opRowId(ref)) as OpRow), unbound: true });
+      tx.put(T.unbound, { id: opId(ref), tenant_id: this.tenantId, ...ref });
+    } else if (ref.seq > 1) {
+      // A bound body links to the slot below: that binds it too, if it was taken unbound.
+      const lo = tx.get(T.op, opRowId({ ...ref, seq: ref.seq - 1 })) as OpRow | undefined;
+      if (lo?.unbound && lo.h === op.ph) this.clearUnbound(tx, lo);
+    }
+    result.applied++;
+  }
+
+  /** Slots this node took by hash with no binding yet (A2.8 item 1.3): the audit view, and what a direct hello lists. */
+  async unboundSlots(limit = MAX_UNBOUND): Promise<OpRef[]> {
+    const rows = (await this.store.list(T.unbound)).map((r) => ({ origin: r.origin as string, stream: r.stream as string, seq: r.seq as number }));
+    return rows.sort((a, b) => (a.stream + a.origin).localeCompare(b.stream + b.origin) || a.seq - b.seq).slice(0, limit);
+  }
+
+  /** Chain conflicts this node recorded; `unreportedOnly` skips those already sent to the cloud (A2.8 item 1.4). */
+  async chainConflicts(unreportedOnly = false): Promise<ChainConflict[]> {
+    return ((await this.store.list(T.cc)) as CcRow[])
+      .filter((c) => !unreportedOnly || !c.reported)
+      .map((c) => ({ origin: c.origin, stream: c.stream, seq: c.seq, held: c.held, ...(c.seen !== undefined ? { seen: c.seen } : {}) }));
+  }
+
+  /** What every direct cloud `hello` carries besides the vectors: unbound slots and unreported chain conflicts. */
+  async helloExtras(): Promise<{ unbound?: OpRef[]; chain_conflicts?: ChainConflict[] }> {
+    const unbound = await this.unboundSlots();
+    const conflicts = await this.chainConflicts(true);
+    return { ...(unbound.length ? { unbound } : {}), ...(conflicts.length ? { chain_conflicts: conflicts } : {}) };
+  }
+
+  /** Marks conflicts as sent: call with the ones a direct cloud hello carried, after it succeeded. */
+  async markConflictsReported(sent: ChainConflict[]): Promise<void> {
+    if (sent.length === 0) return;
+    await this.store.transact((tx) => {
+      for (const c of sent) {
+        for (const src of ["cloud", "relay"] as const) {
+          const row = tx.get(T.cc, ccId(c.origin, c.stream, src)) as CcRow | undefined;
+          if (row && row.seq === c.seq && row.held === c.held) tx.put(T.cc, { ...row, reported: true });
+        }
+      }
+    });
+  }
+
+  /**
+   * Applies the cloud's answer to a hello that listed unbound slots: an equal hash clears the mark, a
+   * different one is a chain conflict, reported at the next direct hello (A2.8 items 1.3 and 1.4).
+   */
+  async resolveUnbound(answers: SlotHash[]): Promise<void> {
+    if (answers.length === 0) return;
+    await this.store.transact((tx) => {
+      for (const a of answers) {
+        const row = tx.get(T.op, opRowId(a)) as OpRow | undefined;
+        if (!row?.unbound) continue;
+        if (row.h === a.h) this.clearUnbound(tx, row);
+        else this.noteConflict(tx, { origin: a.origin, stream: a.stream, seq: a.seq, held: row.h, seen: a.h }, "relay");
+      }
+    });
+    await this.refreshCounts();
+    this.emit();
+  }
+
+  /**
+   * True when a node whose upstream is a hub should now reach the cloud directly: 24 hours since its last direct
+   * hello, an unbound slot or unreported conflict waiting, or a cloud seal it had to refuse under a dropped key.
+   */
+  async directCloudDue(): Promise<boolean> {
+    const at = (await this.store.get(T.meta, "cloud_hello_at"))?.v as number | undefined;
+    if (at === undefined || this.now() - at >= DIRECT_CLOUD_INTERVAL_MS) return true;
+    if ((await this.store.get(T.meta, "stale_cloud_seal"))?.v) return true;
+    if ((await this.store.list(T.unbound)).length > 0) return true;
+    return ((await this.store.list(T.cc)) as CcRow[]).some((c) => !c.reported);
+  }
+
+  /** Stored cloud-origin seals under an op-signing key this node no longer accepts: what to ask the upstream to refresh. */
+  async staleSeals(limit = MAX_STALE_SEALS): Promise<OpRef[]> {
+    if (!this.verifier.acceptsCloudKid) return [];
+    const out: OpRef[] = [];
+    for (const row of await this.store.list(T.seal)) {
+      for (const s of (row.seals as Seal[] | undefined) ?? []) {
+        if (s.origin.startsWith("cloud-") && !this.verifier.acceptsCloudKid(s.kid) && out.length < limit) out.push({ origin: s.origin, stream: s.stream, seq: s.seq });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Replaces stored cloud-origin seals by the upstream's current ones after an op-signing key rotation. A
+   * refreshed seal must verify under the key it names (never another held key) and name the hash already held.
+   */
+  async refreshSeals(seals: Seal[]): Promise<number> {
+    let n = 0;
+    for (const s of seals) {
+      if (!s.origin.startsWith("cloud-") || !(await verifySeal(this.verifier, s))) continue;
+      const id = `${s.stream}|${s.origin}`;
+      const cur = (await this.store.get(T.seal, id))?.seals as Seal[] | undefined;
+      const old = cur?.find((c) => c.seq === s.seq);
+      if (!cur || !old || old.h !== s.h) continue;
+      await this.store.transact((tx) => {
+        const list = ((tx.get(T.seal, id)?.seals as Seal[] | undefined) ?? []).map((c) => (c.seq === s.seq ? s : c));
+        tx.put(T.seal, { id, tenant_id: this.tenantId, seals: list });
+      });
+      n++;
+    }
+    return n;
   }
 
   /** Ops accepted under a gateway endorsement: marked `unsealed` in local audit views (A2.1 item 4). */
@@ -772,7 +1062,7 @@ export class SyncEngine {
    * The three-part rule of A2.1 item 3 for one op of an unsealed tail. `chain` holds the chain-verified
    * ops being applied, so an attestation whose seq is in this batch is checked against the op we hold.
    */
-  private async endorsedTail(it: WireItem, proofs: { endorsements?: Endorsement[]; attestations?: Attestation[] }, chain: Array<{ it: WireItem }>, cur: number): Promise<boolean> {
+  private async endorsedTail(it: WireItem, proofs: RemoteProofs, chain: Array<{ it: WireItem }>, cur: number): Promise<boolean> {
     const v = this.verifier;
     if (!v.verifyEndorsement || !v.recoveredBy) return false;
     const e = (proofs.endorsements ?? []).find((x) => x.origin === it.origin && x.stream === it.stream && x.seq === it.seq && x.h === it.h);
@@ -830,6 +1120,7 @@ export class SyncEngine {
 
   private async refreshCounts(): Promise<void> {
     this.conflictCount = (await this.conflicts()).length;
+    this.chainConflictCount = (await this.store.list(T.cc)).length;
     this.clockqCount = (await this.store.list(T.clockq)).length;
   }
 

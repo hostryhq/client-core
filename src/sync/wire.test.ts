@@ -11,8 +11,8 @@ import { HlcClock, compareStamp, packHlc, unpackHlc, MAX_FUTURE_MS } from "./hlc
 const GO = {
   genesis: "e8e85557194983a052b36b021c32c65cb07e1594342279959a1ec61eaca68e48",
   sealMessage: "hostry-seal-v1\ndev-1\noutlet:o1\n7\nab12",
-  bodyHash: "370a7a50cad0feae09928abfcd06c8f1ec22b649673fd94b033ae505b43404c3",
-  body: '{"actor":"m1","at":"2026-11-24T13:05:11.120Z","clk":"sync","doc":{"number":"A07/2627/000123","type":"tax_invoice"},"hlc":"0193a5f2c7b40003","intent":"bill.finalize","intent_v":1,"muts":[{"e":"bill","f":{"name":"Café \\"x\\"\\n","number":"A07/2627/000123","total_paise":84000},"id":"b1","k":"insert"},{"e":"menu_item","f":{"price_paise":18000},"id":"m1","k":"set","prev":{"price_paise":"0193a5e0aa100000"}}],"origin":"dev-1","pack_v":"p1","ph":"e8e85557194983a052b36b021c32c65cb07e1594342279959a1ec61eaca68e48","seq":1,"sid":"s1","stream":"outlet:o1","tenant_id":"t1","v":1}',
+  bodyHash: "f937deaba86b95f096c4aca6cea1f6d7d0dd09b985f65fb21f8c3e83b03414d5",
+  body: '{"actor":"m1","at":"2026-11-24T13:05:11.120Z","clk":"sync","doc":{"number":"A07/2627/000123","type":"tax_invoice"},"hlc":"0193a5f2c7b40003","intent":"bill.finalize","intent_v":1,"muts":[{"e":"bill","f":{"name":"Café \\"x\\"\\n","number":"A07/2627/000123","total_paise":84000},"id":"b1","k":"insert"},{"e":"menu_item","f":{"price_paise":18000},"id":"m1","k":"set","prev":{"price_paise":"0193a5e0aa100000"}}],"origin":"dev-1","pack_v":1,"ph":"e8e85557194983a052b36b021c32c65cb07e1594342279959a1ec61eaca68e48","seq":1,"sid":"s1","stream":"outlet:o1","tenant_id":"t1","v":1}',
   canon: '{"A":null,"a":"é\\u0001","b":[3,1,{"a":0,"z":1}],"€":true}',
 };
 
@@ -34,7 +34,7 @@ describe("wire conformance with the Go encoder", () => {
       tenant_id: "t1",
       actor: "m1",
       sid: "s1",
-      pack_v: "p1",
+      pack_v: 1,
       intent: "bill.finalize",
       intent_v: 1,
       at: "2026-11-24T13:05:11.120Z",

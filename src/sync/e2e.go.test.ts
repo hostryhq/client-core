@@ -49,7 +49,7 @@ describe.skipIf(!ready)(
       for (const d of f.devices.slice(0, 2)) {
         await ring.add(d.device_id, d.kid, d.pub);
         const signer = await SoftwareSigner.import(d.kid, d.pkcs8, d.pub);
-        const engine = await SyncEngine.open({ store: new InMemoryStore(f.tenant_id), schemas: demoRegistry(), deviceId: d.device_id, outletStream: stream, signer, verifier: ring, packVersion: "p1" });
+        const engine = await SyncEngine.open({ store: new InMemoryStore(f.tenant_id), schemas: demoRegistry(), deviceId: d.device_id, outletStream: stream, signer, verifier: ring, packVersion: 1 });
         engine.session = { actor: "m1", sid: `s-${d.device_id}` };
         await engine.setSeriesGrants(d.series ?? []);
         const runner = new SyncRunner({

@@ -62,7 +62,7 @@ describe("released unsealed tail under endorsement (ADR-0002 A2.1, KL12-KL13)", 
       await ring.addCloudKey(w.cloudSigner.kid, w.cloudSigner.publicB64);
       if (withCred) await ring.ingest([envelope]);
       const rxSigner = await SoftwareSigner.generate("rxk");
-      const engine = await SyncEngine.open({ store: new InMemoryStore("t1"), schemas: demoRegistry(), deviceId: "rx", outletStream: OUTLET, signer: rxSigner, verifier: ring, packVersion: "p1" });
+      const engine = await SyncEngine.open({ store: new InMemoryStore("t1"), schemas: demoRegistry(), deviceId: "rx", outletStream: OUTLET, signer: rxSigner, verifier: ring, packVersion: 1 });
       return { ring, engine };
     };
     return { w, fresh, up: up!, endorse, endorsements, receiver, attestation: up!.attestation as Attestation, seals: up!.seals as Seal[] };

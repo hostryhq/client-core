@@ -60,7 +60,7 @@ export type EngineConfig = {
   streams?: string[];
   signer: Signer;
   verifier: SealVerifier;
-  packVersion: string;
+  packVersion: number;
   /** Wall clock in ms; injectable. */
   now?: () => number;
   clockMode?: ClockMode;
@@ -90,8 +90,15 @@ export type RecordSpec = {
   actor?: string;
   sid?: string;
   approval?: string;
-  /** Opaque PIN-derived proof (ADR-0005); stamped by the auth layer. */
+  /** Opaque PIN-derived proof (ADR-0005); stamped by the auth layer. Sent only on `session.open` and `approval.grant`, where `pinV` is required (A3.1); ignored on any other intent. */
   proof?: string;
+  /** PIN version the proof was made under (A3.1). */
+  pinV?: number;
+  /**
+   * The opening time a `session.open` proof binds: take it from `stampTime()` before the proof is made. Used as the
+   * op's `at` on `session.open` only; ignored elsewhere (A3.1).
+   */
+  at?: string;
   /**
    * Personal data: entity -> row id -> field -> value (string, boolean or integer). It travels beside the op,
    * outside its hash; the sealed body carries only a salted commitment per field (`pii_c`, pii-commit.ts).
@@ -127,6 +134,9 @@ const MAX_STALE_SEALS = 200;
 const MAX_PII_ACKS = 500;
 const PII_ERASE_INTENT = "sync.pii.erase";
 const PII_ERASE_RECORD = "pii_erase";
+const SESSION_OPEN = "session.open";
+/** The only intents whose op carries `proof` and `pin_v` (ADR-0005 A3.1). */
+const PROOF_INTENTS = new Set([SESSION_OPEN, "approval.grant"]);
 const piiErasedId = (r: OpRef): string => `pii_erased:${opId(r)}`;
 
 type CcRow = Row & { origin: string; stream: string; seq: number; held: string; seen?: string; src: "cloud" | "relay"; reported: boolean };
@@ -185,7 +195,7 @@ export class SyncEngine {
   private readonly now: () => number;
   private readonly newId: () => string;
   private readonly random: RandomBytes;
-  private readonly packVersion: string;
+  private packVersion: number;
   private readonly clockMode: ClockMode;
   private readonly sealIntervalMs: number;
 
@@ -219,6 +229,7 @@ export class SyncEngine {
     this.now = cfg.now ?? Date.now;
     this.newId = cfg.newId ?? (() => uuidv7(this.now));
     this.random = cfg.randomBytes ?? systemRandom;
+    if (!Number.isInteger(cfg.packVersion) || cfg.packVersion < 1) throw new Error("packVersion must be an integer >= 1");
     this.packVersion = cfg.packVersion;
     this.clockMode = cfg.clockMode ?? "sync";
     this.sealIntervalMs = cfg.sealIntervalMs ?? 5 * 60 * 1000;
@@ -288,6 +299,10 @@ export class SyncEngine {
     const actor = spec.actor ?? this.session?.actor;
     const sid = spec.sid ?? this.session?.sid;
     if (!actor || !sid) throw new Error("record: no session (actor and sid are stamped on every op)");
+    // A proof travels once, on the op that carries it, with the PIN version it was made under (ADR-0005 A3.1).
+    const carriesProof = spec.proof !== undefined && PROOF_INTENTS.has(spec.intent);
+    if (carriesProof && (!Number.isInteger(spec.pinV) || (spec.pinV as number) < 1)) throw new Error(`record: ${spec.intent} with a proof needs pinV (integer >= 1)`);
+    if (spec.intent === SESSION_OPEN && spec.at !== undefined && new Date(spec.at).toISOString() !== spec.at) throw new Error("record: session.open at must be an RFC 3339 UTC time with milliseconds");
 
     const op = await this.store.transact(async (tx) => {
       const head: Head =
@@ -322,10 +337,10 @@ export class SyncEngine {
         sid,
         pack_v: this.packVersion,
         ...(spec.approval ? { approval: spec.approval } : {}),
-        ...(spec.proof ? { proof: spec.proof } : {}),
+        ...(carriesProof ? { proof: spec.proof, pin_v: spec.pinV } : {}),
         intent: spec.intent,
         intent_v: spec.intentV ?? 1,
-        at: new Date(nowMs).toISOString(),
+        at: spec.intent === SESSION_OPEN && spec.at !== undefined ? spec.at : new Date(nowMs).toISOString(),
         ...(doc ? { doc } : {}),
         // Empty `f` and `prev` are omitted, as the Go side omits them, so both encoders give the same bytes.
         muts: muts.map((m) => ({
@@ -540,6 +555,20 @@ export class SyncEngine {
       tx.put(T.meta, { id: "clock", tenant_id: this.tenantId, offset, src: kind });
     });
     this.emit();
+  }
+
+  /** Sets the pack version stamped on new ops (a pack refresh); an integer >= 1. */
+  setPackVersion(v: number): void {
+    if (!Number.isInteger(v) || v < 1) throw new Error("packVersion must be an integer >= 1");
+    this.packVersion = v;
+  }
+
+  /**
+   * The time the next op will carry, as the engine stamps it (corrected clock, RFC 3339 UTC, ms). The shell takes it
+   * as the opening time before it makes a session proof and hands it back as `at` of `session.open` (A3.1).
+   */
+  stampTime(): string {
+    return new Date(this.correctedNow()).toISOString();
   }
 
   // ---- own-op read-back (A1.2) ---------------------------------------------------------------

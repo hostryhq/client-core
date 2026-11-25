@@ -48,7 +48,7 @@ describe("browser store over IndexedDB", () => {
       outletStream: "outlet:o1",
       signer,
       verifier: ring,
-      packVersion: "p1",
+      packVersion: 1,
     });
     const e1 = await SyncEngine.open(await cfg());
     e1.session = { actor: "m1", sid: "s1" };

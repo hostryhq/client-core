@@ -1,0 +1,128 @@
+{
+ "name": "GST restaurant services (draft, unreviewed)",
+ "effective_date": "2027-04-01",
+ "calc_v": 1,
+ "rules": [
+  {
+   "tax_class": "fnb_standard",
+   "regime": "regular",
+   "specified_premises": false,
+   "order_channel": "dine_in",
+   "doc_type": "tax_invoice",
+   "gst_applies": true,
+   "cgst_bp": 250,
+   "sgst_bp": 250,
+   "igst_bp": 0
+  },
+  {
+   "tax_class": "fnb_standard",
+   "regime": "regular",
+   "specified_premises": true,
+   "order_channel": "dine_in",
+   "doc_type": "tax_invoice",
+   "gst_applies": true,
+   "cgst_bp": 900,
+   "sgst_bp": 900,
+   "igst_bp": 0
+  },
+  {
+   "tax_class": "fnb_non_gst",
+   "regime": "regular",
+   "specified_premises": false,
+   "order_channel": "dine_in",
+   "doc_type": "tax_invoice",
+   "gst_applies": false,
+   "cgst_bp": 0,
+   "sgst_bp": 0,
+   "igst_bp": 0
+  },
+  {
+   "tax_class": "fnb_non_gst",
+   "regime": "regular",
+   "specified_premises": true,
+   "order_channel": "dine_in",
+   "doc_type": "tax_invoice",
+   "gst_applies": false,
+   "cgst_bp": 0,
+   "sgst_bp": 0,
+   "igst_bp": 0
+  },
+  {
+   "tax_class": "exempt",
+   "regime": "regular",
+   "specified_premises": false,
+   "order_channel": "dine_in",
+   "doc_type": "tax_invoice",
+   "gst_applies": true,
+   "cgst_bp": 0,
+   "sgst_bp": 0,
+   "igst_bp": 0
+  },
+  {
+   "tax_class": "exempt",
+   "regime": "regular",
+   "specified_premises": true,
+   "order_channel": "dine_in",
+   "doc_type": "tax_invoice",
+   "gst_applies": true,
+   "cgst_bp": 0,
+   "sgst_bp": 0,
+   "igst_bp": 0
+  },
+  {
+   "tax_class": "fnb_standard",
+   "regime": "regular",
+   "specified_premises": false,
+   "order_channel": "takeaway",
+   "doc_type": "tax_invoice",
+   "gst_applies": true,
+   "cgst_bp": 250,
+   "sgst_bp": 250,
+   "igst_bp": 0
+  },
+  {
+   "tax_class": "fnb_standard",
+   "regime": "regular",
+   "specified_premises": false,
+   "order_channel": "counter",
+   "doc_type": "tax_invoice",
+   "gst_applies": true,
+   "cgst_bp": 250,
+   "sgst_bp": 250,
+   "igst_bp": 0
+  },
+  {
+   "tax_class": "fnb_standard",
+   "regime": "regular",
+   "specified_premises": false,
+   "order_channel": "eco",
+   "doc_type": "tax_invoice",
+   "gst_applies": false,
+   "cgst_bp": 0,
+   "sgst_bp": 0,
+   "igst_bp": 0
+  },
+  {
+   "tax_class": "fnb_standard",
+   "regime": "composition",
+   "specified_premises": false,
+   "order_channel": "dine_in",
+   "doc_type": "bill_of_supply",
+   "gst_applies": false,
+   "cgst_bp": 0,
+   "sgst_bp": 0,
+   "igst_bp": 0
+  },
+  {
+   "tax_class": "fnb_standard",
+   "regime": "unregistered",
+   "specified_premises": false,
+   "order_channel": "dine_in",
+   "doc_type": "plain_bill",
+   "gst_applies": false,
+   "cgst_bp": 0,
+   "sgst_bp": 0,
+   "igst_bp": 0
+  }
+ ]
+}

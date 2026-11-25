@@ -18,6 +18,42 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /** Rename the organisation */
+        patch: operations["updateCurrentOrganisation"];
+        trace?: never;
+    };
+    "/v1/brands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List brands */
+        get: operations["listBrands"];
+        put?: never;
+        /** Create a brand */
+        post: operations["createBrand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/brands/{brand_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a brand */
+        get: operations["getBrand"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -53,6 +89,135 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /** Change an outlet */
+        patch: operations["updateOutlet"];
+        trace?: never;
+    };
+    "/v1/tax-registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List tax registrations */
+        get: operations["listTaxRegistrations"];
+        put?: never;
+        /** Create a tax registration */
+        post: operations["createTaxRegistration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tax-registrations/{registration_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a tax registration */
+        get: operations["getTaxRegistration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Correct an unverified registration
+         * @description 409 once the registration is verified: a different GSTIN is a new registration and the old one is closed with its series.
+         */
+        patch: operations["updateTaxRegistration"];
+        trace?: never;
+    };
+    "/v1/tax-registrations/{registration_id}/closure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Close a tax registration and its series
+         * @description ADR-0003 A1.1 item 6: a verified GSTIN is fixed, so a different GSTIN is a new registration and the old one is closed here, together with all its series (status closed; a series with an unreconciled tail is closed with the unreconciled marker instead). 409 registration_in_use while an active outlet still references the registration. Closing is terminal and idempotent. Publishes no event in v1.
+         */
+        put: operations["closeTaxRegistration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/states": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GST state reference table */
+        get: operations["listStates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/organisation-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get organisation settings */
+        get: operations["getOrganisationSettings"];
+        /** Replace organisation settings */
+        put: operations["updateOrganisationSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/document-series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List document series (the series register) */
+        get: operations["listDocumentSeries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/document-series/{series_id}/closure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Close a series with an unreconciled tail */
+        put: operations["closeDocumentSeriesUnreconciled"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -66,8 +231,95 @@ export interface paths {
         /** List links to other tenants */
         get: operations["listLinks"];
         put?: never;
+        /** Propose a link */
+        post: operations["proposeLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/links/{link_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a link */
+        get: operations["getLink"];
+        put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/link-acceptances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a link with its invitation code */
+        post: operations["acceptLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/links/{link_id}/confirmation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Proposer confirms the accepting organisation */
+        put: operations["confirmLink"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/links/{link_id}/declination": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Decline a proposed link, or reject an accepted one */
+        put: operations["declineLink"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/links/{link_id}/suspension": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Suspend a link (either party, immediate) */
+        put: operations["suspendLink"];
+        post?: never;
+        /** Resume a link (only the suspending party) */
+        delete: operations["resumeLink"];
         options?: never;
         head?: never;
         patch?: never;
@@ -81,9 +333,623 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Revoke a link (either side may revoke) */
+        /** Revoke a link (either party) */
         put: operations["revokeLink"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/links/{link_id}/amendments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Propose adding a scope or raising a limit */
+        post: operations["proposeLinkAmendment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/links/{link_id}/amendments/{amendment_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Accept or decline an amendment */
+        put: operations["decideLinkAmendment"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/links/{link_id}/grants/{grant_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a grant (unilateral, immediate) */
+        delete: operations["removeLinkGrant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/links/{link_id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Link activity log (both parties) */
+        get: operations["listLinkActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/manual-book-series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List registered bill books */
+        get: operations["listManualBookSeries"];
+        put?: never;
+        /**
+         * Register a paper bill book as an entry-only series
+         * @description strong_only (owner). The series is issued, so the foreign-series rule of ADR-0003 A1.5 holds unchanged; billing devices of the named outlets receive it entry-only in the offline pack. The code must be unique per GSTIN against device series codes; the control stays off until a book is registered. x-provisional pending the CA answer on a parallel series (P2B-6).
+         */
+        post: operations["registerManualBookSeries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Owner's read-only "My plan"
+         * @description Could (BR-A1-90). Returns only the caller's own organisation; no vendor user ids, no notes. Overdue is a label and gates nothing (ADR-0008 S5).
+         */
+        get: operations["getMyPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/document-series-issuances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue series codes for a device
+         * @description The service token names the tenant it acts for; it must equal the outlet's tenant. Identity is the only caller, at device activation or when billing is granted.
+         */
+        post: operations["issueDocumentSeries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/devices/{device_id}/series-closure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Close a device's series */
+        put: operations["closeDeviceSeries"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/link-decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Link decision for go-auth */
+        get: operations["getLinkDecision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List and search the organisation directory */
+        get: operations["listOrganisationDirectory"];
+        put?: never;
+        /**
+         * Create an organisation, default brand, first outlet and registration
+         * @description 422 with a field for: unknown outlet kind, state not in the reference table, bad GSTIN format or check character, state-code mismatch, unregistered with a GSTIN, empty names. 409 gstin_in_use when a verified holder exists. No document series and no entitlements are created.
+         */
+        post: operations["createOrganisation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Organisation detail: structure only */
+        get: operations["getOrganisationDirectoryEntry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/tax-registrations/{registration_id}/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mark a registration verified */
+        put: operations["verifyTaxRegistration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/tax-registrations/{registration_id}/rejection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Mark a registration rejected
+         * @description ADR-0003 A1.1 item 4 (AC-TEN-20): vendor staff reject a registration whose GSTIN could not be proven. Allowed only while the registration is unverified (409 otherwise). A rejected registration can get no series and its GSTIN can be corrected or the registration closed by the tenant. The reason is kept in the vendor audit log and the tenant audit log, never in the registration body. Idempotent.
+         */
+        put: operations["rejectTaxRegistration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/billing-configurations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Hostry GST configuration versions */
+        get: operations["listBillingConfigurations"];
+        put?: never;
+        /** Add a GST configuration version */
+        post: operations["createBillingConfiguration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/ledger-exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export the ledger as CSV
+         * @description Should (A1-Q12): organisation ids and names only, no GSTIN, phone or email (BR-A1-38). Audited per export.
+         */
+        get: operations["exportLedger"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/ledger-lists/{list_kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Work lists for billing staff
+         * @description overdue_charges (outstanding above tolerance and due before today IST), charges_to_raise (paid_through within 7 days or passed, no charge for the next period), charges_without_invoice_reference, pilots_ending (review date within 14 days), retired_version_subscriptions, outlets_over_limit. Derived on read; no scheduled tasks, nothing is sent.
+         */
+        get: operations["listLedgerEntries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/charges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List an organisation's charges */
+        get: operations["listCharges"];
+        put?: never;
+        /**
+         * Raise a charge
+         * @description A second charge for a period that already has an open or paid charge is refused 409 duplicate_period unless it is an extra charge with a reason (BR-A1-31). GST is taken from the billing configuration at this moment and stored.
+         */
+        post: operations["raiseCharge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/charges/{charge_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a charge (audited per read) */
+        get: operations["getCharge"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/charges/{charge_id}/cancellation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a charge */
+        post: operations["cancelCharge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/charges/{charge_id}/invoice-reference": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the invoice reference once
+         * @description Set once; a second reference on the same charge is refused 409 invoice_reference_set. A mistyped reference cannot be edited: an admin cancels the charge and raises it again (A1-Q8).
+         */
+        put: operations["setChargeInvoiceReference"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/charges/{charge_id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List payments of a charge */
+        get: operations["listChargePayments"];
+        put?: never;
+        /**
+         * Record a payment received by hand
+         * @description Partial payments are allowed; a payment above the outstanding amount is refused 422 overpayment; a duplicate reference on a different payment is a warning only (BR-A1-45).
+         */
+        post: operations["recordPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/charges/{charge_id}/payments/{payment_id}/reversal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reverse a payment */
+        post: operations["reversePayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/charges/{charge_id}/waiver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Waive a charge */
+        post: operations["waiveCharge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/closure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute an approved closure
+         * @description Executed with the approver's token, the admin service token and a vendor approval grant of kind org_close (ADR-0014 A1.3): the grant is verified, its subject hash (organisation and target status) recomputed, its id recorded as used in this transaction, and the audit row written with the "show to owner" marker (V7). Refused 409 open_trading_day while any outlet has a day in progress (open, dated today or yesterday IST); the approval stays approved and a fresh grant may be issued until the request lapses.  Suspended means read and export only after the grace period; it never wipes devices and never blocks a trading day in progress; the device rule is the guarantee (A1.2 item 5).
+         */
+        post: operations["closeOrganisation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/reinstatement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute an approved reinstatement
+         * @description Executed with the approver's token, the admin service token and a vendor approval grant of kind org_reinstate (ADR-0014 A1.3): the grant is verified, its subject hash (organisation and target status) recomputed, its id recorded as used in this transaction, and the audit row written with the "show to owner" marker (V7). Reinstatement is not guarded.  Suspended means read and export only after the grace period; it never wipes devices and never blocks a trading day in progress; the device rule is the guarantee (A1.2 item 5).
+         */
+        post: operations["reinstateOrganisation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the current subscription and history */
+        get: operations["getOrganisationSubscription"];
+        /** Change plan, price or add-ons from the next charge */
+        put: operations["changeSubscription"];
+        /**
+         * Assign a plan version or a pilot
+         * @description Changes the subscription row and the organisation's entitlement rows in one transaction (BR-A1-14, CB1). Entitlements carry no expiry. A price below list needs admin.subscription.adjust and a reason; a replay with the same key returns the same row. The first plan moves organisation status trial to active (BR-A1-74).
+         */
+        post: operations["startSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/subscription/cancellation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a cancellation at period end
+         * @description No further charge is raised after paid_through; no refund is modelled; closing the organisation is a separate lifecycle action.
+         */
+        post: operations["cancelSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/suspension": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute an approved suspension
+         * @description Executed with the approver's token, the admin service token and a vendor approval grant of kind org_suspend (ADR-0014 A1.3): the grant is verified, its subject hash (organisation and target status) recomputed, its id recorded as used in this transaction, and the audit row written with the "show to owner" marker (V7). Refused 409 open_trading_day while any outlet has a day in progress (open, dated today or yesterday IST); the approval stays approved and a fresh grant may be issued until the request lapses.  Suspended means read and export only after the grace period; it never wipes devices and never blocks a trading day in progress; the device rule is the guarantee (A1.2 item 5).
+         */
+        post: operations["suspendOrganisation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List plans with their versions */
+        get: operations["listPlans"];
+        put?: never;
+        /** Create a plan with a draft first version */
+        post: operations["createPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/plans/{plan_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a plan */
+        get: operations["getPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/plans/{plan_key}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a draft version (a price or content change is a new version) */
+        post: operations["createPlanVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/plans/{plan_key}/versions/{version}/activation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Activate a draft version (immutable from here) */
+        post: operations["activatePlanVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/plans/{plan_key}/versions/{version}/retirement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retire an active version */
+        post: operations["retirePlanVersion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -94,7 +960,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description The tenant. STUB; brands, legal details and entitlements are added in the next wave. */
+        /**
+         * @description Organisation lifecycle state. Phase 1 only reads and shows it; no operation changes it.
+         * @example trial
+         * @enum {string}
+         */
+        OrganisationStatus: "trial" | "active" | "suspended" | "closed";
+        /** @description The organisation: the tenant, the isolation boundary and the owner of everything its staff create. */
         Organisation: {
             id: components["schemas"]["Id"];
             /**
@@ -102,67 +974,391 @@ export interface components {
              * @example Example Hospitality
              */
             name: string;
-            /**
-             * @description Organisation lifecycle state.
-             * @example active
-             * @enum {string}
-             */
-            status: "active" | "suspended" | "closed";
+            status: components["schemas"]["OrganisationStatus"];
+            created_at: components["schemas"]["Timestamp"];
+            updated_at: components["schemas"]["Timestamp"];
         };
-        /** @description Request to create an outlet or property. The ID is client-generated. */
-        CreateOutlet: {
-            id: components["schemas"]["Id"];
+        /** @description Rename the organisation. */
+        UpdateOrganisation: {
             /**
              * @description Display name.
-             * @example Main Restaurant
+             * @example Example Hospitality
+             */
+            name: string;
+        };
+        /** @description A trading name inside an organisation, the scope for shared masters. The default brand is created automatically. */
+        Brand: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Brand name.
+             * @example Example Hospitality
              */
             name: string;
             /**
-             * @description Outlet (restaurant, stall, bakery shop) or property (hotel).
-             * @example outlet
-             * @enum {string}
+             * @description True for the automatically created default brand.
+             * @example true
              */
-            kind: "outlet" | "property";
+            is_default: boolean;
+            created_at: components["schemas"]["Timestamp"];
         };
-        /** @description An outlet or property. STUB; brand, address, tax registration are added in the next wave. */
+        /** @description A page of brands. */
+        BrandPage: {
+            /** @description Brands on this page. */
+            items: components["schemas"]["Brand"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Create a brand. */
+        CreateBrand: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Brand name.
+             * @example Example Bakery
+             */
+            name: string;
+        };
+        /**
+         * @description Outlet or property kind (one entity, one ID space; extensible).
+         * @example restaurant
+         * @enum {string}
+         */
+        OutletKind: "restaurant" | "bakery_outlet" | "production_unit" | "stall" | "property" | "service_point";
+        /**
+         * @description Outlet state.
+         * @example active
+         * @enum {string}
+         */
+        OutletStatus: "active" | "inactive";
+        /** @description An outlet or property: one physical place with its own business date, devices, staff assignments and tax registration. */
         Outlet: {
             id: components["schemas"]["Id"];
+            brand_id: components["schemas"]["Id"];
             /**
-             * @description Display name.
+             * @description Outlet name.
              * @example Main Restaurant
              */
             name: string;
+            kind: components["schemas"]["OutletKind"];
+            status: components["schemas"]["OutletStatus"];
+            state_code: components["schemas"]["StateCode"];
+            tax_registration_id: components["schemas"]["Id"];
+            located_in_outlet_id?: components["schemas"]["Id"];
             /**
-             * @description Outlet or property.
-             * @example outlet
+             * @description Always Asia/Kolkata in Phase 1.
+             * @example Asia/Kolkata
              * @enum {string}
              */
-            kind: "outlet" | "property";
-            /**
-             * @description Outlet lifecycle state.
-             * @example active
-             * @enum {string}
-             */
-            status: "active" | "suspended" | "closed";
+            timezone: "Asia/Kolkata";
+            created_at: components["schemas"]["Timestamp"];
         };
-        /** @description A page of outlets. */
+        /** @description A page of outlets in the caller's scope. */
         OutletPage: {
             /** @description Outlets on this page. */
             items: components["schemas"]["Outlet"][];
             /** @description Opaque cursor for the next page; absent when there are no more results. */
             next_cursor?: string;
         };
-        /** @description An explicit, revocable relationship with another tenant, with scoped permissions. STUB. */
-        Link: {
+        /** @description Create an outlet. The brand defaults to the default brand; the registration must belong to the organisation. */
+        CreateOutlet: {
+            id: components["schemas"]["Id"];
+            brand_id?: components["schemas"]["Id"];
+            /**
+             * @description Outlet name.
+             * @example Main Restaurant
+             */
+            name: string;
+            kind: components["schemas"]["OutletKind"];
+            state_code: components["schemas"]["StateCode"];
+            tax_registration_id: components["schemas"]["Id"];
+            located_in_outlet_id?: components["schemas"]["Id"];
+        };
+        /** @description Change an outlet. */
+        UpdateOutlet: {
+            /**
+             * @description Outlet name.
+             * @example Main Restaurant
+             */
+            name?: string;
+            status?: components["schemas"]["OutletStatus"];
+        };
+        /**
+         * @description GST regime.
+         * @example regular
+         * @enum {string}
+         */
+        TaxRegime: "regular" | "composition" | "unregistered";
+        /**
+         * @description How the GSTIN was verified by Hostry staff.
+         * @example certificate_seen
+         * @enum {string}
+         */
+        VerificationMethod: "certificate_seen" | "gst_portal_lookup" | "other";
+        /** @description GSTIN verification state (ADR-0003 A1.1). */
+        Verification: {
+            /**
+             * @description unverified until vendor staff verify; verified registrations are the only ones that can get series.
+             * @example unverified
+             * @enum {string}
+             */
+            state: "unverified" | "verified" | "rejected";
+            method?: components["schemas"]["VerificationMethod"];
+            verified_at?: components["schemas"]["Timestamp"];
+            rejected_at?: components["schemas"]["Timestamp"];
+        };
+        /** @description A tax registration owned by the organisation; each outlet references exactly one. Kind unregistered has no GSTIN. */
+        TaxRegistration: {
             id: components["schemas"]["Id"];
             /**
-             * @description Link state.
+             * @description Legal name.
+             * @example Example Hospitality Pvt Ltd
+             */
+            legal_name: string;
+            regime: components["schemas"]["TaxRegime"];
+            gstin?: components["schemas"]["Gstin"];
+            state_code: components["schemas"]["StateCode"];
+            verification: components["schemas"]["Verification"];
+            /**
+             * @description Registration state.
+             * @example open
+             * @enum {string}
+             */
+            status: "open" | "closed";
+            created_at: components["schemas"]["Timestamp"];
+        };
+        /** @description A page of tax registrations. */
+        TaxRegistrationPage: {
+            /** @description Registrations on this page. */
+            items: components["schemas"]["TaxRegistration"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Create a registration. A GSTIN already claimed by another organisation is accepted as unverified with the same response as any new registration; the tenant never learns who else holds it (ADR-0003 A1.1). */
+        CreateTaxRegistration: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Legal name.
+             * @example Example Hospitality Pvt Ltd
+             */
+            legal_name: string;
+            regime: components["schemas"]["TaxRegime"];
+            gstin?: components["schemas"]["Gstin"];
+            state_code: components["schemas"]["StateCode"];
+        };
+        /** @description Correct a registration while it is unverified. After verification a different GSTIN is a new registration. */
+        UpdateTaxRegistration: {
+            /**
+             * @description Legal name.
+             * @example Example Hospitality Pvt Ltd
+             */
+            legal_name?: string;
+            gstin?: components["schemas"]["Gstin"];
+        };
+        /** @description One row of the GST state reference table. */
+        StateEntry: {
+            code: components["schemas"]["StateCode"];
+            /**
+             * @description State or union territory name.
+             * @example Tamil Nadu
+             */
+            name: string;
+        };
+        /** @description The state reference table (platform reference data). */
+        StateList: {
+            /** @description States. */
+            items: components["schemas"]["StateEntry"][];
+        };
+        /** @description Organisation-wide settings read by support sessions and used to build offline packs. */
+        OrganisationSettings: {
+            /**
+             * @description Offline window for PIN login and approvals (1 to 30, default 7).
+             * @example 7
+             */
+            offline_window_days: number;
+            /**
+             * @description Idle lock for shared devices.
+             * @example 5
+             */
+            idle_lock_minutes: number;
+            updated_at: components["schemas"]["Timestamp"];
+        };
+        /** @description Replace the settings. */
+        UpdateOrganisationSettings: {
+            /**
+             * @description Offline window (1 to 30).
+             * @example 7
+             */
+            offline_window_days: number;
+            /**
+             * @description Idle lock minutes.
+             * @example 5
+             */
+            idle_lock_minutes: number;
+        };
+        /**
+         * @description Document type.
+         * @example tax_invoice
+         * @enum {string}
+         */
+        DocType: "tax_invoice" | "bill_of_supply" | "plain_bill" | "credit_note";
+        /** @description A series code under a tax registration (unique per registration and per GSTIN; never issued twice). */
+        DocumentSeries: {
+            id: components["schemas"]["Id"];
+            tax_registration_id: components["schemas"]["Id"];
+            /**
+             * @description Series code, 3 characters from capitals and digits without I, O, 0 and 1 (ADR-0002 S7). Printed as <code>/<FY>/<running>.
+             * @example A7K
+             */
+            code: string;
+            doc_type: components["schemas"]["DocType"];
+            outlet_id: components["schemas"]["Id"];
+            device_id: components["schemas"]["Id"];
+            /**
+             * @description Series state.
              * @example active
              * @enum {string}
              */
-            status: "pending" | "active" | "revoked";
-            /** @description Permissions the link grants (for example folio.post_charge). */
-            scopes: string[];
+            status: "dormant" | "active" | "closed" | "closed_unreconciled";
+            issued_at: components["schemas"]["Timestamp"];
+            closed_at?: components["schemas"]["Timestamp"];
+        };
+        /** @description A page of series in the caller's outlet scope. */
+        DocumentSeriesPage: {
+            /** @description Series on this page. */
+            items: components["schemas"]["DocumentSeries"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Close a series whose device never reconciled. The reason is the record for the auditor. */
+        CloseSeries: {
+            reason: components["schemas"]["Reason"];
+        };
+        /** @description Issue series codes for a device under the outlet's registration (identity is the only caller). The registration is read from the stored outlet, never from the request. */
+        IssueSeries: {
+            outlet_id: components["schemas"]["Id"];
+            device_id: components["schemas"]["Id"];
+            /** @description Document types to issue. */
+            doc_types: components["schemas"]["DocType"][];
+            /**
+             * @description active for pos, dormant for waiter.
+             * @example active
+             * @enum {string}
+             */
+            state: "active" | "dormant";
+        };
+        /** @description Issued codes. A repeat for the same device and outlet returns the same codes. */
+        SeriesIssuance: {
+            /** @description Issued series. */
+            items: components["schemas"]["DocumentSeries"][];
+        };
+        /** @description Close a device's series when it is re-bound, reinstalled, restored or revoked. */
+        CloseDeviceSeries: {
+            /**
+             * @description Why.
+             * @example reinstalled
+             * @enum {string}
+             */
+            reason: "rebound" | "reinstalled" | "restored" | "revoked";
+        };
+        /** @description Result of closing a device's series. */
+        SeriesClosure: {
+            /**
+             * @description Number of series closed.
+             * @example 2
+             */
+            closed: number;
+        };
+        /**
+         * @description Named default scope set for the consent screen; authorisation looks at grants, never the template.
+         * @example on_premises_outlet
+         * @enum {string}
+         */
+        LinkTemplate: "on_premises_outlet" | "service_provider" | "supplier_buyer";
+        /**
+         * @description Link state. Only active authorises anything; accepted waits for the proposer to confirm the accepting organisation.
+         * @example active
+         * @enum {string}
+         */
+        LinkStatus: "proposed" | "accepted" | "active" | "suspended" | "declined" | "expired" | "revoked";
+        /**
+         * @description Link scope from the platform catalogue (Phase 1: test-only scopes). Tenants cannot invent scopes.
+         * @example test.echo.read
+         */
+        LinkScope: string;
+        /** @description A scope the proposer offers or asks for. */
+        GrantInput: {
+            scope: components["schemas"]["LinkScope"];
+            /**
+             * @description outbound: the caller is the grantor; inbound: the counterparty grants.
+             * @example outbound
+             * @enum {string}
+             */
+            direction: "outbound" | "inbound";
+            /** @description Outlets the grant is limited to; a grant whose data is synced to devices must name at least one. */
+            outlet_ids?: components["schemas"]["Id"][];
+        };
+        /** @description A directional grant; the grantor owns the data or account the scope touches. */
+        LinkGrant: {
+            id: components["schemas"]["Id"];
+            scope: components["schemas"]["LinkScope"];
+            /**
+             * @description outbound: the caller grants.
+             * @example outbound
+             * @enum {string}
+             */
+            direction: "outbound" | "inbound";
+            /** @description Outlet constraint. */
+            outlet_ids?: components["schemas"]["Id"][];
+            /**
+             * @description Grant state.
+             * @example active
+             * @enum {string}
+             */
+            status: "pending" | "active" | "removed";
+        };
+        /** @description What the proposer sees before confirming (ADR-0003 A1.3). */
+        CounterpartyRegistration: {
+            /**
+             * @description Legal name.
+             * @example Example Restaurants LLP
+             */
+            legal_name: string;
+            gstin?: components["schemas"]["Gstin"];
+            state_code: components["schemas"]["StateCode"];
+            /**
+             * @description Whether Hostry verified the GSTIN.
+             * @example true
+             */
+            gstin_verified: boolean;
+        };
+        /** @description The other organisation, shown only once it has accepted (or, to the acceptor, about the proposer). Contains no member, device or contact data. */
+        LinkCounterparty: {
+            /**
+             * @description Organisation display name.
+             * @example Example Restaurants
+             */
+            display_name: string;
+            /** @description Registrations of the outlets placed in the link (all open registrations if none were named). */
+            registrations: components["schemas"]["CounterpartyRegistration"][];
+        };
+        /** @description A consented, revocable relationship between two organisations. It never gives access to tables. */
+        Link: {
+            id: components["schemas"]["Id"];
+            template: components["schemas"]["LinkTemplate"];
+            status: components["schemas"]["LinkStatus"];
+            /**
+             * @description Which side the caller is.
+             * @example proposer
+             * @enum {string}
+             */
+            role: "proposer" | "acceptor";
+            counterparty_organisation_id?: components["schemas"]["Id"];
+            counterparty?: components["schemas"]["LinkCounterparty"];
+            /** @description Grants of this link. */
+            grants: components["schemas"]["LinkGrant"][];
+            proposed_at: components["schemas"]["Timestamp"];
+            expires_at: components["schemas"]["Timestamp"];
+            accepted_at?: components["schemas"]["Timestamp"];
+            confirmed_at?: components["schemas"]["Timestamp"];
         };
         /** @description A page of links. */
         LinkPage: {
@@ -171,19 +1367,861 @@ export interface components {
             /** @description Opaque cursor for the next page; absent when there are no more results. */
             next_cursor?: string;
         };
-        /** @description Request to revoke a link. */
-        RevokeLink: {
+        /** @description Propose a link. The inviter learns nothing about the counterparty until it accepts (no tenant enumeration). */
+        ProposeLink: {
+            id: components["schemas"]["Id"];
+            template: components["schemas"]["LinkTemplate"];
+            /** @description Scopes offered and asked for. */
+            grants: components["schemas"]["GrantInput"][];
+            /** @description The caller's outlets placed in the link. */
+            outlet_ids?: components["schemas"]["Id"][];
+        };
+        /** @description The proposed link and its one-time invitation code. */
+        LinkProposal: {
+            link: components["schemas"]["Link"];
             /**
-             * @description Why the link is revoked (free text, kept for audit).
+             * @description At least 80 bits from a CSPRNG (16 characters of a 32-symbol alphabet), single use, 14 days. Shown once; also the QR payload.
+             * @example 7QK3M9XD7QK3M9XD
+             */
+            invitation_code: string;
+        };
+        /** @description Accept a link with its invitation code. The code is used up at acceptance; the acceptor is told its own details will be shown to the proposer. */
+        AcceptLink: {
+            /**
+             * @description The invitation code.
+             * @example 7QK3M9XD7QK3M9XD
+             */
+            invitation_code: string;
+            /** @description The caller's outlets placed in the link. */
+            outlet_ids?: components["schemas"]["Id"][];
+        };
+        /** @description Confirm who accepted. The id must be the one shown to the proposer, so a swap between viewing and confirming is refused. */
+        ConfirmLink: {
+            counterparty_organisation_id: components["schemas"]["Id"];
+        };
+        /** @description Reason for a decline, suspension or revocation (kept in link activity without payload data). */
+        LinkReason: {
+            /**
+             * @description Short reason.
              * @example contract ended
              */
             reason: string;
         };
+        /** @description Add a scope or raise a limit; both parties must accept. */
+        LinkAmendmentInput: {
+            id: components["schemas"]["Id"];
+            /** @description Grants to add. */
+            add_grants: components["schemas"]["GrantInput"][];
+        };
+        /** @description An amendment awaiting the other party. */
+        LinkAmendment: {
+            id: components["schemas"]["Id"];
+            link_id: components["schemas"]["Id"];
+            /** @description Grants to add. */
+            add_grants: components["schemas"]["GrantInput"][];
+            /**
+             * @description Amendment state.
+             * @example pending
+             * @enum {string}
+             */
+            status: "pending" | "accepted" | "declined";
+            created_at: components["schemas"]["Timestamp"];
+        };
+        /** @description Accept or decline an amendment. */
+        DecideAmendment: {
+            /**
+             * @description Decision.
+             * @example accept
+             * @enum {string}
+             */
+            decision: "accept" | "decline";
+        };
+        /** @description One state change or cross-link call. No payload. */
+        LinkActivity: {
+            id: components["schemas"]["Id"];
+            link_id: components["schemas"]["Id"];
+            occurred_at: components["schemas"]["Timestamp"];
+            /**
+             * @description Which party acted.
+             * @example proposer
+             * @enum {string}
+             */
+            side: "proposer" | "acceptor" | "system";
+            /**
+             * @description Stable action key.
+             * @example link.confirmed
+             */
+            action: string;
+            scope?: components["schemas"]["LinkScope"];
+            /**
+             * @description Opaque object reference.
+             * @example posting_01
+             */
+            object_ref?: string;
+            /**
+             * @description Result.
+             * @example succeeded
+             * @enum {string}
+             */
+            outcome: "succeeded" | "refused";
+        };
+        /** @description A page of link activity, readable by both parties, append-only. */
+        LinkActivityPage: {
+            /** @description Entries on this page. */
+            items: components["schemas"]["LinkActivity"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Decision for go-auth, cacheable for at most 30 seconds and dropped on tenancy.link.* events. */
+        LinkDecision: {
+            /**
+             * @description Whether the link is active and the grantee holds the scope.
+             * @example true
+             */
+            allowed: boolean;
+            /**
+             * @description Why not, when refused.
+             * @example link_not_active
+             * @enum {string}
+             */
+            reason?: "link_not_active" | "scope_not_granted" | "outlet_not_granted" | "limit_exceeded";
+            data_owner_organisation_id?: components["schemas"]["Id"];
+            /** @description Outlets the grant allows. */
+            outlet_ids?: components["schemas"]["Id"][];
+            /**
+             * @description Maximum cache time.
+             * @example 30
+             */
+            cache_seconds: number;
+        };
+        /** @description Directory view of an organisation (closed). Holds no member, device, phone or email data. */
+        DirectoryOrganisation: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Display name.
+             * @example Example Hospitality
+             */
+            name: string;
+            status: components["schemas"]["OrganisationStatus"];
+            /**
+             * @description Number of outlets.
+             * @example 1
+             */
+            outlet_count: number;
+            created_at: components["schemas"]["Timestamp"];
+        };
+        /** @description A page of the directory, newest first. */
+        DirectoryPage: {
+            /** @description Organisations on this page. */
+            items: components["schemas"]["DirectoryOrganisation"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Brand in the directory. */
+        DirectoryBrand: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Brand name.
+             * @example Example Hospitality
+             */
+            name: string;
+            /**
+             * @description Default brand marker.
+             * @example true
+             */
+            is_default: boolean;
+        };
+        /** @description Outlet in the directory: name, kind, state only. */
+        DirectoryOutlet: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Outlet name.
+             * @example Main Restaurant
+             */
+            name: string;
+            kind: components["schemas"]["OutletKind"];
+            state_code: components["schemas"]["StateCode"];
+            status: components["schemas"]["OutletStatus"];
+        };
+        /** @description Registration in the directory: legal name, GSTIN, regime, verification. */
+        DirectoryRegistration: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Legal name.
+             * @example Example Hospitality Pvt Ltd
+             */
+            legal_name: string;
+            regime: components["schemas"]["TaxRegime"];
+            gstin?: components["schemas"]["Gstin"];
+            state_code: components["schemas"]["StateCode"];
+            /**
+             * @description Verification state.
+             * @example unverified
+             * @enum {string}
+             */
+            verification_state: "unverified" | "verified" | "rejected";
+            /**
+             * @description Registration state.
+             * @example open
+             * @enum {string}
+             */
+            status: "open" | "closed";
+        };
+        /** @description Directory detail: structure only. No members, devices or settings. */
+        OrganisationDetail: {
+            organisation: components["schemas"]["DirectoryOrganisation"];
+            /** @description Brands. */
+            brands: components["schemas"]["DirectoryBrand"][];
+            /** @description Outlets. */
+            outlets: components["schemas"]["DirectoryOutlet"][];
+            /** @description Registrations. */
+            registrations: components["schemas"]["DirectoryRegistration"][];
+        };
+        /** @description The first outlet. */
+        NewOutlet: {
+            /**
+             * @description Outlet name.
+             * @example Main Restaurant
+             */
+            name: string;
+            kind: components["schemas"]["OutletKind"];
+            state_code: components["schemas"]["StateCode"];
+        };
+        /** @description The tax registration the outlet bills under. GSTIN required unless regime is unregistered, forbidden when it is. */
+        NewRegistration: {
+            /**
+             * @description Legal name.
+             * @example Example Hospitality Pvt Ltd
+             */
+            legal_name: string;
+            regime: components["schemas"]["TaxRegime"];
+            gstin?: components["schemas"]["Gstin"];
+        };
+        /** @description Verification recorded in the same submit; needs admin.registration.verify, otherwise the registration starts unverified. */
+        VerificationInput: {
+            method: components["schemas"]["VerificationMethod"];
+            /**
+             * @description Required when the method is other.
+             * @example Certificate seen on the onboarding call.
+             */
+            note?: string;
+        };
+        /** @description One request that creates the tenant, its default brand, the first outlet and one tax registration the outlet references. No plan, entitlement, subscription, series code or owner invitation. */
+        CreateOrganisation: {
+            /**
+             * @description Organisation display name.
+             * @example Example Hospitality
+             */
+            name: string;
+            outlet: components["schemas"]["NewOutlet"];
+            tax_registration: components["schemas"]["NewRegistration"];
+            verification?: components["schemas"]["VerificationInput"];
+        };
+        /** @description The created records. Ids are server-issued UUIDv7; a tenant_id is never reused. */
+        OrganisationCreated: {
+            organisation: components["schemas"]["Organisation"];
+            brand: components["schemas"]["Brand"];
+            outlet: components["schemas"]["Outlet"];
+            tax_registration: components["schemas"]["TaxRegistration"];
+        };
+        /** @description Mark a registration verified. A GSTIN has at most one verified holder. */
+        VerifyRegistration: {
+            method: components["schemas"]["VerificationMethod"];
+            /**
+             * @description Required when the method is other.
+             * @example Certificate seen on the onboarding call.
+             */
+            note?: string;
+        };
+        /** @description Reject a registration. The reason is the record for the auditor. */
+        RejectRegistration: {
+            reason: components["schemas"]["Reason"];
+        };
+        /** @description Close a registration and its series. The reason is the record for the auditor. */
+        CloseRegistration: {
+            reason: components["schemas"]["Reason"];
+        };
         /**
-         * @description Client-generated, time-sortable identifier (UUIDv7 or ULID).
+         * @description draft is editable; active is immutable and sellable; retired stays on existing subscriptions (BR-A1-10, BR-A1-15).
+         * @example draft
+         * @enum {string}
+         */
+        PlanVersionState: "draft" | "active" | "retired";
+        /**
+         * @description Billing cycle; none is the pilot.
+         * @example monthly
+         * @enum {string}
+         */
+        Cycle: "none" | "monthly" | "annual";
+        /** @description A list price for one cycle, in paise excluding GST. */
+        PlanPrice: {
+            cycle: components["schemas"]["Cycle"];
+            list_price: components["schemas"]["Money"];
+        };
+        /** @description Content of a plan version. Plans, versions, prices and feature keys are data, never code (BR-A1-11). */
+        PlanVersionDraft: {
+            /** @description Feature keys granted; an app ignores a key it does not know. */
+            feature_keys: string[];
+            /**
+             * @description Outlets included; the only metered quantity (BR-A1-13).
+             * @example 1
+             */
+            included_outlets: number;
+            /** @description List price per cycle. */
+            prices: components["schemas"]["PlanPrice"][];
+        };
+        PlanVersion: components["schemas"]["PlanVersionDraft"] & {
+            /**
+             * @description Version number within the plan, from 1.
+             * @example 1
+             */
+            version: number;
+            state: components["schemas"]["PlanVersionState"];
+            created_at: components["schemas"]["Timestamp"];
+            activated_at?: components["schemas"]["Timestamp"];
+            retired_at?: components["schemas"]["Timestamp"];
+        };
+        /** @description A plan: a key and its versions. Seeded drafts: pilot, table_service and an extra-outlet add-on become sellable only after the founder activates them (A1-Q1, A1-Q2). */
+        Plan: {
+            /**
+             * @description Unique lower_snake key.
+             * @example table_service
+             */
+            key: string;
+            /**
+             * @description i18n key of the plan name.
+             * @example plan.table_service
+             */
+            name_key: string;
+            /** @description Versions, newest first. */
+            versions: components["schemas"]["PlanVersion"][];
+            created_at: components["schemas"]["Timestamp"];
+        };
+        PlanPage: components["schemas"]["PageCursor"] & {
+            /** @description Items, in the order stated by the operation. */
+            items: components["schemas"]["Plan"][];
+        };
+        /** @description A new plan with its first draft version. */
+        CreatePlan: {
+            /**
+             * @description Unique lower_snake key.
+             * @example table_service
+             */
+            key: string;
+            /**
+             * @description i18n key of the plan name.
+             * @example plan.table_service
+             */
+            name_key: string;
+            version: components["schemas"]["PlanVersionDraft"];
+        };
+        /** @description Hostry's own GST configuration for charges, versioned and effective-dated (BR-A1-30). Hostry's GST invoices are issued from the founder's books; this only drives the GST shown on a charge. x-provisional: SAC and registration facts are CA-pending (A1-Q3). */
+        BillingConfiguration: {
+            id: components["schemas"]["Id"];
+            /**
+             * Format: date
+             * @description First date the configuration applies to charges raised.
+             * @example 2026-11-24
+             */
+            effective_from: string;
+            hostry_state_code: components["schemas"]["StateCode"];
+            /**
+             * @description SAC code; seeded 997331 as a placeholder until the CA answers.
+             * @example 997331
+             */
+            sac: string;
+            /**
+             * @description GST rate in basis points (default 1800).
+             * @example 1800
+             */
+            gst_rate_bp: number;
+            /** @description When false no GST is added to a charge. */
+            gst_registered: boolean;
+            /**
+             * @description A charge counts as paid within this many paise of the total (default 99).
+             * @example 99
+             */
+            payment_tolerance_paise: number;
+            /**
+             * @description Days from the first charge to its due date (default 7).
+             * @example 7
+             */
+            payment_terms_days: number;
+            created_at: components["schemas"]["Timestamp"];
+        };
+        BillingConfigurationPage: components["schemas"]["PageCursor"] & {
+            /** @description Items, in the order stated by the operation. */
+            items: components["schemas"]["BillingConfiguration"][];
+        };
+        /** @description A new configuration version. */
+        CreateBillingConfiguration: {
+            /**
+             * Format: date
+             * @description First date the configuration applies to charges raised.
+             * @example 2026-11-24
+             */
+            effective_from: string;
+            hostry_state_code: components["schemas"]["StateCode"];
+            /**
+             * @description SAC code; seeded 997331 as a placeholder until the CA answers.
+             * @example 997331
+             */
+            sac: string;
+            /**
+             * @description GST rate in basis points (default 1800).
+             * @example 1800
+             */
+            gst_rate_bp: number;
+            /** @description When false no GST is added to a charge. */
+            gst_registered: boolean;
+            /**
+             * @description A charge counts as paid within this many paise of the total (default 99).
+             * @example 99
+             */
+            payment_tolerance_paise: number;
+            /**
+             * @description Days from the first charge to its due date (default 7).
+             * @example 7
+             */
+            payment_terms_days: number;
+        };
+        /** @description An add-on line, for example an extra outlet. */
+        Addon: {
+            /**
+             * @description Add-on key.
+             * @example extra_outlet
+             */
+            name: string;
+            /**
+             * @description Quantity.
+             * @example 1
+             */
+            quantity: number;
+            agreed_price: components["schemas"]["Money"];
+        };
+        /**
+         * @description Stored state: pilot, active or cancelled. overdue is derived and shown separately (BR-A1-26).
+         * @example active
+         * @enum {string}
+         */
+        SubscriptionState: "pilot" | "active" | "cancelled";
+        /** @description A subscription row. One is current per organisation; earlier rows are history. The ledger holds no personal data (BR-A1-27). */
+        Subscription: {
+            id: components["schemas"]["Id"];
+            organisation_id: components["schemas"]["Id"];
+            /**
+             * @description Plan key.
+             * @example table_service
+             */
+            plan_key: string;
+            /**
+             * @description Plan version.
+             * @example 1
+             */
+            plan_version: number;
+            cycle: components["schemas"]["Cycle"];
+            agreed_price: components["schemas"]["Money"];
+            /** @description Add-on lines. */
+            addons: components["schemas"]["Addon"][];
+            /**
+             * Format: date
+             * @description Start date.
+             * @example 2026-11-24
+             */
+            start_date: string;
+            /**
+             * Format: date
+             * @description Paid-through date; for a pilot the review date.
+             * @example 2026-11-24
+             */
+            paid_through?: string;
+            state: components["schemas"]["SubscriptionState"];
+            /** @description Derived: an open charge past its due date. */
+            overdue: boolean;
+            /** @description Cancellation requested; no charge after paid_through. */
+            cancel_at_period_end: boolean;
+            /** @description Soft limit notice in Phase 2 (A1-Q9). */
+            outlets_over_limit?: boolean;
+            created_at: components["schemas"]["Timestamp"];
+            superseded_at?: components["schemas"]["Timestamp"];
+        };
+        /** @description The current subscription and the earlier rows. */
+        SubscriptionHistory: {
+            current?: components["schemas"]["Subscription"];
+            /** @description Earlier rows, newest first. */
+            history: components["schemas"]["Subscription"][];
+        };
+        /** @description Assign a plan version or a pilot. Below-list price needs admin.subscription.adjust and a reason; a pilot has no charge and a review date (default 90 days). */
+        StartSubscription: {
+            /**
+             * @description Plan key.
+             * @example table_service
+             */
+            plan_key: string;
+            /**
+             * @description Active version to assign.
+             * @example 1
+             */
+            plan_version: number;
+            cycle: components["schemas"]["Cycle"];
+            /**
+             * Format: date
+             * @description Start date.
+             * @example 2026-11-24
+             */
+            start_date: string;
+            agreed_price?: components["schemas"]["Money"];
+            /** @description Add-on lines. */
+            addons?: components["schemas"]["Addon"][];
+            /**
+             * Format: date
+             * @description Pilot review date.
+             * @example 2026-11-24
+             */
+            review_date?: string;
+            reason?: components["schemas"]["Reason"];
+        };
+        /** @description A plan or price change; takes effect from the next charge as a new row, no proration (BR-A1-23). */
+        ChangeSubscription: {
+            /**
+             * @description Plan key.
+             * @example table_service
+             */
+            plan_key: string;
+            /**
+             * @description Active version.
+             * @example 1
+             */
+            plan_version: number;
+            cycle: components["schemas"]["Cycle"];
+            /**
+             * Format: date
+             * @description First day of the next charge period.
+             * @example 2026-11-24
+             */
+            effective_from: string;
+            agreed_price?: components["schemas"]["Money"];
+            /** @description Add-on lines. */
+            addons?: components["schemas"]["Addon"][];
+            reason?: components["schemas"]["Reason"];
+        };
+        /** @description Record the owner's cancellation request. */
+        CancelSubscription: {
+            reason?: components["schemas"]["Reason"];
+        };
+        /**
+         * @description open, paid (derived from payments within tolerance), waived or cancelled (reversing rows).
+         * @example open
+         * @enum {string}
+         */
+        ChargeStatus: "open" | "paid" | "waived" | "cancelled";
+        /** @description Number and date of the invoice raised in the founder's books; set once, never edited; the panel does not check it (BR-A1-34). */
+        InvoiceReference: {
+            /**
+             * @description Invoice number as in the books.
+             * @example HQ/2627/0042
+             */
+            number: string;
+            /**
+             * Format: date
+             * @description Invoice date.
+             * @example 2026-11-24
+             */
+            date: string;
+        };
+        /** @description A charge, append-only (BR-A1-31). GST comes from the billing configuration at the moment it is raised and is stored here; there is no round-off and no invoice rendering. */
+        Charge: {
+            id: components["schemas"]["Id"];
+            organisation_id: components["schemas"]["Id"];
+            subscription_id: components["schemas"]["Id"];
+            /**
+             * @description period or extra (an extra charge carries a reason).
+             * @example period
+             * @enum {string}
+             */
+            kind: "period" | "extra";
+            /**
+             * Format: date
+             * @description First day covered.
+             * @example 2026-11-24
+             */
+            period_start: string;
+            /**
+             * Format: date
+             * @description Last day covered.
+             * @example 2026-11-24
+             */
+            period_end: string;
+            taxable: components["schemas"]["Money"];
+            cgst: components["schemas"]["Money"];
+            sgst: components["schemas"]["Money"];
+            igst: components["schemas"]["Money"];
+            total: components["schemas"]["Money"];
+            /**
+             * Format: date
+             * @description Due date (BR-A1-33).
+             * @example 2026-11-24
+             */
+            due_date: string;
+            invoice_reference?: components["schemas"]["InvoiceReference"];
+            status: components["schemas"]["ChargeStatus"];
+            outstanding: components["schemas"]["Money"];
+            /** @description Free-text note for staff, at most 200 characters, no personal data. */
+            note?: string;
+            /** @description Reason for an extra, waived or cancelled charge. */
+            reason?: string;
+            created_at: components["schemas"]["Timestamp"];
+        };
+        ChargePage: components["schemas"]["PageCursor"] & {
+            /** @description Items, in the order stated by the operation. */
+            items: components["schemas"]["Charge"][];
+        };
+        /** @description Raise a charge for the next period, or an extra charge. */
+        RaiseCharge: {
+            /**
+             * @description period or extra.
+             * @example period
+             * @enum {string}
+             */
+            kind: "period" | "extra";
+            /**
+             * Format: date
+             * @description First day covered.
+             * @example 2026-11-24
+             */
+            period_start: string;
+            /**
+             * Format: date
+             * @description Last day covered.
+             * @example 2026-11-24
+             */
+            period_end: string;
+            taxable?: components["schemas"]["Money"];
+            reason?: components["schemas"]["Reason"];
+            /** @description Staff note. */
+            note?: string;
+        };
+        /** @description The invoice reference from the books. */
+        SetInvoiceReference: {
+            invoice_reference: components["schemas"]["InvoiceReference"];
+        };
+        /** @description A reason for an adjustment. */
+        ReasonBody: {
+            reason: components["schemas"]["Reason"];
+        };
+        /**
+         * @description Payment method; gateway_link is reserved and not available in A1.
+         * @example upi
+         * @enum {string}
+         */
+        PaymentMethod: "upi" | "bank_transfer" | "cash" | "cheque";
+        /** @description A recorded payment, append-only and idempotent by key (BR-A1-43). A correction is a reversing row. */
+        LedgerPayment: {
+            id: components["schemas"]["Id"];
+            charge_id: components["schemas"]["Id"];
+            amount: components["schemas"]["Money"];
+            method: components["schemas"]["PaymentMethod"];
+            /**
+             * @description UTR or cheque number, up to 40 characters.
+             * @example UTR1234567890
+             */
+            reference?: string;
+            /**
+             * Format: date
+             * @description Date received, not in the future.
+             * @example 2026-11-24
+             */
+            received_on: string;
+            recorded_by: components["schemas"]["Id"];
+            reversal_of?: components["schemas"]["Id"];
+            /** @description Reason, for a reversing row. */
+            reason?: string;
+            created_at: components["schemas"]["Timestamp"];
+        };
+        LedgerPaymentPage: components["schemas"]["PageCursor"] & {
+            /** @description Items, in the order stated by the operation. */
+            items: components["schemas"]["LedgerPayment"][];
+        };
+        /** @description Record a payment by hand. A payment above the outstanding amount is refused 422 overpayment. */
+        RecordPayment: {
+            amount: components["schemas"]["Money"];
+            method: components["schemas"]["PaymentMethod"];
+            /**
+             * @description UTR or cheque number.
+             * @example UTR1234567890
+             */
+            reference?: string;
+            /**
+             * Format: date
+             * @description Date received.
+             * @example 2026-11-24
+             */
+            received_on: string;
+        };
+        /**
+         * @description Work lists for staff; nothing is sent automatically (BR-A1-50).
+         * @example overdue_charges
+         * @enum {string}
+         */
+        LedgerListKind: "overdue_charges" | "charges_to_raise" | "charges_without_invoice_reference" | "pilots_ending" | "retired_version_subscriptions" | "outlets_over_limit";
+        /** @description One row of a work list. */
+        LedgerListRow: {
+            organisation_id: components["schemas"]["Id"];
+            /**
+             * @description Organisation name from the directory.
+             * @example Example Hospitality
+             */
+            organisation_name: string;
+            subject_id?: components["schemas"]["Id"];
+            /**
+             * Format: date
+             * @description Due date or review date.
+             * @example 2026-11-24
+             */
+            due_date?: string;
+            /**
+             * @description Days past due, for the overdue list; buckets 1-7, 8-15, 16-30, over 30 are derived by the client.
+             * @example 3
+             */
+            age_days?: number;
+            amount?: components["schemas"]["Money"];
+        };
+        LedgerListRowPage: components["schemas"]["PageCursor"] & {
+            /** @description Items, in the order stated by the operation. */
+            items: components["schemas"]["LedgerListRow"][];
+        };
+        /** @description Execution of an approved lifecycle action. The grant header carries the approval; the subject hash covers the organisation and the target status. */
+        LifecycleRequest: {
+            ticket: components["schemas"]["TicketReference"];
+            reason: components["schemas"]["Reason"];
+            /** @description Close only: recorded confirmation that the owner was offered an export (BR-A1-72). */
+            owner_export_offered?: boolean;
+        };
+        /** @description The organisation after the action. */
+        LifecycleResult: {
+            organisation_id: components["schemas"]["Id"];
+            status: components["schemas"]["OrganisationStatus"];
+            changed_at: components["schemas"]["Timestamp"];
+        };
+        /** @description The owner's read-only "My plan" screen (Could, BR-A1-90): the caller's own organisation only. */
+        MyPlan: {
+            /**
+             * @description Plan key.
+             * @example table_service
+             */
+            plan_key: string;
+            /**
+             * @description i18n key of the plan name.
+             * @example plan.table_service
+             */
+            plan_name_key: string;
+            /**
+             * @description Version.
+             * @example 1
+             */
+            plan_version: number;
+            cycle: components["schemas"]["Cycle"];
+            agreed_price: components["schemas"]["Money"];
+            /**
+             * Format: date
+             * @description Start date.
+             * @example 2026-11-24
+             */
+            start_date: string;
+            /**
+             * Format: date
+             * @description Paid-through date or pilot review date.
+             * @example 2026-11-24
+             */
+            paid_through?: string;
+            state: components["schemas"]["SubscriptionState"];
+            /** @description Shown to the owner as a label only; it gates nothing (ADR-0008 S5). */
+            overdue: boolean;
+            /** @description Charges, newest first. */
+            charges: {
+                /**
+                 * Format: date
+                 * @description First day covered.
+                 * @example 2026-11-24
+                 */
+                period_start: string;
+                /**
+                 * Format: date
+                 * @description Last day covered.
+                 * @example 2026-11-24
+                 */
+                period_end: string;
+                total: components["schemas"]["Money"];
+                /**
+                 * Format: date
+                 * @description Due date.
+                 * @example 2026-11-24
+                 */
+                due_date: string;
+                /**
+                 * @description Invoice number when set.
+                 * @example HQ/2627/0042
+                 */
+                invoice_number?: string;
+                status: components["schemas"]["ChargeStatus"];
+            }[];
+            /** @description Payments, newest first. */
+            payments: {
+                /**
+                 * Format: date
+                 * @description Date received.
+                 * @example 2026-11-24
+                 */
+                received_on: string;
+                amount: components["schemas"]["Money"];
+                method: components["schemas"]["PaymentMethod"];
+            }[];
+        };
+        /** @description A paper bill book registered as an entry-only series of kind manual_book (ADR-0014 A1.6 item 4). Billing devices of the outlet receive it entry-only: numbers are typed, never allocated. One supply has one invoice number, so Hostry never gives a book page a second number. x-provisional: whether a paper book may run as a parallel series under the same GSTIN is a CA question (P2B-6). */
+        ManualBookSeries: {
+            id: components["schemas"]["Id"];
+            tax_registration_id: components["schemas"]["Id"];
+            /**
+             * @description The book's own prefix, unique per GSTIN together with the device-series codes.
+             * @example BKB
+             */
+            code: string;
+            /** @description Outlets whose billing devices may enter from this book. */
+            outlet_ids: components["schemas"]["Id"][];
+            /**
+             * @description active or closed.
+             * @example active
+             * @enum {string}
+             */
+            status: "active" | "closed";
+            created_at: components["schemas"]["Timestamp"];
+        };
+        ManualBookSeriesPage: components["schemas"]["PageCursor"] & {
+            /** @description Items, in the order stated by the operation. */
+            items: components["schemas"]["ManualBookSeries"][];
+        };
+        /** @description Register a bill book. */
+        RegisterManualBook: {
+            tax_registration_id: components["schemas"]["Id"];
+            /**
+             * @description The book's prefix.
+             * @example BKB
+             */
+            code: string;
+            /** @description Outlets that may enter from it. */
+            outlet_ids: components["schemas"]["Id"][];
+        };
+        /**
+         * @description Client-generated, time-sortable UUIDv7 in lower-case canonical form (ADR-0003 policy; ULID is not accepted).
          * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
          */
         Id: string;
+        /**
+         * Format: date-time
+         * @description RFC 3339 instant in UTC.
+         * @example 2026-11-24T13:05:11.120Z
+         */
+        Timestamp: string;
         /** @description RFC 9457 problem details. `type` is a stable URI per error kind. */
         Problem: {
             /**
@@ -241,9 +2279,183 @@ export interface components {
                 message?: string;
             }[];
         };
+        /**
+         * @description Two-digit GST state code from the platform state reference table.
+         * @example 33
+         */
+        StateCode: string;
+        /**
+         * @description GSTIN, 15 characters, upper case, no spaces. Format only here; the check character and the state-code match are validated by the service (rule from gst-invoicing-india).
+         * @example 33ABCDE1234F1Z7
+         */
+        Gstin: string;
+        /**
+         * @description Free-text reason, 10 to 500 characters. Stays with the owning record; never placed in events.
+         * @example Owner phoned to report a lost tablet.
+         */
+        Reason: string;
+        /** @description Cursor pagination field shared by every list response (compose with allOf). */
+        PageCursor: {
+            /**
+             * @description Opaque cursor for the next page; absent when there are no more results.
+             * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+             */
+            next_cursor?: string;
+        };
+        /** @description Amount in integer paise. Never a float. */
+        Money: {
+            /**
+             * Format: int64
+             * @description Amount in paise (1 INR = 100 paise).
+             * @example 12500
+             */
+            amount_paise: number;
+            /**
+             * @description ISO 4217 currency code.
+             * @example INR
+             * @enum {string}
+             */
+            currency: "INR";
+        };
+        /**
+         * @description Support ticket reference. Fixed pattern so it can travel in events without free text.
+         * @example SUP-2041
+         */
+        TicketReference: string;
     };
     responses: {
-        /** @description Missing or invalid token. */
+        /** @description A verified holder of this GSTIN already exists. Only vendor operations may say so; a tenant-realm request gets the same response as any new registration. */
+        GstinInUse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Invalid input; nothing is created. */
+        RegistrationValidation: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The registration is not verified, so no series is issued. The device may still register without billing. */
+        RegistrationUnverified: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description At most 200 codes per registration per IST day (and an alert at 75 percent of the code space). */
+        SeriesCapReached: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The link is not in a state that allows this, or the invitation code is used, expired or unknown (one answer for all of these). */
+        LinkConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The operation needs a strong session with a fresh OTP (auth_time within 10 minutes); a pin session never qualifies. */
+        StepUpRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Blocked while the binding is under caution or needs an approval token (ADR-0005 A2.2). */
+        ApprovalRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description An outlet has a business day in progress (open, dated today or yesterday IST); suspension and closure are refused at request and again at execution (ADR-0014 A1.2). The approval stays approved and a fresh grant may be issued until the request lapses. */
+        OpenTradingDay: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "urn:hostry:problem:open_trading_day",
+                 *       "title": "Trading day in progress",
+                 *       "status": 409,
+                 *       "code": "open_trading_day"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Grant missing (grant.required), used, expired or for another subject (grant.subject_mismatch). */
+        GrantRefused: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "urn:hostry:problem:grant.used",
+                 *       "title": "Approval grant refused",
+                 *       "status": 403,
+                 *       "code": "grant.used"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The panel keeps no unapplied credit in A1. */
+        Overpayment: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "urn:hostry:problem:overpayment",
+                 *       "title": "Payment exceeds outstanding",
+                 *       "status": 422,
+                 *       "code": "overpayment"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The permission is strong_only and the session is a pin or device session. */
+        StrongSessionRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "urn:hostry:problem:strong_session_required",
+                 *       "title": "Strong session required",
+                 *       "status": 403,
+                 *       "code": "strong_session_required"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Missing or refused token. Every refused token (expired, wrong realm, wrong audience, revoked, bad signature) is the same 401 with code auth.invalid_token; no finer reason is exposed. */
         Unauthorized: {
             headers: {
                 [name: string]: unknown;
@@ -251,10 +2463,10 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "type": "urn:hostry:problem:unauthenticated",
+                 *       "type": "urn:hostry:problem:auth.invalid_token",
                  *       "title": "Authentication required",
                  *       "status": 401,
-                 *       "code": "unauthenticated"
+                 *       "code": "auth.invalid_token"
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
@@ -318,11 +2530,51 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
+        /** @description State conflict, or an Idempotency-Key request still in progress. */
+        Conflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "urn:hostry:problem:idempotency.in_progress",
+                 *       "title": "Conflict",
+                 *       "status": 409,
+                 *       "code": "idempotency.in_progress"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Rate limit exceeded; honour Retry-After. */
+        TooManyRequests: {
+            headers: {
+                "Retry-After": components["headers"]["RetryAfter"];
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "urn:hostry:problem:rate_limited",
+                 *       "title": "Too many requests",
+                 *       "status": 429,
+                 *       "code": "rate_limited"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
     };
     parameters: {
         /**
+         * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+         * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+         */
+        IdempotencyKey: string;
+        /**
          * @description Opaque cursor from a previous response's next_cursor.
-         * @example eyJhZnRlciI6IjAxOTBhMWIyIn0
+         * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
          */
         Cursor: string;
         /**
@@ -331,13 +2583,29 @@ export interface components {
          */
         Limit: number;
         /**
-         * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 or ULID is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
-         * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+         * @description Page size for vendor lists (default 25, maximum 100).
+         * @example 25
          */
-        IdempotencyKey: string;
+        VendorLimit: number;
+        /**
+         * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+         * @example 203.0.113.7
+         */
+        VendorClientAddress: string;
+        /**
+         * @description Signed, single-use vendor approval grant from identity (ADR-0014 A1.3): vendor realm, type vendor_approval, 5 minutes; claims are the approval id, kind, organisation or none, requester, approver and a subject hash over the fields named per kind. The executing service verifies the signature and the approver's permission (the bearer token is the approver's), recomputes the subject hash from the request, records the grant id as used in the action's own transaction and applies its own guard. A used, expired or foreign-subject grant is refused 403 with code grant.used, grant.expired or grant.subject_mismatch; a missing one is 403 grant.required.
+         * @example grant_example_0190a1b2
+         */
+        VendorApprovalGrant: string;
     };
     requestBodies: never;
-    headers: never;
+    headers: {
+        /**
+         * @description Seconds to wait before retrying.
+         * @example 30
+         */
+        RetryAfter: number;
+    };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
@@ -351,7 +2619,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The organisation named by the token. */
+            /** @description The organisation named by the token (also served to a support token for its one organisation). */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -361,7 +2629,9 @@ export interface operations {
                      * @example {
                      *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
                      *       "name": "Example Hospitality",
-                     *       "status": "active"
+                     *       "status": "trial",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "updated_at": "2026-11-24T13:05:11.120Z"
                      *     }
                      */
                     "application/json": components["schemas"]["Organisation"];
@@ -371,12 +2641,59 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
-    listOutlets: {
+    updateCurrentOrganisation: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Example Hospitality"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateOrganisation"];
+            };
+        };
+        responses: {
+            /** @description The updated organisation. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "name": "Example Hospitality",
+                     *       "status": "trial",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "updated_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Organisation"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listBrands: {
         parameters: {
             query?: {
                 /**
                  * @description Opaque cursor from a previous response's next_cursor.
-                 * @example eyJhZnRlciI6IjAxOTBhMWIyIn0
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
                  */
                 cursor?: components["parameters"]["Cursor"];
                 /**
@@ -391,7 +2708,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A page of outlets. */
+            /** @description A page of brands. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -399,7 +2716,153 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "items": []
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
+                     *           "name": "Example Hospitality",
+                     *           "is_default": true,
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BrandPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createBrand: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a91",
+                 *       "name": "Example Bakery"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateBrand"];
+            };
+        };
+        responses: {
+            /** @description Brand created. A replay returns the same brand. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a91",
+                     *       "name": "Example Bakery",
+                     *       "is_default": false,
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Brand"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getBrand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Brand ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a
+                 */
+                brand_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The brand. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
+                     *       "name": "Example Hospitality",
+                     *       "is_default": true,
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Brand"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listOutlets: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Filter by kind.
+                 * @example restaurant
+                 */
+                kind?: components["schemas"]["OutletKind"];
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size (default 50, maximum 200).
+                 * @example 50
+                 */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of outlets; a scoped member lists only granted outlets. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *           "brand_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
+                     *           "name": "Main Restaurant",
+                     *           "kind": "restaurant",
+                     *           "status": "active",
+                     *           "state_code": "33",
+                     *           "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *           "timezone": "Asia/Kolkata",
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ]
                      *     }
                      */
                     "application/json": components["schemas"]["OutletPage"];
@@ -414,7 +2877,7 @@ export interface operations {
             query?: never;
             header: {
                 /**
-                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 or ULID is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
                  * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
                  */
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
@@ -426,9 +2889,11 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
-                 *       "name": "Main Restaurant",
-                 *       "kind": "outlet"
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a92",
+                 *       "name": "Garden Restaurant",
+                 *       "kind": "restaurant",
+                 *       "state_code": "33",
+                 *       "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b"
                  *     }
                  */
                 "application/json": components["schemas"]["CreateOutlet"];
@@ -443,10 +2908,15 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
-                     *       "name": "Main Restaurant",
-                     *       "kind": "outlet",
-                     *       "status": "active"
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a92",
+                     *       "brand_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
+                     *       "name": "Garden Restaurant",
+                     *       "kind": "restaurant",
+                     *       "status": "active",
+                     *       "state_code": "33",
+                     *       "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *       "timezone": "Asia/Kolkata",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
                      *     }
                      */
                     "application/json": components["schemas"]["Outlet"];
@@ -454,6 +2924,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
         };
     };
@@ -472,7 +2943,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The outlet. */
+            /** @description The outlet. Another tenant's or an out-of-scope outlet is 404. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -481,24 +2952,602 @@ export interface operations {
                     /**
                      * @example {
                      *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *       "brand_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
                      *       "name": "Main Restaurant",
-                     *       "kind": "outlet",
-                     *       "status": "active"
+                     *       "kind": "restaurant",
+                     *       "status": "active",
+                     *       "state_code": "33",
+                     *       "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *       "timezone": "Asia/Kolkata",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
                      *     }
                      */
                     "application/json": components["schemas"]["Outlet"];
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    updateOutlet: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Outlet or property ID (one ID space).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61
+                 */
+                outlet_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Main Restaurant"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateOutlet"];
+            };
+        };
+        responses: {
+            /** @description The updated outlet. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *       "brand_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
+                     *       "name": "Main Restaurant",
+                     *       "kind": "restaurant",
+                     *       "status": "active",
+                     *       "state_code": "33",
+                     *       "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *       "timezone": "Asia/Kolkata",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Outlet"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listTaxRegistrations: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size (default 50, maximum 200).
+                 * @example 50
+                 */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of registrations with their verification state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *           "legal_name": "Example Hospitality Pvt Ltd",
+                     *           "regime": "regular",
+                     *           "gstin": "33ABCDE1234F1Z7",
+                     *           "state_code": "33",
+                     *           "verification": {
+                     *             "state": "unverified"
+                     *           },
+                     *           "status": "open",
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TaxRegistrationPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createTaxRegistration: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a93",
+                 *       "legal_name": "Example Hospitality Karnataka Pvt Ltd",
+                 *       "regime": "regular",
+                 *       "gstin": "29ABCDE1234F1ZW",
+                 *       "state_code": "29"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateTaxRegistration"];
+            };
+        };
+        responses: {
+            /** @description Registration created unverified. Identical response whether or not another organisation claims the GSTIN. GSTIN format and check character validated; unregistered takes no GSTIN. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a93",
+                     *       "legal_name": "Example Hospitality Karnataka Pvt Ltd",
+                     *       "regime": "regular",
+                     *       "gstin": "29ABCDE1234F1ZW",
+                     *       "state_code": "29",
+                     *       "verification": {
+                     *         "state": "unverified"
+                     *       },
+                     *       "status": "open",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TaxRegistration"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getTaxRegistration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Tax registration ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b
+                 */
+                registration_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The registration. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *       "legal_name": "Example Hospitality Pvt Ltd",
+                     *       "regime": "regular",
+                     *       "gstin": "33ABCDE1234F1Z7",
+                     *       "state_code": "33",
+                     *       "verification": {
+                     *         "state": "unverified"
+                     *       },
+                     *       "status": "open",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TaxRegistration"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateTaxRegistration: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Tax registration ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b
+                 */
+                registration_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "legal_name": "Example Hospitality Pvt Ltd"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateTaxRegistration"];
+            };
+        };
+        responses: {
+            /** @description The corrected registration. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *       "legal_name": "Example Hospitality Pvt Ltd",
+                     *       "regime": "regular",
+                     *       "gstin": "33ABCDE1234F1Z7",
+                     *       "state_code": "33",
+                     *       "verification": {
+                     *         "state": "unverified"
+                     *       },
+                     *       "status": "open",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TaxRegistration"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    closeTaxRegistration: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Tax registration ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a93
+                 */
+                registration_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "Moved the Bengaluru outlets to a new GSTIN."
+                 *     }
+                 */
+                "application/json": components["schemas"]["CloseRegistration"];
+            };
+        };
+        responses: {
+            /** @description Registration closed with its series. A replay returns the same registration. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a93",
+                     *       "legal_name": "Example Hospitality Karnataka Pvt Ltd",
+                     *       "regime": "regular",
+                     *       "gstin": "29ABCDE1234F1ZW",
+                     *       "state_code": "29",
+                     *       "verification": {
+                     *         "state": "verified",
+                     *         "method": "certificate_seen",
+                     *         "verified_at": "2026-11-24T13:10:11.120Z"
+                     *       },
+                     *       "status": "closed",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TaxRegistration"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listStates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Platform reference data. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "code": "29",
+                     *           "name": "Karnataka"
+                     *         },
+                     *         {
+                     *           "code": "33",
+                     *           "name": "Tamil Nadu"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["StateList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getOrganisationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Offline window and idle lock. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "offline_window_days": 7,
+                     *       "idle_lock_minutes": 5,
+                     *       "updated_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OrganisationSettings"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateOrganisationSettings: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "offline_window_days": 7,
+                 *       "idle_lock_minutes": 5
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateOrganisationSettings"];
+            };
+        };
+        responses: {
+            /** @description The settings; devices pick them up in their next pack. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "offline_window_days": 7,
+                     *       "idle_lock_minutes": 5,
+                     *       "updated_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OrganisationSettings"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["ApprovalRequired"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listDocumentSeries: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Filter by outlet (intersected with the caller's scope).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61
+                 */
+                outlet_id?: components["schemas"]["Id"];
+                /**
+                 * @description Filter by status.
+                 * @example active
+                 */
+                status?: "dormant" | "active" | "closed" | "closed_unreconciled";
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size (default 50, maximum 200).
+                 * @example 50
+                 */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of series in the caller's outlet scope. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6c",
+                     *           "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *           "code": "A7K",
+                     *           "doc_type": "tax_invoice",
+                     *           "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *           "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *           "status": "active",
+                     *           "issued_at": "2026-11-24T13:15:11.120Z"
+                     *         },
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a95",
+                     *           "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *           "code": "A7M",
+                     *           "doc_type": "credit_note",
+                     *           "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *           "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *           "status": "active",
+                     *           "issued_at": "2026-11-24T13:15:11.120Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DocumentSeriesPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    closeDocumentSeriesUnreconciled: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Document series ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6c
+                 */
+                series_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "Device stolen and never reconnected."
+                 *     }
+                 */
+                "application/json": components["schemas"]["CloseSeries"];
+            };
+        };
+        responses: {
+            /** @description Series closed_unreconciled; if the device reconnects later its numbers appear as recovered after closure. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6c",
+                     *       "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *       "code": "A7K",
+                     *       "doc_type": "tax_invoice",
+                     *       "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *       "status": "closed_unreconciled",
+                     *       "issued_at": "2026-11-24T13:15:11.120Z",
+                     *       "closed_at": "2026-11-24T13:25:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DocumentSeries"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["ApprovalRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     listLinks: {
         parameters: {
             query?: {
                 /**
+                 * @description Filter by status.
+                 * @example active
+                 */
+                status?: components["schemas"]["LinkStatus"];
+                /**
                  * @description Opaque cursor from a previous response's next_cursor.
-                 * @example eyJhZnRlciI6IjAxOTBhMWIyIn0
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
                  */
                 cursor?: components["parameters"]["Cursor"];
                 /**
@@ -521,7 +3570,41 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "items": []
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *           "template": "on_premises_outlet",
+                     *           "status": "active",
+                     *           "role": "proposer",
+                     *           "counterparty_organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a63",
+                     *           "counterparty": {
+                     *             "display_name": "Example Restaurants",
+                     *             "registrations": [
+                     *               {
+                     *                 "legal_name": "Example Restaurants LLP",
+                     *                 "gstin": "33AAAAA0000A1Z9",
+                     *                 "state_code": "33",
+                     *                 "gstin_verified": true
+                     *               }
+                     *             ]
+                     *           },
+                     *           "grants": [
+                     *             {
+                     *               "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a72",
+                     *               "scope": "test.echo.read",
+                     *               "direction": "outbound",
+                     *               "outlet_ids": [
+                     *                 "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *               ],
+                     *               "status": "active"
+                     *             }
+                     *           ],
+                     *           "proposed_at": "2026-11-24T13:05:11.120Z",
+                     *           "expires_at": "2026-12-08T13:05:11.120Z",
+                     *           "accepted_at": "2026-11-24T13:10:11.120Z",
+                     *           "confirmed_at": "2026-11-24T13:20:11.120Z"
+                     *         }
+                     *       ]
                      *     }
                      */
                     "application/json": components["schemas"]["LinkPage"];
@@ -531,12 +3614,539 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
+    proposeLink: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                 *       "template": "on_premises_outlet",
+                 *       "grants": [
+                 *         {
+                 *           "scope": "test.echo.read",
+                 *           "direction": "outbound",
+                 *           "outlet_ids": [
+                 *             "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                 *           ]
+                 *         }
+                 *       ],
+                 *       "outlet_ids": [
+                 *         "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["ProposeLink"];
+            };
+        };
+        responses: {
+            /** @description Link proposed; the invitation code is shown once. Expires in 14 days. A replay returns the same proposal. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "link": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *         "template": "on_premises_outlet",
+                     *         "status": "proposed",
+                     *         "role": "proposer",
+                     *         "grants": [
+                     *           {
+                     *             "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a72",
+                     *             "scope": "test.echo.read",
+                     *             "direction": "outbound",
+                     *             "outlet_ids": [
+                     *               "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *             ],
+                     *             "status": "pending"
+                     *           }
+                     *         ],
+                     *         "proposed_at": "2026-11-24T13:05:11.120Z",
+                     *         "expires_at": "2026-12-08T13:05:11.120Z"
+                     *       },
+                     *       "invitation_code": "7QK3M9XD7QK3M9XD"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LinkProposal"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Link ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62
+                 */
+                link_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The link as seen by the caller. A link of two other organisations is 404. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *       "template": "on_premises_outlet",
+                     *       "status": "active",
+                     *       "role": "proposer",
+                     *       "counterparty_organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a63",
+                     *       "counterparty": {
+                     *         "display_name": "Example Restaurants",
+                     *         "registrations": [
+                     *           {
+                     *             "legal_name": "Example Restaurants LLP",
+                     *             "gstin": "33AAAAA0000A1Z9",
+                     *             "state_code": "33",
+                     *             "gstin_verified": true
+                     *           }
+                     *         ]
+                     *       },
+                     *       "grants": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a72",
+                     *           "scope": "test.echo.read",
+                     *           "direction": "outbound",
+                     *           "outlet_ids": [
+                     *             "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *           ],
+                     *           "status": "active"
+                     *         }
+                     *       ],
+                     *       "proposed_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-12-08T13:05:11.120Z",
+                     *       "accepted_at": "2026-11-24T13:10:11.120Z",
+                     *       "confirmed_at": "2026-11-24T13:20:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Link"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    acceptLink: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "invitation_code": "7QK3M9XD7QK3M9XD",
+                 *       "outlet_ids": [
+                 *         "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a94"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AcceptLink"];
+            };
+        };
+        responses: {
+            /** @description Link becomes accepted (no grant is live yet). The response shows the proposer's details so the acceptor knows whom it accepted. Redemption is rate limited per tenant and IP. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *       "template": "on_premises_outlet",
+                     *       "status": "accepted",
+                     *       "role": "acceptor",
+                     *       "counterparty_organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "counterparty": {
+                     *         "display_name": "Example Hospitality",
+                     *         "registrations": [
+                     *           {
+                     *             "legal_name": "Example Hospitality Pvt Ltd",
+                     *             "gstin": "33ABCDE1234F1Z7",
+                     *             "state_code": "33",
+                     *             "gstin_verified": true
+                     *           }
+                     *         ]
+                     *       },
+                     *       "grants": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a72",
+                     *           "scope": "test.echo.read",
+                     *           "direction": "inbound",
+                     *           "outlet_ids": [
+                     *             "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *           ],
+                     *           "status": "pending"
+                     *         }
+                     *       ],
+                     *       "proposed_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-12-08T13:05:11.120Z",
+                     *       "accepted_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Link"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            409: components["responses"]["LinkConflict"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    confirmLink: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Link ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62
+                 */
+                link_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "counterparty_organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a63"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ConfirmLink"];
+            };
+        };
+        responses: {
+            /** @description Link active. The proposer first saw the acceptor's display name, legal name, GSTIN, state and verification (read with getLink). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *       "template": "on_premises_outlet",
+                     *       "status": "active",
+                     *       "role": "proposer",
+                     *       "counterparty_organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a63",
+                     *       "counterparty": {
+                     *         "display_name": "Example Restaurants",
+                     *         "registrations": [
+                     *           {
+                     *             "legal_name": "Example Restaurants LLP",
+                     *             "gstin": "33AAAAA0000A1Z9",
+                     *             "state_code": "33",
+                     *             "gstin_verified": true
+                     *           }
+                     *         ]
+                     *       },
+                     *       "grants": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a72",
+                     *           "scope": "test.echo.read",
+                     *           "direction": "outbound",
+                     *           "outlet_ids": [
+                     *             "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *           ],
+                     *           "status": "active"
+                     *         }
+                     *       ],
+                     *       "proposed_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-12-08T13:05:11.120Z",
+                     *       "accepted_at": "2026-11-24T13:10:11.120Z",
+                     *       "confirmed_at": "2026-11-24T13:20:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Link"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["LinkConflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    declineLink: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Link ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62
+                 */
+                link_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "not our partner"
+                 *     }
+                 */
+                "application/json": components["schemas"]["LinkReason"];
+            };
+        };
+        responses: {
+            /** @description Link declined (terminal). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *       "template": "on_premises_outlet",
+                     *       "status": "declined",
+                     *       "role": "proposer",
+                     *       "counterparty_organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a63",
+                     *       "counterparty": {
+                     *         "display_name": "Example Restaurants",
+                     *         "registrations": [
+                     *           {
+                     *             "legal_name": "Example Restaurants LLP",
+                     *             "gstin": "33AAAAA0000A1Z9",
+                     *             "state_code": "33",
+                     *             "gstin_verified": true
+                     *           }
+                     *         ]
+                     *       },
+                     *       "grants": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a72",
+                     *           "scope": "test.echo.read",
+                     *           "direction": "outbound",
+                     *           "outlet_ids": [
+                     *             "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *           ],
+                     *           "status": "removed"
+                     *         }
+                     *       ],
+                     *       "proposed_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-12-08T13:05:11.120Z",
+                     *       "accepted_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Link"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["LinkConflict"];
+        };
+    };
+    suspendLink: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Link ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62
+                 */
+                link_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "under review"
+                 *     }
+                 */
+                "application/json": components["schemas"]["LinkReason"];
+            };
+        };
+        responses: {
+            /** @description Link suspended; no call or event crosses. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *       "template": "on_premises_outlet",
+                     *       "status": "suspended",
+                     *       "role": "proposer",
+                     *       "counterparty_organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a63",
+                     *       "counterparty": {
+                     *         "display_name": "Example Restaurants",
+                     *         "registrations": [
+                     *           {
+                     *             "legal_name": "Example Restaurants LLP",
+                     *             "gstin": "33AAAAA0000A1Z9",
+                     *             "state_code": "33",
+                     *             "gstin_verified": true
+                     *           }
+                     *         ]
+                     *       },
+                     *       "grants": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a72",
+                     *           "scope": "test.echo.read",
+                     *           "direction": "outbound",
+                     *           "outlet_ids": [
+                     *             "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *           ],
+                     *           "status": "active"
+                     *         }
+                     *       ],
+                     *       "proposed_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-12-08T13:05:11.120Z",
+                     *       "accepted_at": "2026-11-24T13:10:11.120Z",
+                     *       "confirmed_at": "2026-11-24T13:20:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Link"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["LinkConflict"];
+        };
+    };
+    resumeLink: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Link ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62
+                 */
+                link_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Link active again. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *       "template": "on_premises_outlet",
+                     *       "status": "active",
+                     *       "role": "proposer",
+                     *       "counterparty_organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a63",
+                     *       "counterparty": {
+                     *         "display_name": "Example Restaurants",
+                     *         "registrations": [
+                     *           {
+                     *             "legal_name": "Example Restaurants LLP",
+                     *             "gstin": "33AAAAA0000A1Z9",
+                     *             "state_code": "33",
+                     *             "gstin_verified": true
+                     *           }
+                     *         ]
+                     *       },
+                     *       "grants": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a72",
+                     *           "scope": "test.echo.read",
+                     *           "direction": "outbound",
+                     *           "outlet_ids": [
+                     *             "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *           ],
+                     *           "status": "active"
+                     *         }
+                     *       ],
+                     *       "proposed_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-12-08T13:05:11.120Z",
+                     *       "accepted_at": "2026-11-24T13:10:11.120Z",
+                     *       "confirmed_at": "2026-11-24T13:20:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Link"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["LinkConflict"];
+        };
+    };
     revokeLink: {
         parameters: {
             query?: never;
             header: {
                 /**
-                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 or ULID is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
                  * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
                  */
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
@@ -557,11 +4167,11 @@ export interface operations {
                  *       "reason": "contract ended"
                  *     }
                  */
-                "application/json": components["schemas"]["RevokeLink"];
+                "application/json": components["schemas"]["LinkReason"];
             };
         };
         responses: {
-            /** @description Link revoked (idempotent; a repeat returns the same body). */
+            /** @description Link revoked (terminal, idempotent). Each side keeps what it owns; cached snapshots are deleted at next sync. Publishes tenancy.link.revoked. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -570,16 +4180,2935 @@ export interface operations {
                     /**
                      * @example {
                      *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *       "template": "on_premises_outlet",
                      *       "status": "revoked",
-                     *       "scopes": []
+                     *       "role": "proposer",
+                     *       "counterparty_organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a63",
+                     *       "counterparty": {
+                     *         "display_name": "Example Restaurants",
+                     *         "registrations": [
+                     *           {
+                     *             "legal_name": "Example Restaurants LLP",
+                     *             "gstin": "33AAAAA0000A1Z9",
+                     *             "state_code": "33",
+                     *             "gstin_verified": true
+                     *           }
+                     *         ]
+                     *       },
+                     *       "grants": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a72",
+                     *           "scope": "test.echo.read",
+                     *           "direction": "outbound",
+                     *           "outlet_ids": [
+                     *             "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *           ],
+                     *           "status": "removed"
+                     *         }
+                     *       ],
+                     *       "proposed_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-12-08T13:05:11.120Z",
+                     *       "accepted_at": "2026-11-24T13:10:11.120Z",
+                     *       "confirmed_at": "2026-11-24T13:20:11.120Z"
                      *     }
                      */
                     "application/json": components["schemas"]["Link"];
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    proposeLinkAmendment: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Link ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62
+                 */
+                link_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a73",
+                 *       "add_grants": [
+                 *         {
+                 *           "scope": "test.echo.post",
+                 *           "direction": "outbound"
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["LinkAmendmentInput"];
+            };
+        };
+        responses: {
+            /** @description Amendment pending the other party. Only the grantor of a grant can add or widen it, and only with the grantee's acceptance. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a73",
+                     *       "link_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *       "add_grants": [
+                     *         {
+                     *           "scope": "test.echo.post",
+                     *           "direction": "outbound"
+                     *         }
+                     *       ],
+                     *       "status": "pending",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LinkAmendment"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["LinkConflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    decideLinkAmendment: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Link ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62
+                 */
+                link_id: components["schemas"]["Id"];
+                /**
+                 * @description Amendment ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a73
+                 */
+                amendment_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "decision": "accept"
+                 *     }
+                 */
+                "application/json": components["schemas"]["DecideAmendment"];
+            };
+        };
+        responses: {
+            /** @description Decision recorded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a73",
+                     *       "link_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *       "add_grants": [
+                     *         {
+                     *           "scope": "test.echo.post",
+                     *           "direction": "outbound"
+                     *         }
+                     *       ],
+                     *       "status": "accepted",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LinkAmendment"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["LinkConflict"];
+        };
+    };
+    removeLinkGrant: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Link ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62
+                 */
+                link_id: components["schemas"]["Id"];
+                /**
+                 * @description Grant ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a72
+                 */
+                grant_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Grant removed; effective at once in tenancy and within the 30-second go-auth bound. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StepUpRequired"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listLinkActivity: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size (default 50, maximum 200).
+                 * @example 50
+                 */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /**
+                 * @description Link ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62
+                 */
+                link_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every state change and cross-link call; no payload; append-only for the application role. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a96",
+                     *           "link_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *           "occurred_at": "2026-11-24T13:05:11.120Z",
+                     *           "side": "proposer",
+                     *           "action": "link.proposed",
+                     *           "outcome": "succeeded"
+                     *         },
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a97",
+                     *           "link_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *           "occurred_at": "2026-11-24T13:10:11.120Z",
+                     *           "side": "acceptor",
+                     *           "action": "link.accepted",
+                     *           "outcome": "succeeded"
+                     *         },
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a98",
+                     *           "link_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62",
+                     *           "occurred_at": "2026-11-24T13:20:11.120Z",
+                     *           "side": "proposer",
+                     *           "action": "link.confirmed",
+                     *           "outcome": "succeeded"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LinkActivityPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listManualBookSeries: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size (default 50, maximum 200).
+                 * @example 50
+                 */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8051",
+                     *           "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *           "code": "BKB",
+                     *           "outlet_ids": [
+                     *             "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *           ],
+                     *           "status": "active",
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ],
+                     *       "next_cursor": "eyJhZnRlciI6IjAxOTBhMWIyIn0"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ManualBookSeriesPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    registerManualBookSeries: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                 *       "code": "BKB",
+                 *       "outlet_ids": [
+                 *         "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["RegisterManualBook"];
+            };
+        };
+        responses: {
+            /** @description The registered book. A replay returns the same book. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8051",
+                     *       "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *       "code": "BKB",
+                     *       "outlet_ids": [
+                     *         "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *       ],
+                     *       "status": "active",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ManualBookSeries"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["StrongSessionRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getMyPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "plan_key": "table_service",
+                     *       "plan_name_key": "plan.table_service",
+                     *       "plan_version": 1,
+                     *       "cycle": "monthly",
+                     *       "agreed_price": {
+                     *         "amount_paise": 129900,
+                     *         "currency": "INR"
+                     *       },
+                     *       "start_date": "2026-12-01",
+                     *       "paid_through": "2026-12-31",
+                     *       "state": "active",
+                     *       "overdue": false,
+                     *       "charges": [
+                     *         {
+                     *           "period_start": "2026-12-01",
+                     *           "period_end": "2026-12-31",
+                     *           "total": {
+                     *             "amount_paise": 153282,
+                     *             "currency": "INR"
+                     *           },
+                     *           "due_date": "2026-12-08",
+                     *           "invoice_number": "HQ/2627/0042",
+                     *           "status": "paid"
+                     *         }
+                     *       ],
+                     *       "payments": [
+                     *         {
+                     *           "received_on": "2026-12-02",
+                     *           "amount": {
+                     *             "amount_paise": 153282,
+                     *             "currency": "INR"
+                     *           },
+                     *           "method": "upi"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MyPlan"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    issueDocumentSeries: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                 *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                 *       "doc_types": [
+                 *         "tax_invoice",
+                 *         "credit_note"
+                 *       ],
+                 *       "state": "active"
+                 *     }
+                 */
+                "application/json": components["schemas"]["IssueSeries"];
+            };
+        };
+        responses: {
+            /** @description Codes under the outlet's verified registration (kind unregistered needs no verification); unique per (registration, code) and per (GSTIN, code). A replay returns the same codes. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6c",
+                     *           "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *           "code": "A7K",
+                     *           "doc_type": "tax_invoice",
+                     *           "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *           "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *           "status": "active",
+                     *           "issued_at": "2026-11-24T13:15:11.120Z"
+                     *         },
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a95",
+                     *           "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *           "code": "A7M",
+                     *           "doc_type": "credit_note",
+                     *           "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *           "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *           "status": "active",
+                     *           "issued_at": "2026-11-24T13:15:11.120Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SeriesIssuance"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["RegistrationUnverified"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["SeriesCapReached"];
+        };
+    };
+    closeDeviceSeries: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Device ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e
+                 */
+                device_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "reinstalled"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CloseDeviceSeries"];
+            };
+        };
+        responses: {
+            /** @description Series closed; the device gets new codes on re-activation. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "closed": 2
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SeriesClosure"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getLinkDecision: {
+        parameters: {
+            query: {
+                /**
+                 * @description Link ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a62
+                 */
+                link_id: components["schemas"]["Id"];
+                /**
+                 * @description Scope being exercised.
+                 * @example test.echo.read
+                 */
+                scope: components["schemas"]["LinkScope"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Allowed or refused for the acting tenant named by the service token. Cached for at most 30 seconds and dropped on tenancy.link.* events. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "allowed": true,
+                     *       "data_owner_organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "outlet_ids": [
+                     *         "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *       ],
+                     *       "cache_seconds": 30
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LinkDecision"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listOrganisationDirectory: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Name contains (case-insensitive), or an organisation id, or an exact GSTIN. A partial GSTIN never matches.
+                 * @example Example
+                 */
+                q?: string;
+                /**
+                 * @description Filter by status.
+                 * @example trial
+                 */
+                status?: components["schemas"]["OrganisationStatus"];
+                /**
+                 * @description Comma-separated organisation ids (used by the admin service after an owner-mobile lookup), at most 100.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_ids?: string;
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size for vendor lists (default 25, maximum 100).
+                 * @example 25
+                 */
+                limit?: components["parameters"]["VendorLimit"];
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newest first, 25 per page (maximum 100). Read from the vendor directory table by a role that can read nothing else; stable under concurrent inserts. Closed schema: no member, device, phone or email data. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *           "name": "Example Hospitality",
+                     *           "status": "trial",
+                     *           "outlet_count": 1,
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DirectoryPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    createOrganisation: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Example Hospitality",
+                 *       "outlet": {
+                 *         "name": "Main Restaurant",
+                 *         "kind": "restaurant",
+                 *         "state_code": "33"
+                 *       },
+                 *       "tax_registration": {
+                 *         "legal_name": "Example Hospitality Pvt Ltd",
+                 *         "regime": "regular",
+                 *         "gstin": "33ABCDE1234F1Z7"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateOrganisation"];
+            };
+        };
+        responses: {
+            /** @description One transaction creates organisation (status trial), hidden default brand, outlet and registration, and the directory rows. A replay of the same Idempotency-Key returns the same result and creates nothing more; a different body with the same key is 422. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "organisation": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *         "name": "Example Hospitality",
+                     *         "status": "trial",
+                     *         "created_at": "2026-11-24T13:05:11.120Z",
+                     *         "updated_at": "2026-11-24T13:05:11.120Z"
+                     *       },
+                     *       "brand": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
+                     *         "name": "Example Hospitality",
+                     *         "is_default": true,
+                     *         "created_at": "2026-11-24T13:05:11.120Z"
+                     *       },
+                     *       "outlet": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *         "brand_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
+                     *         "name": "Main Restaurant",
+                     *         "kind": "restaurant",
+                     *         "status": "active",
+                     *         "state_code": "33",
+                     *         "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *         "timezone": "Asia/Kolkata",
+                     *         "created_at": "2026-11-24T13:05:11.120Z"
+                     *       },
+                     *       "tax_registration": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *         "legal_name": "Example Hospitality Pvt Ltd",
+                     *         "regime": "regular",
+                     *         "gstin": "33ABCDE1234F1Z7",
+                     *         "state_code": "33",
+                     *         "verification": {
+                     *           "state": "unverified"
+                     *         },
+                     *         "status": "open",
+                     *         "created_at": "2026-11-24T13:05:11.120Z"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OrganisationCreated"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["GstinInUse"];
+            422: components["responses"]["RegistrationValidation"];
+        };
+    };
+    getOrganisationDirectoryEntry: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Organisation ID (vendor routes take the organisation from the path).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Brands, outlets (name, kind, state) and registrations. No members, devices or settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "organisation": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *         "name": "Example Hospitality",
+                     *         "status": "trial",
+                     *         "outlet_count": 1,
+                     *         "created_at": "2026-11-24T13:05:11.120Z"
+                     *       },
+                     *       "brands": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
+                     *           "name": "Example Hospitality",
+                     *           "is_default": true
+                     *         }
+                     *       ],
+                     *       "outlets": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *           "name": "Main Restaurant",
+                     *           "kind": "restaurant",
+                     *           "state_code": "33",
+                     *           "status": "active"
+                     *         }
+                     *       ],
+                     *       "registrations": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *           "legal_name": "Example Hospitality Pvt Ltd",
+                     *           "regime": "regular",
+                     *           "gstin": "33ABCDE1234F1Z7",
+                     *           "state_code": "33",
+                     *           "verification_state": "unverified",
+                     *           "status": "open"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OrganisationDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    verifyTaxRegistration: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation ID (vendor routes take the organisation from the path).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Tax registration ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b
+                 */
+                registration_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "method": "certificate_seen",
+                 *       "note": "Certificate seen on the onboarding call."
+                 *     }
+                 */
+                "application/json": components["schemas"]["VerifyRegistration"];
+            };
+        };
+        responses: {
+            /** @description Registration verified (idempotent). Written to the vendor log and the tenant's log. If an earlier holder of this GSTIN existed, the allocator starts beyond every code already issued under it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *       "legal_name": "Example Hospitality Pvt Ltd",
+                     *       "regime": "regular",
+                     *       "gstin": "33ABCDE1234F1Z7",
+                     *       "state_code": "33",
+                     *       "verification": {
+                     *         "state": "verified",
+                     *         "method": "certificate_seen",
+                     *         "verified_at": "2026-11-24T13:10:11.120Z"
+                     *       },
+                     *       "status": "open",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TaxRegistration"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["GstinInUse"];
+        };
+    };
+    rejectTaxRegistration: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation ID (vendor routes take the organisation from the path).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Tax registration ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b
+                 */
+                registration_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "The certificate shown does not match the legal name."
+                 *     }
+                 */
+                "application/json": components["schemas"]["RejectRegistration"];
+            };
+        };
+        responses: {
+            /** @description Registration rejected (idempotent). Written to the vendor log and the tenant's log. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b",
+                     *       "legal_name": "Example Hospitality Pvt Ltd",
+                     *       "regime": "regular",
+                     *       "gstin": "33ABCDE1234F1Z7",
+                     *       "state_code": "33",
+                     *       "verification": {
+                     *         "state": "rejected",
+                     *         "rejected_at": "2026-11-24T13:10:11.120Z"
+                     *       },
+                     *       "status": "open",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TaxRegistration"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listBillingConfigurations: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size for vendor lists (default 25, maximum 100).
+                 * @example 25
+                 */
+                limit?: components["parameters"]["VendorLimit"];
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8041",
+                     *           "effective_from": "2026-12-01",
+                     *           "hostry_state_code": "33",
+                     *           "sac": "997331",
+                     *           "gst_rate_bp": 1800,
+                     *           "gst_registered": true,
+                     *           "payment_tolerance_paise": 99,
+                     *           "payment_terms_days": 7,
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ],
+                     *       "next_cursor": "eyJhZnRlciI6IjAxOTBhMWIyIn0"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BillingConfigurationPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    createBillingConfiguration: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "effective_from": "2026-12-01",
+                 *       "hostry_state_code": "33",
+                 *       "sac": "997331",
+                 *       "gst_rate_bp": 1800,
+                 *       "gst_registered": true,
+                 *       "payment_tolerance_paise": 99,
+                 *       "payment_terms_days": 7
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateBillingConfiguration"];
+            };
+        };
+        responses: {
+            /** @description The configuration. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8041",
+                     *       "effective_from": "2026-12-01",
+                     *       "hostry_state_code": "33",
+                     *       "sac": "997331",
+                     *       "gst_rate_bp": 1800,
+                     *       "gst_registered": true,
+                     *       "payment_tolerance_paise": 99,
+                     *       "payment_terms_days": 7,
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BillingConfiguration"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    exportLedger: {
+        parameters: {
+            query?: {
+                /**
+                 * @description First charge due date.
+                 * @example 2026-11-24
+                 */
+                from?: string;
+                /**
+                 * @description Last charge due date.
+                 * @example 2026-11-24
+                 */
+                to?: string;
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV text. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /** @example organisation_id,organisation_name,period_start,period_end,taxable_paise,total_paise,due_date,invoice_number,status,outstanding_paise */
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listLedgerEntries: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size for vendor lists (default 25, maximum 100).
+                 * @example 25
+                 */
+                limit?: components["parameters"]["VendorLimit"];
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Which list.
+                 * @example overdue_charges
+                 */
+                list_kind: components["schemas"]["LedgerListKind"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page, oldest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *           "organisation_name": "Example Hospitality",
+                     *           "subject_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021",
+                     *           "due_date": "2026-12-08",
+                     *           "age_days": 3,
+                     *           "amount": {
+                     *             "amount_paise": 153282,
+                     *             "currency": "INR"
+                     *           }
+                     *         }
+                     *       ],
+                     *       "next_cursor": "eyJhZnRlciI6IjAxOTBhMWIyIn0"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LedgerListRowPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listCharges: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Filter by status.
+                 * @example open
+                 */
+                status?: "open" | "paid" | "waived" | "cancelled";
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size for vendor lists (default 25, maximum 100).
+                 * @example 25
+                 */
+                limit?: components["parameters"]["VendorLimit"];
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page, newest period first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021",
+                     *           "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *           "subscription_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8011",
+                     *           "kind": "period",
+                     *           "period_start": "2026-12-01",
+                     *           "period_end": "2026-12-31",
+                     *           "taxable": {
+                     *             "amount_paise": 129900,
+                     *             "currency": "INR"
+                     *           },
+                     *           "cgst": {
+                     *             "amount_paise": 11691,
+                     *             "currency": "INR"
+                     *           },
+                     *           "sgst": {
+                     *             "amount_paise": 11691,
+                     *             "currency": "INR"
+                     *           },
+                     *           "igst": {
+                     *             "amount_paise": 0,
+                     *             "currency": "INR"
+                     *           },
+                     *           "total": {
+                     *             "amount_paise": 153282,
+                     *             "currency": "INR"
+                     *           },
+                     *           "due_date": "2026-12-08",
+                     *           "status": "open",
+                     *           "outstanding": {
+                     *             "amount_paise": 153282,
+                     *             "currency": "INR"
+                     *           },
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ],
+                     *       "next_cursor": "eyJhZnRlciI6IjAxOTBhMWIyIn0"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ChargePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    raiseCharge: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "kind": "period",
+                 *       "period_start": "2026-12-01",
+                 *       "period_end": "2026-12-31"
+                 *     }
+                 */
+                "application/json": components["schemas"]["RaiseCharge"];
+            };
+        };
+        responses: {
+            /** @description The charge. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "subscription_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8011",
+                     *       "kind": "period",
+                     *       "period_start": "2026-12-01",
+                     *       "period_end": "2026-12-31",
+                     *       "taxable": {
+                     *         "amount_paise": 129900,
+                     *         "currency": "INR"
+                     *       },
+                     *       "cgst": {
+                     *         "amount_paise": 11691,
+                     *         "currency": "INR"
+                     *       },
+                     *       "sgst": {
+                     *         "amount_paise": 11691,
+                     *         "currency": "INR"
+                     *       },
+                     *       "igst": {
+                     *         "amount_paise": 0,
+                     *         "currency": "INR"
+                     *       },
+                     *       "total": {
+                     *         "amount_paise": 153282,
+                     *         "currency": "INR"
+                     *       },
+                     *       "due_date": "2026-12-08",
+                     *       "status": "open",
+                     *       "outstanding": {
+                     *         "amount_paise": 153282,
+                     *         "currency": "INR"
+                     *       },
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Charge"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getCharge: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Charge id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021
+                 */
+                charge_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The charge. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "subscription_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8011",
+                     *       "kind": "period",
+                     *       "period_start": "2026-12-01",
+                     *       "period_end": "2026-12-31",
+                     *       "taxable": {
+                     *         "amount_paise": 129900,
+                     *         "currency": "INR"
+                     *       },
+                     *       "cgst": {
+                     *         "amount_paise": 11691,
+                     *         "currency": "INR"
+                     *       },
+                     *       "sgst": {
+                     *         "amount_paise": 11691,
+                     *         "currency": "INR"
+                     *       },
+                     *       "igst": {
+                     *         "amount_paise": 0,
+                     *         "currency": "INR"
+                     *       },
+                     *       "total": {
+                     *         "amount_paise": 153282,
+                     *         "currency": "INR"
+                     *       },
+                     *       "due_date": "2026-12-08",
+                     *       "status": "open",
+                     *       "outstanding": {
+                     *         "amount_paise": 153282,
+                     *         "currency": "INR"
+                     *       },
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Charge"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    cancelCharge: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Charge id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021
+                 */
+                charge_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "Duplicate period raised by mistake."
+                 *     }
+                 */
+                "application/json": components["schemas"]["ReasonBody"];
+            };
+        };
+        responses: {
+            /** @description The charge, cancelled. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "subscription_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8011",
+                     *       "kind": "period",
+                     *       "period_start": "2026-12-01",
+                     *       "period_end": "2026-12-31",
+                     *       "taxable": {
+                     *         "amount_paise": 129900,
+                     *         "currency": "INR"
+                     *       },
+                     *       "cgst": {
+                     *         "amount_paise": 11691,
+                     *         "currency": "INR"
+                     *       },
+                     *       "sgst": {
+                     *         "amount_paise": 11691,
+                     *         "currency": "INR"
+                     *       },
+                     *       "igst": {
+                     *         "amount_paise": 0,
+                     *         "currency": "INR"
+                     *       },
+                     *       "total": {
+                     *         "amount_paise": 153282,
+                     *         "currency": "INR"
+                     *       },
+                     *       "due_date": "2026-12-08",
+                     *       "status": "cancelled",
+                     *       "outstanding": {
+                     *         "amount_paise": 0,
+                     *         "currency": "INR"
+                     *       },
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "reason": "Duplicate period raised by mistake."
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Charge"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    setChargeInvoiceReference: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Charge id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021
+                 */
+                charge_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "invoice_reference": {
+                 *         "number": "HQ/2627/0042",
+                 *         "date": "2026-12-01"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["SetInvoiceReference"];
+            };
+        };
+        responses: {
+            /** @description The charge. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "subscription_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8011",
+                     *       "kind": "period",
+                     *       "period_start": "2026-12-01",
+                     *       "period_end": "2026-12-31",
+                     *       "taxable": {
+                     *         "amount_paise": 129900,
+                     *         "currency": "INR"
+                     *       },
+                     *       "cgst": {
+                     *         "amount_paise": 11691,
+                     *         "currency": "INR"
+                     *       },
+                     *       "sgst": {
+                     *         "amount_paise": 11691,
+                     *         "currency": "INR"
+                     *       },
+                     *       "igst": {
+                     *         "amount_paise": 0,
+                     *         "currency": "INR"
+                     *       },
+                     *       "total": {
+                     *         "amount_paise": 153282,
+                     *         "currency": "INR"
+                     *       },
+                     *       "due_date": "2026-12-08",
+                     *       "status": "open",
+                     *       "outstanding": {
+                     *         "amount_paise": 153282,
+                     *         "currency": "INR"
+                     *       },
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "invoice_reference": {
+                     *         "number": "HQ/2627/0042",
+                     *         "date": "2026-12-01"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Charge"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listChargePayments: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size for vendor lists (default 25, maximum 100).
+                 * @example 25
+                 */
+                limit?: components["parameters"]["VendorLimit"];
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Charge id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021
+                 */
+                charge_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8031",
+                     *           "charge_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021",
+                     *           "amount": {
+                     *             "amount_paise": 153282,
+                     *             "currency": "INR"
+                     *           },
+                     *           "method": "upi",
+                     *           "reference": "UTR1234567890",
+                     *           "received_on": "2026-12-02",
+                     *           "recorded_by": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a90",
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ],
+                     *       "next_cursor": "eyJhZnRlciI6IjAxOTBhMWIyIn0"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LedgerPaymentPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    recordPayment: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Charge id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021
+                 */
+                charge_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "amount": {
+                 *         "amount_paise": 153282,
+                 *         "currency": "INR"
+                 *       },
+                 *       "method": "upi",
+                 *       "reference": "UTR1234567890",
+                 *       "received_on": "2026-12-02"
+                 *     }
+                 */
+                "application/json": components["schemas"]["RecordPayment"];
+            };
+        };
+        responses: {
+            /** @description The payment. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8031",
+                     *       "charge_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021",
+                     *       "amount": {
+                     *         "amount_paise": 153282,
+                     *         "currency": "INR"
+                     *       },
+                     *       "method": "upi",
+                     *       "reference": "UTR1234567890",
+                     *       "received_on": "2026-12-02",
+                     *       "recorded_by": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a90",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LedgerPayment"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Overpayment"];
+        };
+    };
+    reversePayment: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Charge id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021
+                 */
+                charge_id: components["schemas"]["Id"];
+                /**
+                 * @description Payment id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8031
+                 */
+                payment_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "Duplicate period raised by mistake."
+                 *     }
+                 */
+                "application/json": components["schemas"]["ReasonBody"];
+            };
+        };
+        responses: {
+            /** @description The reversing row. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8032",
+                     *       "charge_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021",
+                     *       "amount": {
+                     *         "amount_paise": 153282,
+                     *         "currency": "INR"
+                     *       },
+                     *       "method": "upi",
+                     *       "reference": "UTR1234567890",
+                     *       "received_on": "2026-12-02",
+                     *       "recorded_by": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a90",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "reversal_of": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8031",
+                     *       "reason": "Duplicate period raised by mistake."
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LedgerPayment"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    waiveCharge: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Charge id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021
+                 */
+                charge_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "Duplicate period raised by mistake."
+                 *     }
+                 */
+                "application/json": components["schemas"]["ReasonBody"];
+            };
+        };
+        responses: {
+            /** @description The charge, waived. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8021",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "subscription_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8011",
+                     *       "kind": "period",
+                     *       "period_start": "2026-12-01",
+                     *       "period_end": "2026-12-31",
+                     *       "taxable": {
+                     *         "amount_paise": 129900,
+                     *         "currency": "INR"
+                     *       },
+                     *       "cgst": {
+                     *         "amount_paise": 11691,
+                     *         "currency": "INR"
+                     *       },
+                     *       "sgst": {
+                     *         "amount_paise": 11691,
+                     *         "currency": "INR"
+                     *       },
+                     *       "igst": {
+                     *         "amount_paise": 0,
+                     *         "currency": "INR"
+                     *       },
+                     *       "total": {
+                     *         "amount_paise": 153282,
+                     *         "currency": "INR"
+                     *       },
+                     *       "due_date": "2026-12-08",
+                     *       "status": "waived",
+                     *       "outstanding": {
+                     *         "amount_paise": 0,
+                     *         "currency": "INR"
+                     *       },
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "reason": "Duplicate period raised by mistake."
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Charge"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    closeOrganisation: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Signed, single-use vendor approval grant from identity (ADR-0014 A1.3): vendor realm, type vendor_approval, 5 minutes; claims are the approval id, kind, organisation or none, requester, approver and a subject hash over the fields named per kind. The executing service verifies the signature and the approver's permission (the bearer token is the approver's), recomputes the subject hash from the request, records the grant id as used in the action's own transaction and applies its own guard. A used, expired or foreign-subject grant is refused 403 with code grant.used, grant.expired or grant.subject_mismatch; a missing one is 403 grant.required.
+                 * @example grant_example_0190a1b2
+                 */
+                "Hostry-Vendor-Approval": components["parameters"]["VendorApprovalGrant"];
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "ticket": "SUP-2041",
+                 *       "reason": "Owner asked to close the outlet group.",
+                 *       "owner_export_offered": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["LifecycleRequest"];
+            };
+        };
+        responses: {
+            /** @description The organisation after the action. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "status": "closed",
+                     *       "changed_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LifecycleResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantRefused"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["OpenTradingDay"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    reinstateOrganisation: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Signed, single-use vendor approval grant from identity (ADR-0014 A1.3): vendor realm, type vendor_approval, 5 minutes; claims are the approval id, kind, organisation or none, requester, approver and a subject hash over the fields named per kind. The executing service verifies the signature and the approver's permission (the bearer token is the approver's), recomputes the subject hash from the request, records the grant id as used in the action's own transaction and applies its own guard. A used, expired or foreign-subject grant is refused 403 with code grant.used, grant.expired or grant.subject_mismatch; a missing one is 403 grant.required.
+                 * @example grant_example_0190a1b2
+                 */
+                "Hostry-Vendor-Approval": components["parameters"]["VendorApprovalGrant"];
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "ticket": "SUP-2041",
+                 *       "reason": "Owner asked to close the outlet group.",
+                 *       "owner_export_offered": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["LifecycleRequest"];
+            };
+        };
+        responses: {
+            /** @description The organisation after the action. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "status": "active",
+                     *       "changed_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LifecycleResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantRefused"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getOrganisationSubscription: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subscription. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "current": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8011",
+                     *         "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *         "plan_key": "table_service",
+                     *         "plan_version": 1,
+                     *         "cycle": "monthly",
+                     *         "agreed_price": {
+                     *           "amount_paise": 129900,
+                     *           "currency": "INR"
+                     *         },
+                     *         "addons": [],
+                     *         "start_date": "2026-12-01",
+                     *         "paid_through": "2026-12-31",
+                     *         "state": "active",
+                     *         "overdue": false,
+                     *         "cancel_at_period_end": false,
+                     *         "outlets_over_limit": false,
+                     *         "created_at": "2026-11-24T13:05:11.120Z"
+                     *       },
+                     *       "history": []
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SubscriptionHistory"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    changeSubscription: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "plan_key": "table_service",
+                 *       "plan_version": 1,
+                 *       "cycle": "annual",
+                 *       "effective_from": "2027-01-01"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ChangeSubscription"];
+            };
+        };
+        responses: {
+            /** @description The new subscription row. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8011",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "plan_key": "table_service",
+                     *       "plan_version": 1,
+                     *       "cycle": "annual",
+                     *       "agreed_price": {
+                     *         "amount_paise": 129900,
+                     *         "currency": "INR"
+                     *       },
+                     *       "addons": [],
+                     *       "start_date": "2026-12-01",
+                     *       "paid_through": "2026-12-31",
+                     *       "state": "active",
+                     *       "overdue": false,
+                     *       "cancel_at_period_end": false,
+                     *       "outlets_over_limit": false,
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    startSubscription: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "plan_key": "table_service",
+                 *       "plan_version": 1,
+                 *       "cycle": "monthly",
+                 *       "start_date": "2026-12-01"
+                 *     }
+                 */
+                "application/json": components["schemas"]["StartSubscription"];
+            };
+        };
+        responses: {
+            /** @description The subscription. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8011",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "plan_key": "table_service",
+                     *       "plan_version": 1,
+                     *       "cycle": "monthly",
+                     *       "agreed_price": {
+                     *         "amount_paise": 129900,
+                     *         "currency": "INR"
+                     *       },
+                     *       "addons": [],
+                     *       "start_date": "2026-12-01",
+                     *       "paid_through": "2026-12-31",
+                     *       "state": "active",
+                     *       "overdue": false,
+                     *       "cancel_at_period_end": false,
+                     *       "outlets_over_limit": false,
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    cancelSubscription: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "Owner asked to stop after the current period."
+                 *     }
+                 */
+                "application/json": components["schemas"]["CancelSubscription"];
+            };
+        };
+        responses: {
+            /** @description The subscription. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f8011",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "plan_key": "table_service",
+                     *       "plan_version": 1,
+                     *       "cycle": "monthly",
+                     *       "agreed_price": {
+                     *         "amount_paise": 129900,
+                     *         "currency": "INR"
+                     *       },
+                     *       "addons": [],
+                     *       "start_date": "2026-12-01",
+                     *       "paid_through": "2026-12-31",
+                     *       "state": "active",
+                     *       "overdue": false,
+                     *       "cancel_at_period_end": true,
+                     *       "outlets_over_limit": false,
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    suspendOrganisation: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Signed, single-use vendor approval grant from identity (ADR-0014 A1.3): vendor realm, type vendor_approval, 5 minutes; claims are the approval id, kind, organisation or none, requester, approver and a subject hash over the fields named per kind. The executing service verifies the signature and the approver's permission (the bearer token is the approver's), recomputes the subject hash from the request, records the grant id as used in the action's own transaction and applies its own guard. A used, expired or foreign-subject grant is refused 403 with code grant.used, grant.expired or grant.subject_mismatch; a missing one is 403 grant.required.
+                 * @example grant_example_0190a1b2
+                 */
+                "Hostry-Vendor-Approval": components["parameters"]["VendorApprovalGrant"];
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation id.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "ticket": "SUP-2041",
+                 *       "reason": "Owner asked to close the outlet group.",
+                 *       "owner_export_offered": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["LifecycleRequest"];
+            };
+        };
+        responses: {
+            /** @description The organisation after the action. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "status": "suspended",
+                     *       "changed_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LifecycleResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantRefused"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["OpenTradingDay"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listPlans: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size for vendor lists (default 25, maximum 100).
+                 * @example 25
+                 */
+                limit?: components["parameters"]["VendorLimit"];
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "key": "table_service",
+                     *           "name_key": "plan.table_service",
+                     *           "versions": [
+                     *             {
+                     *               "feature_keys": [
+                     *                 "restaurant.core",
+                     *                 "restaurant.kds",
+                     *                 "restaurant.captain",
+                     *                 "restaurant.reports.core"
+                     *               ],
+                     *               "included_outlets": 1,
+                     *               "prices": [
+                     *                 {
+                     *                   "cycle": "monthly",
+                     *                   "list_price": {
+                     *                     "amount_paise": 129900,
+                     *                     "currency": "INR"
+                     *                   }
+                     *                 }
+                     *               ],
+                     *               "version": 1,
+                     *               "state": "draft",
+                     *               "created_at": "2026-11-24T13:05:11.120Z"
+                     *             }
+                     *           ],
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ],
+                     *       "next_cursor": "eyJhZnRlciI6IjAxOTBhMWIyIn0"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PlanPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    createPlan: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "key": "table_service",
+                 *       "name_key": "plan.table_service",
+                 *       "version": {
+                 *         "feature_keys": [
+                 *           "restaurant.core",
+                 *           "restaurant.kds",
+                 *           "restaurant.captain",
+                 *           "restaurant.reports.core"
+                 *         ],
+                 *         "included_outlets": 1,
+                 *         "prices": [
+                 *           {
+                 *             "cycle": "monthly",
+                 *             "list_price": {
+                 *               "amount_paise": 129900,
+                 *               "currency": "INR"
+                 *             }
+                 *           }
+                 *         ]
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreatePlan"];
+            };
+        };
+        responses: {
+            /** @description The plan. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "key": "table_service",
+                     *       "name_key": "plan.table_service",
+                     *       "versions": [
+                     *         {
+                     *           "feature_keys": [
+                     *             "restaurant.core",
+                     *             "restaurant.kds",
+                     *             "restaurant.captain",
+                     *             "restaurant.reports.core"
+                     *           ],
+                     *           "included_outlets": 1,
+                     *           "prices": [
+                     *             {
+                     *               "cycle": "monthly",
+                     *               "list_price": {
+                     *                 "amount_paise": 129900,
+                     *                 "currency": "INR"
+                     *               }
+                     *             }
+                     *           ],
+                     *           "version": 1,
+                     *           "state": "draft",
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ],
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getPlan: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Plan key.
+                 * @example table_service
+                 */
+                plan_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "key": "table_service",
+                     *       "name_key": "plan.table_service",
+                     *       "versions": [
+                     *         {
+                     *           "feature_keys": [
+                     *             "restaurant.core",
+                     *             "restaurant.kds",
+                     *             "restaurant.captain",
+                     *             "restaurant.reports.core"
+                     *           ],
+                     *           "included_outlets": 1,
+                     *           "prices": [
+                     *             {
+                     *               "cycle": "monthly",
+                     *               "list_price": {
+                     *                 "amount_paise": 129900,
+                     *                 "currency": "INR"
+                     *               }
+                     *             }
+                     *           ],
+                     *           "version": 1,
+                     *           "state": "draft",
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ],
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createPlanVersion: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Plan key.
+                 * @example table_service
+                 */
+                plan_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "feature_keys": [
+                 *         "restaurant.core",
+                 *         "restaurant.kds",
+                 *         "restaurant.captain",
+                 *         "restaurant.reports.core"
+                 *       ],
+                 *       "included_outlets": 1,
+                 *       "prices": [
+                 *         {
+                 *           "cycle": "monthly",
+                 *           "list_price": {
+                 *             "amount_paise": 129900,
+                 *             "currency": "INR"
+                 *           }
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["PlanVersionDraft"];
+            };
+        };
+        responses: {
+            /** @description The new draft. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "feature_keys": [
+                     *         "restaurant.core",
+                     *         "restaurant.kds",
+                     *         "restaurant.captain",
+                     *         "restaurant.reports.core"
+                     *       ],
+                     *       "included_outlets": 1,
+                     *       "prices": [
+                     *         {
+                     *           "cycle": "monthly",
+                     *           "list_price": {
+                     *             "amount_paise": 129900,
+                     *             "currency": "INR"
+                     *           }
+                     *         }
+                     *       ],
+                     *       "version": 2,
+                     *       "state": "draft",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PlanVersion"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    activatePlanVersion: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Plan key.
+                 * @example table_service
+                 */
+                plan_key: string;
+                /**
+                 * @description Version number.
+                 * @example 1
+                 */
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The active version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "feature_keys": [
+                     *         "restaurant.core",
+                     *         "restaurant.kds",
+                     *         "restaurant.captain",
+                     *         "restaurant.reports.core"
+                     *       ],
+                     *       "included_outlets": 1,
+                     *       "prices": [
+                     *         {
+                     *           "cycle": "monthly",
+                     *           "list_price": {
+                     *             "amount_paise": 129900,
+                     *             "currency": "INR"
+                     *           }
+                     *         }
+                     *       ],
+                     *       "version": 1,
+                     *       "state": "active",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "activated_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PlanVersion"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    retirePlanVersion: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Plan key.
+                 * @example table_service
+                 */
+                plan_key: string;
+                /**
+                 * @description Version number.
+                 * @example 1
+                 */
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The retired version; existing subscriptions keep it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "feature_keys": [
+                     *         "restaurant.core",
+                     *         "restaurant.kds",
+                     *         "restaurant.captain",
+                     *         "restaurant.reports.core"
+                     *       ],
+                     *       "included_outlets": 1,
+                     *       "prices": [
+                     *         {
+                     *           "cycle": "monthly",
+                     *           "list_price": {
+                     *             "amount_paise": 129900,
+                     *             "currency": "INR"
+                     *           }
+                     *         }
+                     *       ],
+                     *       "version": 1,
+                     *       "state": "retired",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "retired_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PlanVersion"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
 }

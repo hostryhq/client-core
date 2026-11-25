@@ -182,6 +182,7 @@ function bill(b: Builder, d: BillDoc): void {
   b.row(L["print.subtotal"], b.money(d.subtotal));
   if (d.discount) b.row(d.discount.label, b.money(-Math.abs(d.discount.amount)));
   if (d.serviceCharge !== undefined) b.row(L["print.serviceCharge"], b.money(d.serviceCharge));
+  if (d.packingCharge) b.row(L["print.packing"], b.money(d.packingCharge));
   if (d.nonGstSubtotal !== undefined) b.row(L["print.nonGst"], b.money(d.nonGstSubtotal));
   taxBlock(b, d.taxGroups);
   if (d.roundOff) b.row(L["print.roundOff"], b.money(d.roundOff, { sign: true }));
@@ -214,7 +215,10 @@ function preBill(b: Builder, d: PreBillDoc): void {
   itemTable(b, d.lines);
   b.row(L["print.subtotal"], b.money(d.subtotal));
   if (d.discount) b.row(d.discount.label, b.money(-Math.abs(d.discount.amount)));
+  if (d.serviceCharge) b.row(L["print.serviceCharge"], b.money(d.serviceCharge));
+  if (d.packingCharge) b.row(L["print.packing"], b.money(d.packingCharge));
   for (const t of d.estimatedTaxes) b.row(`${t.label} ${L["print.estimate"]}`, b.money(t.amount));
+  if (d.roundOff) b.row(L["print.roundOff"], b.money(d.roundOff, { sign: true }));
   b.rule();
   totalRow(b, L["print.totalToPay"], d.total);
   b.rule();

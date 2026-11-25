@@ -13,7 +13,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start an owner/manager OTP sign-in */
+        /**
+         * Start an owner or manager OTP sign-in
+         * @description Limits: 30 s resend cooldown, 3 sends per 15 minutes and 6 per day per number, plus per-device and per-IP limits and a global daily budget (429 with Retry-After). Counters advance identically for unknown numbers, so 429 does not reveal whether a number is known. Indian numbers only.
+         */
         post: operations["createOtpChallenge"];
         delete?: never;
         options?: never;
@@ -30,8 +33,113 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Exchange a verified OTP (or device assertion) for tokens */
+        /** Exchange a verified OTP (or vendor-assisted code) for a session */
         post: operations["createSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** End a session (sign out, or end a pin session id) */
+        delete: operations["endSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tokens/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate a refresh token */
+        post: operations["refreshSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tokens/switch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get a token for another organisation of the same account */
+        post: operations["switchMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tokens/device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get a device or pin token by device-key assertion
+         * @description Pin grant (ADR-0005 A2.1): identity checks device, outlet binding, member, pack_v issued to this device, current pin_v, opened_at within [-60 s, +16 h], sid ownership and the proof. Limits: 5 failures in 15 minutes refuse that member and device for 15 minutes; 10 failed sessions in 24 hours refuse until cleared. These limits never touch local PIN login or sync.
+         */
+        post: operations["createDeviceToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tokens/drain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get the drain token a revoked device may use */
+        post: operations["createDrainToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/device-nonces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get a nonce to sign with the key being registered */
+        post: operations["createDeviceNonce"];
         delete?: never;
         options?: never;
         head?: never;
@@ -45,10 +153,67 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Public signing keys (JWKS) */
+        /** Public signing keys of the tenant realm */
         get: operations["getJwks"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vendor-jwks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Public signing keys of the vendor realm (separate issuer) */
+        get: operations["getVendorJwks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/activation-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a single-use device activation code
+         * @description strong_only: refused in pin and device sessions, and for 24 hours on a binding under caution unless approved. Redemption and creation are rate limited per outlet per day.
+         */
+        post: operations["createActivationCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/device-activations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activate a device with an activation code
+         * @description The owners of the organisation are notified with device name, kind, outlet and key_protection. A pending series registration that is unverified does not block registration, only billing.
+         */
+        post: operations["activateDevice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -62,11 +227,31 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List registered devices */
+        /** List devices */
         get: operations["listDevices"];
         put?: never;
-        /** Register a device */
+        /**
+         * Register a device from a signed-in member
+         * @description strong_only, with the 24-hour caution rule (A2.2). Device kind and outlet come from the registering member, never from a later client claim.
+         */
         post: operations["registerDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a device */
+        get: operations["getDevice"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -81,8 +266,48 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Revoke a device (it keeps only the quarantine-upload path) */
+        /**
+         * Revoke a device (it keeps only the drain path)
+         * @description strong_only. A non-owner may revoke outlet devices in their scope; a personal device only by its account holder or an owner (G6). Publishes identity.device.revoked.
+         */
         put: operations["revokeDevice"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/devices/{device_id}/offline-packs/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fetch a fresh offline pack (device token) */
+        get: operations["getDeviceOfflinePack"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/devices/{device_id}/wipe-order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fetch the wipe order (drain token)
+         * @description Never issued sooner than 15 minutes after the drain completed, measured on the server clock.
+         */
+        get: operations["getWipeOrder"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -100,6 +325,82 @@ export interface paths {
         /** List members (staff) of the organisation */
         get: operations["listMembers"];
         put?: never;
+        /**
+         * Add a member
+         * @description strong_only and owner_grant rules apply (G1, G2, G4).
+         */
+        post: operations["createMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/members/{member_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a member */
+        get: operations["getMember"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change or deactivate a member
+         * @description G4: nobody changes their own status. G5: a non-owner may act only on members whose permissions are a subset of their own and hold no owner_grant permission.
+         */
+        patch: operations["updateMember"];
+        trace?: never;
+    };
+    "/v1/members/{member_id}/pin-lockout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Clear a PIN lockout */
+        delete: operations["clearPinLockout"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/members/{member_id}/pin-reset-authorisations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authorise a member to choose a new PIN */
+        post: operations["authorisePinReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/members/{member_id}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set or change a PIN (online only) */
+        put: operations["setPin"];
         post?: never;
         delete?: never;
         options?: never;
@@ -107,16 +408,765 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/revocations": {
+    "/v1/members/{member_id}/role-assignments": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Revocations since a cursor (used by the sync gateway reconciliation) */
+        get?: never;
+        put?: never;
+        /**
+         * Assign a role to a member
+         * @description G1: the actor must hold every permission of the role at the scope. The built-in owner role is assigned only through assignOwnerRole.
+         */
+        post: operations["createRoleAssignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/members/{member_id}/role-assignments/{assignment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a role assignment */
+        delete: operations["deleteRoleAssignment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/members/{member_id}/owner-role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Make a member an owner
+         * @description Owners only, with step-up (G3). Vendor staff can never add owners to a running organisation.
+         */
+        put: operations["assignOwnerRole"];
+        post?: never;
+        /** Remove the owner role from a member */
+        delete: operations["removeOwnerRole"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List roles */
+        get: operations["listRoles"];
+        put?: never;
+        /**
+         * Create a role
+         * @description G1 and G2 apply.
+         */
+        post: operations["createRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/roles/{role_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a role */
+        get: operations["getRole"];
+        /** Replace a role */
+        put: operations["updateRole"];
+        post?: never;
+        /** Delete a role */
+        delete: operations["deleteRole"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The permission catalogue */
+        get: operations["listPermissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/audit-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the organisation's own audit log
+         * @description Support sessions appear as start, end and expiry entries with reason and ticket reference, and every support read with a read summary. Vendor operational access (device list and revoke) appears too.
+         */
+        get: operations["listAuditEntries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/approval-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List approval requests the caller may decide */
+        get: operations["listApprovalRequests"];
+        put?: never;
+        /** File a refused operation for approval */
+        post: operations["createApprovalRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/approval-requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read an approval request (the requester polls for the token) */
+        get: operations["getApprovalRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/approval-requests/{request_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Approve or reject a request */
+        put: operations["decideApprovalRequest"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the account's device bindings */
+        get: operations["listBindings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bindings/{binding_id}/rejection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reject a new binding ("not me") */
+        put: operations["rejectBinding"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/owner-recoveries/{recovery_id}/cancellation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Cancel a pending owner recovery during its 24-hour delay */
+        put: operations["cancelOwnerRecovery"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/revocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revocations since a cursor (sync gateway reconciliation) */
         get: operations["listRevocations"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/devices/{device_id}/drain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Record that a device is drained */
+        put: operations["recordDeviceDrained"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/proof-verifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify a session or approval proof */
+        post: operations["verifyProof"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/pack-history-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Was a member or series code issued to the device in a pack? */
+        post: operations["checkPackHistory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vendor sign-in: email, password, TOTP */
+        post: operations["createVendorSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/session-renewals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Renew a vendor access token */
+        post: operations["renewVendorSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/sessions/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Sign out of the vendor realm */
+        delete: operations["endVendorSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/setup-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin account setup from a one-time link */
+        post: operations["beginVendorSetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/setup-completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish account setup */
+        post: operations["completeVendorSetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List vendor users */
+        get: operations["listVendorUsers"];
+        put?: never;
+        /** Create a vendor user */
+        post: operations["createVendorUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/users/{vendor_user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change role or deactivate a vendor user */
+        patch: operations["updateVendorUser"];
+        trace?: never;
+    };
+    "/internal/v1/vendor/users/{vendor_user_id}/totp-resets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset a vendor user's TOTP */
+        post: operations["resetVendorUserTotp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/audit-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the vendor audit log */
+        get: operations["listVendorAuditEntries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/owner-lookups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find organisations by exact owner mobile
+         * @description A POST so the number never appears in a URL or access log.
+         */
+        post: operations["lookupOrganisationsByOwnerMobile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/owner-statuses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Owner state for a set of organisations (directory list) */
+        get: operations["getOwnerStatuses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/owner-invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List an organisation's owner invitations */
+        get: operations["listOwnerInvitations"];
+        put?: never;
+        /**
+         * Create an owner invitation
+         * @description Allowed only while the organisation has no owner member (no vendor can add or replace owners, T-E4). The number is stored only in identity.
+         */
+        post: operations["createOwnerInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/owner-invitations/{invitation_id}/renewals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend or extend a pending invitation */
+        post: operations["renewOwnerInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/owner-invitations/{invitation_id}/cancellation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Cancel a pending invitation */
+        put: operations["cancelOwnerInvitation"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List one organisation's devices (metadata only) */
+        get: operations["listOrganisationDevices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one device of an organisation */
+        get: operations["getOrganisationDevice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/organisations/{organisation_id}/devices/{device_id}/revocation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Revoke a device on a verified request */
+        put: operations["revokeOrganisationDevice"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/support-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a read-only support session
+         * @description 422 for a duration over 60 minutes, an empty ticket, or a reason under 10 characters. One active session per vendor user. Refused for a deactivated vendor user.
+         */
+        post: operations["startSupportSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/support-sessions/{support_session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a support session */
+        get: operations["getSupportSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/support-sessions/{support_session_id}/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Re-issue the support token inside the session */
+        post: operations["renewSupportToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/support-sessions/{support_session_id}/termination": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** End a support session */
+        put: operations["endSupportSession"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List vendor approvals */
+        get: operations["listVendorApprovals"];
+        put?: never;
+        /**
+         * File a two-person vendor approval
+         * @description The gate permission is admin.approval.create; the service then checks the kind-specific permission (x-permission-by-kind). The four kinds of ADR-0014 A1.3 (org_suspend, org_reinstate, org_close, tax_rule_set_publish) lapse after 24 hours; with fewer than two eligible users the request is refused second_approver_unavailable in every environment.
+         */
+        post: operations["createVendorApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/approvals/{approval_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a vendor approval */
+        get: operations["getVendorApproval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/approvals/{approval_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Approve with a fresh TOTP
+         * @description The approver must differ from the requester, hold the kind's approve permission (admin.signin_code.approve, admin.recovery.approve, admin.device.revoke, admin.org.lifecycle.approve or admin.taxrules.publish) and have an account older than 7 days. No single-person override exists. For the kinds executed by another service (org_suspend, org_reinstate, org_close, tax_rule_set_publish) the response carries a single-use vendor approval grant for the admin service.
+         */
+        put: operations["approveVendorApproval"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/approvals/{approval_id}/code-half-claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim the requester's half of a sign-in code (once) */
+        post: operations["claimCodeHalf"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/vendor/approvals/{approval_id}/cancellation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reject or cancel an approval */
+        put: operations["cancelVendorApproval"];
         post?: never;
         delete?: never;
         options?: never;
@@ -128,81 +1178,313 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description Request to start an OTP sign-in. STUB. */
-        CreateOtpChallenge: {
+        /** @description Public key as a JWK (RFC 7517), P-256 only. Private key material is never sent. */
+        PublicJwk: {
             /**
-             * @description Mobile number in E.164 format.
-             * @example +910000000000
+             * @description Key type.
+             * @example EC
+             * @enum {string}
              */
-            mobile_e164: string;
+            kty: "EC";
+            /**
+             * @description Curve.
+             * @example P-256
+             * @enum {string}
+             */
+            crv: "P-256";
+            /**
+             * @description Base64url X coordinate.
+             * @example f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU
+             */
+            x: string;
+            /**
+             * @description Base64url Y coordinate.
+             * @example x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0
+             */
+            y: string;
         };
-        /** @description A pending OTP challenge. STUB. */
+        /** @description One published signing key (RFC 7517). */
+        Jwk: {
+            /**
+             * @description Key type.
+             * @example EC
+             * @enum {string}
+             */
+            kty: "EC";
+            /**
+             * @description Curve.
+             * @example P-256
+             * @enum {string}
+             */
+            crv: "P-256";
+            /**
+             * @description Base64url X coordinate.
+             * @example f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU
+             */
+            x: string;
+            /**
+             * @description Base64url Y coordinate.
+             * @example x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0
+             */
+            y: string;
+            /**
+             * @description Key id.
+             * @example k-2026-09
+             */
+            kid: string;
+            /**
+             * @description Algorithm; always ES256.
+             * @example ES256
+             * @enum {string}
+             */
+            alg: "ES256";
+            /**
+             * @description Key use.
+             * @example sig
+             * @enum {string}
+             */
+            use: "sig";
+        };
+        /** @description JSON Web Key Set: current and next signing keys, plus retired keys still inside the longest offline window. */
+        Jwks: {
+            /** @description Public signing keys. */
+            keys: components["schemas"]["Jwk"][];
+        };
+        /** @description Access token and, for strong sessions, a rotating refresh token. */
+        TokenPair: {
+            /**
+             * @description ES256 access token, 15 minutes (ADR-0005 section 2).
+             * @example tok_example_access
+             */
+            access_token: string;
+            /**
+             * @description Always Bearer.
+             * @example Bearer
+             * @enum {string}
+             */
+            token_type: "Bearer";
+            expires_at: components["schemas"]["Timestamp"];
+            /**
+             * @description Opaque 256-bit refresh token; rotates on every use and reuse revokes the session.
+             * @example tok_example_refresh
+             */
+            refresh_token?: string;
+            refresh_expires_at?: components["schemas"]["Timestamp"];
+        };
+        /**
+         * @description How the principal authenticated (the amr claim).
+         * @example otp
+         * @enum {string}
+         */
+        AuthMethod: "otp" | "vendor_code" | "pin" | "device";
+        /** @description One organisation the signed-in account belongs to. */
+        Membership: {
+            member_id: components["schemas"]["Id"];
+            organisation_id: components["schemas"]["Id"];
+        };
+        /** @description Request to start an owner or manager OTP sign-in. The response never reveals whether the number is known. */
+        CreateOtpChallenge: {
+            mobile_e164: components["schemas"]["MobileE164"];
+            device_id: components["schemas"]["Id"];
+            device_public_key: components["schemas"]["PublicJwk"];
+        };
+        /** @description A pending OTP challenge, bound to the requesting device key. Identical for known, unknown and rate-blocked numbers. */
         OtpChallenge: {
             id: components["schemas"]["Id"];
             expires_at: components["schemas"]["Timestamp"];
+            resend_after: components["schemas"]["Timestamp"];
         };
-        /** @description Request to create a session from a verified OTP. STUB. */
+        /** @description Exchange a verified OTP, or a vendor-assisted sign-in code, for a session. */
         CreateSession: {
+            /**
+             * @description Which secret is being redeemed.
+             * @example otp
+             * @enum {string}
+             */
+            grant_type: "otp" | "vendor_code";
             challenge_id: components["schemas"]["Id"];
             /**
-             * @description The one-time code entered by the user.
-             * @example 000000
+             * @description The 6-digit OTP, or the 8-character vendor-assisted code.
+             * @example 482915
              */
-            otp: string;
+            code: string;
+            device_id: components["schemas"]["Id"];
+            /**
+             * @description Compact JWS signed with the device key over the challenge id, a fresh jti and iat (IC-04).
+             * @example assertion.example
+             */
+            device_assertion: string;
         };
-        /** @description A signed-in session. STUB; tokens and offline pack are added in the next wave. */
+        /** @description A signed-in strong session. */
         Session: {
-            id: components["schemas"]["Id"];
+            session_id: components["schemas"]["Id"];
+            member_id: components["schemas"]["Id"];
+            tokens: components["schemas"]["TokenPair"];
+            amr: components["schemas"]["AuthMethod"];
+            auth_time: components["schemas"]["Timestamp"];
+            caution_until?: components["schemas"]["Timestamp"];
+            /**
+             * @description True when this sign-in consumed a pending owner invitation and created the owner member.
+             * @example false
+             */
+            invitation_accepted: boolean;
+            /** @description All organisations of the account; the token is for member_id only. */
+            memberships: components["schemas"]["Membership"][];
+        };
+        /** @description Rotate a refresh token. The proof is signed by the device key, so a copied token is useless elsewhere. */
+        RefreshSession: {
+            /**
+             * @description The current refresh token.
+             * @example tok_example_refresh
+             */
+            refresh_token: string;
+            device_id: components["schemas"]["Id"];
+            /**
+             * @description Compact JWS over the refresh-token hash, a fresh jti and iat.
+             * @example proof.example
+             */
+            proof: string;
+        };
+        /** @description Request a token for another organisation of the same account (a new token, membership re-read). */
+        SwitchMember: {
+            member_id: components["schemas"]["Id"];
+        };
+        /** @description Device token request for unattended devices (KDS, hub): the device role applies. */
+        DeviceGrant: {
+            /**
+             * @description Constant. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            grant_type: "device";
+            device_id: components["schemas"]["Id"];
+            /**
+             * @description Device-key assertion over a fresh jti and iat.
+             * @example assertion.example
+             */
+            assertion: string;
+        };
+        /** @description Online token for a PIN session. Carries the device assertion and the fields of the session.open record with its session proof (ADR-0005 A2.1). */
+        PinGrant: {
+            /**
+             * @description Constant. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            grant_type: "pin";
+            device_id: components["schemas"]["Id"];
+            /**
+             * @description Device-key assertion signed over these fields plus a fresh jti and iat.
+             * @example assertion.example
+             */
+            assertion: string;
+            session_id: components["schemas"]["Id"];
+            member_id: components["schemas"]["Id"];
+            /**
+             * @description Offline-pack version the session was opened under.
+             * @example 7
+             */
+            pack_v: number;
+            /**
+             * @description The member PIN version; must be current.
+             * @example 2
+             */
+            pin_v: number;
+            opened_at: components["schemas"]["Timestamp"];
+            /**
+             * @description HMAC session proof made at PIN entry; verified with the member proof key.
+             * @example proof.example
+             */
+            session_proof: string;
+        };
+        /** @description Device token request: a device grant, or a PIN grant that also carries the session proof. */
+        DeviceTokenRequest: components["schemas"]["DeviceGrant"] | components["schemas"]["PinGrant"];
+        /** @description Access token for a device or PIN session. A pin session has no refresh token; renew by repeating the request. */
+        DeviceToken: {
+            /**
+             * @description ES256 access token, 15 minutes and never past opened_at plus 16 hours for pin.
+             * @example tok_example_access
+             */
+            access_token: string;
+            /**
+             * @description Always Bearer.
+             * @example Bearer
+             * @enum {string}
+             */
+            token_type: "Bearer";
+            expires_at: components["schemas"]["Timestamp"];
+            /**
+             * @description Token type claim.
+             * @example pin
+             * @enum {string}
+             */
+            typ: "device" | "pin";
+            session_id?: components["schemas"]["Id"];
+        };
+        /** @description Drain token request from a revoked device. */
+        DrainRequest: {
+            device_id: components["schemas"]["Id"];
+            /**
+             * @description Device-key assertion over a fresh jti and iat.
+             * @example assertion.example
+             */
+            assertion: string;
+        };
+        /** @description The only credential a revoked device receives: valid 5 minutes for quarantine upload and the wipe-order endpoint. */
+        DrainToken: {
+            /**
+             * @description ES256 drain token, not refreshable.
+             * @example tok_example_drain
+             */
+            access_token: string;
             expires_at: components["schemas"]["Timestamp"];
         };
-        /** @description JSON Web Key Set. STUB. */
-        Jwks: {
-            /** @description Public signing keys. */
-            keys: {
-                [key: string]: unknown;
-            }[];
+        /** @description Server nonce a device signs with the key it is registering (IC-13). */
+        DeviceNonce: {
+            /**
+             * @description Random value, single use.
+             * @example nonce_example_01
+             */
+            nonce: string;
+            expires_at: components["schemas"]["Timestamp"];
         };
         /**
-         * @description Device kind. STUB; the device-role catalogue is added in the next wave.
-         * @example waiter_tablet
+         * @description Device kind (ADR-0005 section 4).
+         * @example pos
          * @enum {string}
          */
-        DeviceKind: "waiter_tablet" | "counter" | "kds" | "hub" | "mobile";
+        DeviceKind: "personal" | "pos" | "waiter" | "kds" | "hub";
         /**
-         * @description Device lifecycle state.
+         * @description Device lifecycle state: active, then revoked, then drained, then wiped; or revoked, then lost.
          * @example active
          * @enum {string}
          */
-        DeviceStatus: "active" | "revoked";
-        /** @description Request to register a device. The device ID is client-generated. */
-        RegisterDevice: {
-            id: components["schemas"]["Id"];
-            kind: components["schemas"]["DeviceKind"];
-            /**
-             * @description Display name.
-             * @example Tablet 1
-             */
-            name: string;
-        };
-        /** @description Request to revoke a device. */
-        RevokeDevice: {
-            /**
-             * @description Why the device is revoked.
-             * @example lost
-             * @enum {string}
-             */
-            reason: "lost" | "stolen" | "retired" | "other";
-        };
-        /** @description A registered device. STUB. */
+        DeviceState: "active" | "revoked" | "drained" | "wiped" | "lost";
+        /**
+         * @description Protection tier of the device key, reported by the device at registration. Information, not proof, and no permission depends on it (ADR-0005 A1).
+         * @example hardware
+         * @enum {string}
+         */
+        KeyProtection: "hardware" | "os-software";
+        /**
+         * @description Whether the device may finalise legal documents: active series, dormant series (waiter), or none.
+         * @example active
+         * @enum {string}
+         */
+        BillingCapability: "none" | "dormant" | "active";
+        /** @description A registered device. Keys, PIN data and pack contents are never part of this resource. */
         Device: {
             id: components["schemas"]["Id"];
             kind: components["schemas"]["DeviceKind"];
             /**
              * @description Display name.
-             * @example Tablet 1
+             * @example Counter 1
              */
             name: string;
-            status: components["schemas"]["DeviceStatus"];
+            outlet_id: components["schemas"]["Id"];
+            state: components["schemas"]["DeviceState"];
+            key_protection: components["schemas"]["KeyProtection"];
+            registered_at: components["schemas"]["Timestamp"];
+            last_contact_at?: components["schemas"]["Timestamp"];
+            billing_capability: components["schemas"]["BillingCapability"];
         };
         /** @description A page of devices. */
         DevicePage: {
@@ -211,15 +1493,269 @@ export interface components {
             /** @description Opaque cursor for the next page; absent when there are no more results. */
             next_cursor?: string;
         };
-        /** @description A staff member. STUB; roles and outlet bindings are added in the next wave. Personal data fields are deliberately absent here. */
-        Member: {
+        /** @description Register a device by a signed-in member holding device.register. Kind and outlet are the registering member's choice and are never taken from a later client claim. */
+        RegisterDevice: {
             id: components["schemas"]["Id"];
+            kind: components["schemas"]["DeviceKind"];
+            /**
+             * @description Display name.
+             * @example Counter 1
+             */
+            name: string;
+            outlet_id: components["schemas"]["Id"];
+            public_key: components["schemas"]["PublicJwk"];
+            key_protection: components["schemas"]["KeyProtection"];
+            /**
+             * @description Nonce from createDeviceNonce.
+             * @example nonce_example_01
+             */
+            nonce: string;
+            /**
+             * @description Signature of the nonce with the submitted key (proof of possession).
+             * @example sig.example
+             */
+            nonce_signature: string;
+        };
+        /** @description Create a single-use activation code bound to an outlet and a device kind. */
+        CreateActivationCode: {
+            outlet_id: components["schemas"]["Id"];
+            kind: components["schemas"]["DeviceKind"];
+        };
+        /** @description An activation code; the code itself is shown once. */
+        ActivationCode: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description 8 characters from a 32-symbol alphabet (40 bits), 10 minutes, single use.
+             * @example 7QK3M9XD
+             */
+            code: string;
+            outlet_id: components["schemas"]["Id"];
+            kind: components["schemas"]["DeviceKind"];
+            expires_at: components["schemas"]["Timestamp"];
+        };
+        /** @description Activate a new device with a code. No OTP is spent and the manager session never touches the device. */
+        ActivateDevice: {
+            /**
+             * @description The code from createActivationCode.
+             * @example 7QK3M9XD
+             */
+            activation_code: string;
+            id: components["schemas"]["Id"];
+            /**
+             * @description Display name.
+             * @example Counter 1
+             */
+            name: string;
+            public_key: components["schemas"]["PublicJwk"];
+            key_protection: components["schemas"]["KeyProtection"];
+            /**
+             * @description Nonce from createDeviceNonce.
+             * @example nonce_example_01
+             */
+            nonce: string;
+            /**
+             * @description Signature of the nonce with the submitted key.
+             * @example sig.example
+             */
+            nonce_signature: string;
+        };
+        /** @description A member usable at the device outlet. Verifier fields appear only for device kinds that offer PIN login. */
+        PackMember: {
+            member_id: components["schemas"]["Id"];
+            /**
+             * @description Display name; no phone number or account id.
+             * @example Asha
+             */
+            display_name: string;
             /**
              * @description Member state.
              * @example active
              * @enum {string}
              */
             status: "active" | "suspended";
+            /**
+             * @description Base64 per-member salt.
+             * @example c2FsdC1leGFtcGxl
+             */
+            pin_salt?: string;
+            /**
+             * @description Base64 of the first vbits bits of the HKDF verifier (ADR-0005 A2.6).
+             * @example kg
+             */
+            pin_verifier?: string;
+            /**
+             * @description Number of verifier bits carried (default 12).
+             * @example 12
+             */
+            vbits?: number;
+            /**
+             * @description PIN version.
+             * @example 2
+             */
+            pin_v?: number;
+            /** @description Effective permission strings at this outlet. */
+            permissions: string[];
+        };
+        /** @description A document-series code given to the device (ADR-0003 section 1a). */
+        PackSeries: {
+            /**
+             * @description Series code, unique per tax registration.
+             * @example A7K
+             */
+            code: string;
+            /**
+             * @description Document type.
+             * @example tax_invoice
+             * @enum {string}
+             */
+            doc_type: "tax_invoice" | "bill_of_supply" | "plain_bill" | "credit_note";
+            /**
+             * @description Series state on this device.
+             * @example active
+             * @enum {string}
+             */
+            state: "active" | "dormant";
+            tax_registration_id: components["schemas"]["Id"];
+        };
+        /** @description Payload of the signed offline pack (ADR-0005 section 6, A2.6). */
+        OfflinePackClaims: {
+            /**
+             * @description Pack version.
+             * @example 7
+             */
+            pack_v: number;
+            organisation_id: components["schemas"]["Id"];
+            /** @description The device's own credential. */
+            device: {
+                device_id: components["schemas"]["Id"];
+                public_key: components["schemas"]["PublicJwk"];
+                outlet_id: components["schemas"]["Id"];
+                kind: components["schemas"]["DeviceKind"];
+            };
+            /** @description Members allowed at the outlet. */
+            members: components["schemas"]["PackMember"][];
+            /** @description Series codes given to the device. */
+            series: components["schemas"]["PackSeries"][];
+            /** @description Revoked device ids for the outlet. */
+            revoked_device_ids: components["schemas"]["Id"][];
+            /**
+             * @description Version of the signed intent table.
+             * @example 3
+             */
+            intent_table_version: number;
+            /**
+             * @description Permission catalogue version.
+             * @example 1
+             */
+            catalogue_version: number;
+            issued_at: components["schemas"]["Timestamp"];
+            offline_valid_until: components["schemas"]["Timestamp"];
+            /**
+             * @description Idle lock for shared devices.
+             * @example 5
+             */
+            idle_lock_minutes: number;
+            /** @description Current and next identity public keys. */
+            identity_public_keys: components["schemas"]["Jwk"][];
+            op_signing_public_key: components["schemas"]["Jwk"];
+        };
+        /** @description A signed offline pack. Clients verify jws and use only its payload. */
+        OfflinePack: {
+            /**
+             * @description Pack version.
+             * @example 7
+             */
+            pack_v: number;
+            /**
+             * @description Compact ES256 JWS whose payload is OfflinePackClaims.
+             * @example pack.jws.example
+             */
+            jws: string;
+            claims: components["schemas"]["OfflinePackClaims"];
+            issued_at: components["schemas"]["Timestamp"];
+            offline_valid_until: components["schemas"]["Timestamp"];
+        };
+        /** @description A newly registered device with its first offline pack. */
+        DeviceActivation: {
+            device: components["schemas"]["Device"];
+            offline_pack: components["schemas"]["OfflinePack"];
+        };
+        /** @description Revoke a device. Terminal; the device keeps only the drain path. */
+        RevokeDevice: {
+            /**
+             * @description Why the device is revoked.
+             * @example lost
+             * @enum {string}
+             */
+            reason: "lost" | "stolen" | "retired" | "other";
+        };
+        /** @description Highest sequence of one device stream. */
+        StreamSequence: {
+            /**
+             * @description Stream name.
+             * @example device-ops
+             */
+            stream: string;
+            /**
+             * @description Sequence number.
+             * @example 1842
+             */
+            seq: number;
+        };
+        /** @description Wipe order, signed by identity. The device verifies it covers every local operation before wiping. */
+        WipeOrder: {
+            device_id: components["schemas"]["Id"];
+            /** @description Sequence the device is drained through, per stream. */
+            drained_through: components["schemas"]["StreamSequence"][];
+            issued_at: components["schemas"]["Timestamp"];
+            /**
+             * @description Compact JWS signed with the pack-signing key.
+             * @example wipe.jws.example
+             */
+            jws: string;
+        };
+        /** @description Drain report from the sync gateway. */
+        RecordDrain: {
+            /** @description Sequence stored per device stream. */
+            drained_through: components["schemas"]["StreamSequence"][];
+        };
+        /** @description Assign a role at a scope. */
+        AssignmentInput: {
+            id: components["schemas"]["Id"];
+            role_id: components["schemas"]["Id"];
+            /** @description Outlets the assignment covers; absent or empty means the whole organisation. */
+            outlet_ids?: components["schemas"]["Id"][];
+        };
+        /** @description A member-role-scope assignment. */
+        RoleAssignment: {
+            id: components["schemas"]["Id"];
+            role_id: components["schemas"]["Id"];
+            /** @description Outlets the assignment covers; absent means the whole organisation. */
+            outlet_ids?: components["schemas"]["Id"][];
+        };
+        /** @description A staff member. Mobile number only in masked form; email and ID documents never appear. */
+        Member: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Display name.
+             * @example Asha
+             */
+            display_name: string;
+            /**
+             * @description Member state.
+             * @example active
+             * @enum {string}
+             */
+            status: "invited" | "active" | "suspended";
+            mobile_masked?: components["schemas"]["MobileMasked"];
+            /**
+             * @description Whether a PIN is set.
+             * @example true
+             */
+            has_pin: boolean;
+            /** @description Role assignments. */
+            role_assignments: components["schemas"]["RoleAssignment"][];
+            created_at: components["schemas"]["Timestamp"];
         };
         /** @description A page of members. */
         MemberPage: {
@@ -228,7 +1764,292 @@ export interface components {
             /** @description Opaque cursor for the next page; absent when there are no more results. */
             next_cursor?: string;
         };
-        /** @description A device or session revocation. STUB. */
+        /** @description Add a member. With a mobile number the person is invited; the response is identical whether or not the number has an account. */
+        CreateMember: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Display name.
+             * @example Asha
+             */
+            display_name: string;
+            mobile_e164?: components["schemas"]["MobileE164"];
+            /** @description Initial assignments. */
+            role_assignments?: components["schemas"]["AssignmentInput"][];
+        };
+        /** @description Change a member. */
+        UpdateMember: {
+            /**
+             * @description Display name.
+             * @example Asha K
+             */
+            display_name?: string;
+            /**
+             * @description Member state.
+             * @example suspended
+             * @enum {string}
+             */
+            status?: "active" | "suspended";
+        };
+        /** @description Authorisation for a member to choose a new PIN on a device. The authoriser never sees or chooses the PIN. */
+        PinResetAuthorisation: {
+            id: components["schemas"]["Id"];
+            expires_at: components["schemas"]["Timestamp"];
+        };
+        /** @description Set or change a PIN. The body is excluded from every log and trace. */
+        SetPin: {
+            device_id: components["schemas"]["Id"];
+            /**
+             * @description 4 to 6 digits; 6 for members holding sensitive permissions; trivial PINs refused.
+             * @example 482915
+             */
+            pin: string;
+            pin_reset_authorisation_id?: components["schemas"]["Id"];
+        };
+        /** @description Result of setting a PIN. */
+        PinSet: {
+            /**
+             * @description New PIN version.
+             * @example 3
+             */
+            pin_v: number;
+        };
+        /**
+         * @description Permission string, <resource>.<action>[.<qualifier>].
+         * @example order.create
+         */
+        PermissionKey: string;
+        /** @description A role: a set of permissions, nothing more. */
+        Role: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Role name.
+             * @example Cashier
+             */
+            name: string;
+            /** @description Permission strings. */
+            permissions: components["schemas"]["PermissionKey"][];
+            /**
+             * @description The built-in owner role cannot be edited or removed from its last holder.
+             * @example false
+             */
+            built_in: boolean;
+            created_at: components["schemas"]["Timestamp"];
+            updated_at: components["schemas"]["Timestamp"];
+        };
+        /** @description A page of roles. */
+        RolePage: {
+            /** @description Roles on this page. */
+            items: components["schemas"]["Role"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Create or replace a role. The actor must hold every permission before and after the edit (G1). */
+        RoleInput: {
+            id?: components["schemas"]["Id"];
+            /**
+             * @description Role name.
+             * @example Cashier
+             */
+            name: string;
+            /** @description Permission strings. */
+            permissions: components["schemas"]["PermissionKey"][];
+        };
+        /** @description One catalogue entry (the catalogue lives in common/permissions.yaml). */
+        Permission: {
+            key: components["schemas"]["PermissionKey"];
+            /**
+             * @description Owning service.
+             * @example tenancy
+             */
+            service: string;
+            /**
+             * @description i18n key of the description.
+             * @example perm.order.create
+             */
+            description_key: string;
+            /**
+             * @description Reason and audit record required.
+             * @example false
+             */
+            sensitive: boolean;
+            /**
+             * @description Never exercisable in a pin or device session.
+             * @example false
+             */
+            strong_only: boolean;
+            /**
+             * @description Roles containing it are managed by owners only.
+             * @example false
+             */
+            owner_grant: boolean;
+            /**
+             * @description Readable in a support session (view mode).
+             * @example false
+             */
+            support_viewable: boolean;
+            /**
+             * @description Writable in a support session in act mode; no permission carries it in Phase 1.
+             * @example false
+             */
+            support_actable: boolean;
+        };
+        /** @description The permission catalogue. */
+        PermissionList: {
+            /** @description Catalogue entries. */
+            items: components["schemas"]["Permission"][];
+            /**
+             * @description Catalogue version.
+             * @example 1
+             */
+            catalogue_version: number;
+        };
+        /** @description Assign the built-in owner role (step-up, owners only). */
+        OwnerRoleAssignment: {
+            id: components["schemas"]["Id"];
+        };
+        /** @description An entry in the organisation's own audit log, including vendor and support access. No secrets or personal data. */
+        TenantAuditEntry: {
+            id: components["schemas"]["Id"];
+            occurred_at: components["schemas"]["Timestamp"];
+            /**
+             * @description Who acted.
+             * @example vendor
+             * @enum {string}
+             */
+            actor_kind: "member" | "device" | "vendor" | "system";
+            /**
+             * @description Display label; "Hostry support" for vendor actors.
+             * @example Hostry support
+             */
+            actor_label: string;
+            /**
+             * @description Stable action key.
+             * @example support.session.started
+             */
+            action: string;
+            target_id?: components["schemas"]["Id"];
+            /**
+             * @description Result.
+             * @example succeeded
+             * @enum {string}
+             */
+            outcome: "succeeded" | "refused" | "failed";
+            /**
+             * @description Marker for the Phase 2 owner screens and Phase 3 delivery (ADR-0013 V7).
+             * @example true
+             */
+            show_to_owner: boolean;
+            support_session_id?: components["schemas"]["Id"];
+            ticket_reference?: components["schemas"]["TicketReference"];
+            reason?: components["schemas"]["Reason"];
+            /**
+             * @description Summary of what a support read returned, for example "devices: 4".
+             * @example devices: 4
+             */
+            read_summary?: string;
+        };
+        /** @description A page of audit entries, newest first. */
+        TenantAuditPage: {
+            /** @description Entries on this page. */
+            items: components["schemas"]["TenantAuditEntry"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description File a refused operation for approval from another binding or owner (ADR-0005 A2.2). The approver sees what will happen, built from the stored operation, never from requester text. */
+        CreateApprovalRequest: {
+            /**
+             * @description operationId of the refused operation.
+             * @example createMember
+             */
+            operation_id: string;
+            /** @description The exact body that will be repeated with the approval token. */
+            request_body: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description A pending, approved, rejected or lapsed caution approval. The approval token is returned once, to the requester, when approved. */
+        ApprovalRequest: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description operationId of the refused operation.
+             * @example createMember
+             */
+            operation_id: string;
+            /**
+             * @description Hash the approval token is bound to (claim bh): "sha256:" followed by the 64 lower-case hex digits of the SHA-256 over the exact bytes of the request body as sent, with no parsing, re-serialisation or whitespace change. For this filing request those are the bytes of the request_body member exactly as received; the repeated operation must send a body that is byte-identical to them, and the verifier hashes the bytes it received. An empty body hashes the empty string. go-auth provides the helper that computes and checks it.
+             * @example sha256:cf03a846706f29a88ba61a212f79e7c224142fdd5df92fc1d7ed8bb1283fb8c8
+             */
+            body_hash: string;
+            /**
+             * @description Request state.
+             * @example pending
+             * @enum {string}
+             */
+            state: "pending" | "approved" | "rejected" | "lapsed" | "used";
+            created_at: components["schemas"]["Timestamp"];
+            expires_at: components["schemas"]["Timestamp"];
+            /**
+             * @description ES256 approval token, 5 minutes, single use; present once on approval. Claims: typ approval, sid, op (operationId) and bh (hash of the request body). Sent on the repeated request in the Hostry-Approval header.
+             * @example tok_example_approval
+             */
+            approval_token?: string;
+        };
+        /** @description A page of approval requests. */
+        ApprovalRequestPage: {
+            /** @description Requests on this page. */
+            items: components["schemas"]["ApprovalRequest"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Approve or reject a request. */
+        DecideApproval: {
+            /**
+             * @description Decision.
+             * @example approve
+             * @enum {string}
+             */
+            decision: "approve" | "reject";
+        };
+        /** @description Account-to-device binding. Under caution for 24 hours from creation. */
+        Binding: {
+            id: components["schemas"]["Id"];
+            device_id: components["schemas"]["Id"];
+            created_at: components["schemas"]["Timestamp"];
+            caution_until?: components["schemas"]["Timestamp"];
+            /**
+             * @description Binding state.
+             * @example active
+             * @enum {string}
+             */
+            state: "active" | "rejected" | "revoked";
+        };
+        /** @description A page of bindings. */
+        BindingPage: {
+            /** @description Bindings on this page. */
+            items: components["schemas"]["Binding"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Cancel a pending owner recovery. */
+        RecoveryCancellation: {
+            /**
+             * @description Optional note.
+             * @example Not requested by me.
+             */
+            reason?: string;
+        };
+        /** @description An owner recovery in its 24-hour delay. */
+        OwnerRecovery: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Recovery state.
+             * @example cancelled
+             * @enum {string}
+             */
+            state: "pending" | "cancelled" | "completed";
+            completes_at?: components["schemas"]["Timestamp"];
+        };
+        /** @description A device or session revocation (tenant-id-only feed, no personal data). */
         Revocation: {
             id: components["schemas"]["Id"];
             /**
@@ -238,17 +2059,582 @@ export interface components {
              */
             subject_type: "device" | "session";
             subject_id: components["schemas"]["Id"];
+            organisation_id: components["schemas"]["Id"];
             revoked_at: components["schemas"]["Timestamp"];
         };
-        /** @description A page of revocations. */
+        /** @description A page of revocations in order. */
         RevocationPage: {
             /** @description Revocations on this page. */
             items: components["schemas"]["Revocation"][];
             /** @description Opaque cursor for the next page; absent when there are no more results. */
             next_cursor?: string;
         };
+        /** @description Ask identity to verify a session or approval proof (sync gateway, ADR-0005 section 7 questions 4 and 5). */
+        ProofVerification: {
+            /**
+             * @description Proof kind.
+             * @example session
+             * @enum {string}
+             */
+            kind: "session" | "approval";
+            device_id: components["schemas"]["Id"];
+            member_id: components["schemas"]["Id"];
+            session_id?: components["schemas"]["Id"];
+            /**
+             * @description Pack version.
+             * @example 7
+             */
+            pack_v: number;
+            /**
+             * @description PIN version of the proof.
+             * @example 2
+             */
+            pin_v: number;
+            opened_at?: components["schemas"]["Timestamp"];
+            /**
+             * @description The proof to verify.
+             * @example proof.example
+             */
+            proof: string;
+            /**
+             * @description Action hash, for approval proofs.
+             * @example sha256:cf03a846706f29a88ba61a212f79e7c224142fdd5df92fc1d7ed8bb1283fb8c8
+             */
+            action_hash?: string;
+        };
+        /** @description Verdict of a proof check. Never reveals key material. */
+        ProofVerdict: {
+            /**
+             * @description Whether the proof verifies for that pin_v.
+             * @example true
+             */
+            valid: boolean;
+            /**
+             * @description Attribution label (computed by the cloud).
+             * @example verified
+             * @enum {string}
+             */
+            label: "verified" | "unverified";
+        };
+        /** @description Was the member and/or series code issued to the device in the given pack? */
+        PackHistoryCheck: {
+            device_id: components["schemas"]["Id"];
+            /**
+             * @description Pack version.
+             * @example 7
+             */
+            pack_v: number;
+            member_id?: components["schemas"]["Id"];
+            /**
+             * @description Series code to look up.
+             * @example A7K
+             */
+            series_code?: string;
+        };
+        /** @description Result of a pack-history check. */
+        PackHistoryVerdict: {
+            /**
+             * @description Identity holds this pack version for the device.
+             * @example true
+             */
+            pack_known: boolean;
+            /**
+             * @description The member was listed in that pack.
+             * @example true
+             */
+            member_in_pack: boolean;
+            /**
+             * @description The series code was issued to the device in any pack.
+             * @example true
+             */
+            series_issued: boolean;
+        };
         /**
-         * @description Client-generated, time-sortable identifier (UUIDv7 or ULID).
+         * @description Vendor role (a set of admin.* permissions; checks are on permissions).
+         * @example support
+         * @enum {string}
+         */
+        VendorRole: "platform_admin" | "onboarding" | "support" | "billing";
+        /** @description Vendor sign-in. Failures (wrong password, unknown email, wrong or replayed TOTP, lockout) are all the same 401. */
+        VendorSignIn: {
+            /**
+             * Format: email
+             * @description Vendor user email.
+             * @example staff@example.invalid
+             */
+            email: string;
+            /**
+             * @description Password; never logged.
+             * @example correct-horse-battery-staple
+             */
+            password: string;
+            /**
+             * @description Current TOTP code; accepted once.
+             * @example 123456
+             */
+            totp_code: string;
+        };
+        /** @description The signed-in vendor user and what the role allows. */
+        VendorPrincipal: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Display name.
+             * @example Priya
+             */
+            display_name: string;
+            role: components["schemas"]["VendorRole"];
+            /** @description admin.* permission strings held. */
+            permissions: string[];
+        };
+        /** @description Vendor-realm credential. Held server-side by the admin service and never sent to a browser. */
+        VendorSession: {
+            /**
+             * @description ES256 vendor-realm access token.
+             * @example tok_example_vendor
+             */
+            access_token: string;
+            expires_at: components["schemas"]["Timestamp"];
+            /**
+             * @description Opaque handle used to renew the token.
+             * @example renew_example
+             */
+            renewal_handle: string;
+            session_ends_at: components["schemas"]["Timestamp"];
+            user: components["schemas"]["VendorPrincipal"];
+        };
+        /** @description Renew a vendor access token. */
+        VendorSessionRenewal: {
+            /**
+             * @description The current renewal handle.
+             * @example renew_example
+             */
+            renewal_handle: string;
+        };
+        /** @description Start account setup from a one-time link (24 hours, single use). */
+        BeginVendorSetup: {
+            /**
+             * @description Token from the setup link.
+             * @example setup_example
+             */
+            setup_token: string;
+        };
+        /** @description Material for TOTP enrolment. */
+        VendorSetupChallenge: {
+            /**
+             * Format: email
+             * @description Account email.
+             * @example staff@example.invalid
+             */
+            email: string;
+            /**
+             * @description otpauth URI for the authenticator app. Contains the TOTP secret; shown once.
+             * @example otpauth://totp/Hostry:staff@example.invalid?secret=EXAMPLEEXAMPLE234&issuer=Hostry
+             */
+            totp_provisioning_uri: string;
+            expires_at: components["schemas"]["Timestamp"];
+        };
+        /** @description Finish setup: choose a password (at least 12 characters, no composition rules, not the account email) and confirm TOTP with one code. */
+        CompleteVendorSetup: {
+            /**
+             * @description Token from the setup link.
+             * @example setup_example
+             */
+            setup_token: string;
+            /**
+             * @description New password.
+             * @example example-passphrase-twelve
+             */
+            password: string;
+            /**
+             * @description One TOTP code from the new enrolment.
+             * @example 123456
+             */
+            totp_code: string;
+        };
+        /**
+         * @description Account state. setup_pending until password and TOTP are both set.
+         * @example active
+         * @enum {string}
+         */
+        VendorUserStatus: "setup_pending" | "active" | "deactivated";
+        /** @description A vendor staff account. Never holds password, TOTP secret or one-time codes. */
+        VendorUser: {
+            id: components["schemas"]["Id"];
+            /**
+             * Format: email
+             * @description Account email.
+             * @example staff@example.invalid
+             */
+            email: string;
+            /**
+             * @description Display name.
+             * @example Priya
+             */
+            display_name: string;
+            role: components["schemas"]["VendorRole"];
+            status: components["schemas"]["VendorUserStatus"];
+            /**
+             * @description Whether TOTP is enrolled.
+             * @example true
+             */
+            totp_enrolled: boolean;
+            created_at: components["schemas"]["Timestamp"];
+        };
+        /** @description A page of vendor users. */
+        VendorUserPage: {
+            /** @description Users on this page. */
+            items: components["schemas"]["VendorUser"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Create a vendor user. A one-time setup link goes out through the email sender interface; it is never returned. */
+        CreateVendorUser: {
+            id: components["schemas"]["Id"];
+            /**
+             * Format: email
+             * @description Account email.
+             * @example staff@example.invalid
+             */
+            email: string;
+            /**
+             * @description Display name.
+             * @example Priya
+             */
+            display_name: string;
+            role: components["schemas"]["VendorRole"];
+        };
+        /** @description Change role or state. Deactivation ends that user's admin and support sessions; the last active platform_admin cannot be deactivated or demoted, and nobody can deactivate themselves. */
+        UpdateVendorUser: {
+            role?: components["schemas"]["VendorRole"];
+            /**
+             * @description Set to deactivated or active.
+             * @example deactivated
+             * @enum {string}
+             */
+            status?: "active" | "deactivated";
+        };
+        /** @description Append-only vendor audit entry. Holds no password, TOTP, OTP, token or full phone number. */
+        VendorAuditEntry: {
+            id: components["schemas"]["Id"];
+            occurred_at: components["schemas"]["Timestamp"];
+            actor_vendor_user_id: components["schemas"]["Id"];
+            /**
+             * @description Stable action key.
+             * @example vendor.device.revoked
+             */
+            action: string;
+            organisation_id?: components["schemas"]["Id"];
+            target_id?: components["schemas"]["Id"];
+            ticket_reference?: components["schemas"]["TicketReference"];
+            /**
+             * @description Result.
+             * @example succeeded
+             * @enum {string}
+             */
+            result: "succeeded" | "refused" | "failed";
+            /**
+             * @description Request id.
+             * @example req_0190a1b2c3d4
+             */
+            request_id: string;
+            /**
+             * @description Source address of the staff member.
+             * @example 203.0.113.7
+             */
+            source_address?: string;
+            support_session_id?: components["schemas"]["Id"];
+            /**
+             * @description For support reads: what was read.
+             * @example devices: 4
+             */
+            read_summary?: string;
+        };
+        /** @description A page of audit entries, newest first. */
+        VendorAuditPage: {
+            /** @description Entries on this page. */
+            items: components["schemas"]["VendorAuditEntry"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Exact owner-mobile lookup. Prefixes never match. */
+        OwnerLookup: {
+            mobile_e164: components["schemas"]["MobileE164"];
+        };
+        /** @description Organisation ids with a pending invitation or an owner member for that exact number. */
+        OwnerLookupResult: {
+            /** @description Matching organisation ids. */
+            organisation_ids: components["schemas"]["Id"][];
+        };
+        /**
+         * @description Owner invitation state.
+         * @example pending
+         * @enum {string}
+         */
+        InvitationStatus: "pending" | "accepted" | "expired" | "cancelled";
+        /**
+         * @description Owner state of an organisation: none (no invitation and no owner member), or the state of the latest owner invitation. An organisation whose owner member exists reports accepted (the invitation was consumed); there is no separate owner value.
+         * @example pending
+         * @enum {string}
+         */
+        OwnerStatus: "none" | "pending" | "accepted" | "expired" | "cancelled";
+        /** @description Owner state for one organisation. */
+        OwnerStatusItem: {
+            organisation_id: components["schemas"]["Id"];
+            owner_status: components["schemas"]["OwnerStatus"];
+            owner_accepted_at?: components["schemas"]["Timestamp"];
+        };
+        /** @description Owner states for the requested organisations. */
+        OwnerStatusList: {
+            /** @description One item per requested organisation. */
+            items: components["schemas"]["OwnerStatusItem"][];
+        };
+        /** @description Create an owner invitation for one organisation and mobile number. A repeat for the same pair returns the existing pending invitation. Refused once the organisation has an owner member. */
+        CreateOwnerInvitation: {
+            mobile_e164: components["schemas"]["MobileE164"];
+            /**
+             * @description Owner display name.
+             * @example Asha
+             */
+            owner_name: string;
+        };
+        /** @description A pending record that lets one number request an OTP and become the owner member. Not an account, not a login. */
+        OwnerInvitation: {
+            id: components["schemas"]["Id"];
+            organisation_id: components["schemas"]["Id"];
+            status: components["schemas"]["InvitationStatus"];
+            mobile_masked: components["schemas"]["MobileMasked"];
+            /**
+             * @description Owner display name.
+             * @example Asha
+             */
+            owner_name?: string;
+            expires_at: components["schemas"]["Timestamp"];
+            created_at: components["schemas"]["Timestamp"];
+            accepted_at?: components["schemas"]["Timestamp"];
+        };
+        /** @description Invitations of one organisation, newest first. */
+        OwnerInvitationList: {
+            /** @description Invitations. */
+            items: components["schemas"]["OwnerInvitation"][];
+        };
+        /** @description Closed device view for vendor staff: no key, PIN data or pack contents. */
+        VendorDevice: {
+            id: components["schemas"]["Id"];
+            kind: components["schemas"]["DeviceKind"];
+            outlet_id: components["schemas"]["Id"];
+            state: components["schemas"]["DeviceState"];
+            registered_at: components["schemas"]["Timestamp"];
+            last_contact_at?: components["schemas"]["Timestamp"];
+            /**
+             * @description Whether the device may finalise legal documents.
+             * @example true
+             */
+            billing_capable: boolean;
+            key_protection?: components["schemas"]["KeyProtection"];
+        };
+        /** @description A page of devices of one organisation. */
+        VendorDevicePage: {
+            /** @description Devices on this page. */
+            items: components["schemas"]["VendorDevice"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /**
+         * @description How the requester was verified.
+         * @example callback_to_registered_number
+         * @enum {string}
+         */
+        RequesterVerification: "callback_to_registered_number" | "owner_request_in_app" | "other";
+        /** @description Revoke one active device on a verified request. Terminal; no un-revoke and no wipe. */
+        VendorRevoke: {
+            ticket_reference: components["schemas"]["TicketReference"];
+            reason: components["schemas"]["Reason"];
+            verification_method: components["schemas"]["RequesterVerification"];
+            /**
+             * @description Required when the method is other.
+             * @example Verified by the accountant on the registered number.
+             */
+            verification_note?: string;
+            /**
+             * @description Must be true: the one confirmation.
+             * @constant
+             */
+            confirm: true;
+            approval_id?: components["schemas"]["Id"];
+        };
+        /** @description Outcome of a vendor revoke. */
+        VendorRevokeResult: {
+            device: components["schemas"]["VendorDevice"];
+            /**
+             * @description revoked: state changed now. already_revoked: no change (also for drained, wiped or lost devices); no wipe order was issued or hastened.
+             * @example revoked
+             * @enum {string}
+             */
+            outcome: "revoked" | "already_revoked";
+            /**
+             * @description Whether this call changed state.
+             * @example true
+             */
+            changed: boolean;
+        };
+        /** @description Start a read-only support session for one organisation. */
+        StartSupportSession: {
+            organisation_id: components["schemas"]["Id"];
+            ticket_reference: components["schemas"]["TicketReference"];
+            reason: components["schemas"]["Reason"];
+            /**
+             * @description Session length; default 30, maximum 60.
+             * @example 30
+             */
+            duration_minutes?: number;
+            /**
+             * @description view is the only mode in Phase 1; act returns 422 mode_not_supported.
+             * @example view
+             * @enum {string}
+             */
+            mode?: "view" | "act";
+        };
+        /** @description A support session record. */
+        SupportSession: {
+            id: components["schemas"]["Id"];
+            organisation_id: components["schemas"]["Id"];
+            vendor_user_id: components["schemas"]["Id"];
+            /**
+             * @description Mode.
+             * @example view
+             * @enum {string}
+             */
+            mode: "view";
+            /**
+             * @description Session state.
+             * @example active
+             * @enum {string}
+             */
+            status: "active" | "ended" | "expired";
+            ticket_reference: components["schemas"]["TicketReference"];
+            started_at: components["schemas"]["Timestamp"];
+            ends_at: components["schemas"]["Timestamp"];
+            ended_at?: components["schemas"]["Timestamp"];
+        };
+        /** @description Tenant-realm token of type support for one organisation: realm tenant, support_viewable permissions only, 15 minutes, never past the session end. Held server-side by the admin service. */
+        SupportToken: {
+            /**
+             * @description ES256 support token. Claims: realm tenant, typ support, tid (the one organisation), sid (support session id), mode (view in Phase 1; act later), ticket (the ticket reference), grants limited to support_viewable permissions, exp.
+             * @example tok_example_support
+             */
+            access_token: string;
+            expires_at: components["schemas"]["Timestamp"];
+        };
+        /** @description A started support session and its first token. */
+        SupportSessionStarted: {
+            session: components["schemas"]["SupportSession"];
+            token: components["schemas"]["SupportToken"];
+        };
+        /**
+         * @description What the two-person approval authorises. org_suspend, org_reinstate and org_close are executed by tenancy and tax_rule_set_publish by billing, with a vendor approval grant from the approval decision (ADR-0014 A1.3); they lapse after 24 hours, and tax_rule_set_publish concerns no organisation.
+         * @example sign_in_code
+         * @enum {string}
+         */
+        ApprovalKind: "sign_in_code" | "owner_recovery" | "device_revoke_over_quota" | "org_suspend" | "org_reinstate" | "org_close" | "tax_rule_set_publish";
+        /** @description File a request that needs a second vendor user (ADR-0005 A2.3). With fewer than two eligible users it is refused (second_approver_unavailable); no single-person override exists. */
+        CreateVendorApproval: {
+            kind: components["schemas"]["ApprovalKind"];
+            organisation_id?: components["schemas"]["Id"];
+            subject_id?: components["schemas"]["Id"];
+            rule_set_id?: components["schemas"]["Id"];
+            /**
+             * @description Content hash of the signed tax rule set (tax_rule_set_publish only), part of the subject hash the grant binds.
+             * @example sha256:cf03a846706f29a88ba61a212f79e7c224142fdd5df92fc1d7ed8bb1283fb8c8
+             */
+            rule_set_content_hash?: string;
+            /**
+             * Format: date
+             * @description Business date the rule set takes effect (tax_rule_set_publish only), part of the subject hash.
+             * @example 2026-12-01
+             */
+            effective_date?: string;
+            mobile_e164?: components["schemas"]["MobileE164"];
+            new_mobile_e164?: components["schemas"]["MobileE164"];
+            ticket_reference: components["schemas"]["TicketReference"];
+            reason: components["schemas"]["Reason"];
+            verification_method: components["schemas"]["RequesterVerification"];
+        };
+        /** @description A two-person approval record. Phone numbers appear only masked. */
+        VendorApproval: {
+            id: components["schemas"]["Id"];
+            kind: components["schemas"]["ApprovalKind"];
+            /**
+             * @description Approval state.
+             * @example pending
+             * @enum {string}
+             */
+            state: "pending" | "approved" | "rejected" | "expired" | "cancelled" | "completed";
+            organisation_id?: components["schemas"]["Id"];
+            subject_id?: components["schemas"]["Id"];
+            mobile_masked?: components["schemas"]["MobileMasked"];
+            requested_by: components["schemas"]["Id"];
+            approved_by?: components["schemas"]["Id"];
+            ticket_reference: components["schemas"]["TicketReference"];
+            verification_method: components["schemas"]["RequesterVerification"];
+            created_at: components["schemas"]["Timestamp"];
+            expires_at: components["schemas"]["Timestamp"];
+            completes_at?: components["schemas"]["Timestamp"];
+        };
+        /** @description A page of approvals. */
+        VendorApprovalPage: {
+            /** @description Approvals on this page. */
+            items: components["schemas"]["VendorApproval"][];
+            /** @description Opaque cursor for the next page; absent when there are no more results. */
+            next_cursor?: string;
+        };
+        /** @description Approve with a fresh TOTP. The approver must be a different vendor user holding the kind's approve permission, on an account at least 7 days old. */
+        ApproveVendorApproval: {
+            /**
+             * @description Fresh TOTP code, accepted once.
+             * @example 123456
+             */
+            totp_code: string;
+        };
+        /** @description Half of a vendor-assisted sign-in code, shown once. The requester gets characters 1 to 4, the approver 5 to 8. */
+        CodeHalf: {
+            /**
+             * @description Four characters.
+             * @example 7QK3
+             */
+            half: string;
+            /**
+             * @description Which half.
+             * @example first
+             * @enum {string}
+             */
+            position: "first" | "second";
+        };
+        /** @description Result of an approval decision. The approver receives their half once; sign_in_code approvals only. */
+        ApprovalDecision: {
+            approval: components["schemas"]["VendorApproval"];
+            code_half?: components["schemas"]["CodeHalf"];
+            grant?: components["schemas"]["VendorApprovalGrant"];
+        };
+        /** @description Signed, single-use grant (vendor realm, type vendor_approval, 5 minutes) for the kinds executed by another service (ADR-0014 A1.3). Its claims are the approval id, kind, organisation or none, requester, approver and a subject hash over the fields named per kind: organisation id and target status for org_suspend, org_reinstate and org_close; rule-set id, content hash and effective date for tax_rule_set_publish. The admin service passes it to the executing service and never to the browser. If the executor refuses, the approval stays approved and a fresh grant can be issued until it lapses. */
+        VendorApprovalGrant: {
+            /**
+             * @description The signed grant.
+             * @example grant.example
+             */
+            token: string;
+            expires_at: components["schemas"]["Timestamp"];
+        };
+        /** @description Reject or cancel an approval. */
+        RejectVendorApproval: {
+            reason: components["schemas"]["Reason"];
+        };
+        /**
+         * @description Indian mobile number in E.164 form (+91 then ten digits starting 6 to 9). Accepted on input only where a request must carry a number; never returned in full by any vendor or support operation.
+         * @example +919876543210
+         */
+        MobileE164: string;
+        /**
+         * @description Client-generated, time-sortable UUIDv7 in lower-case canonical form (ADR-0003 policy; ULID is not accepted).
          * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
          */
         Id: string;
@@ -315,8 +2701,167 @@ export interface components {
                 message?: string;
             }[];
         };
+        /**
+         * @description Mobile number masked to its last 3 digits. The only form vendor and support responses may carry.
+         * @example +91*******210
+         */
+        MobileMasked: string;
+        /**
+         * @description Support ticket reference. Fixed pattern so it can travel in events without free text.
+         * @example SUP-2041
+         */
+        TicketReference: string;
+        /**
+         * @description Free-text reason, 10 to 500 characters. Stays with the owning record; never placed in events.
+         * @example Owner phoned to report a lost tablet.
+         */
+        Reason: string;
     };
     responses: {
+        /** @description The session proof or device assertion did not verify. Every failure looks the same, is counted per member and device, and is audited. */
+        InvalidSessionProof: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The device is revoked. The answer is signed so the device may enter drain mode. */
+        DeviceRevoked: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The operation is blocked while the binding is under caution (24 hours) or needs an approval token (ADR-0005 A2.2). File the request with createApprovalRequest and repeat with the approval token. */
+        ApprovalRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Refused by the grant limits G1 to G6 (ADR-0005 A2.4), enforced from stored assignments, not from token grants. */
+        GrantNotPermitted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The activation code is unknown, expired, used, or the proof of key possession failed. One answer for all of these. */
+        ActivationInvalid: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The outlet's tax registration is not verified, so no series can be issued. The device may still register without billing. */
+        RegistrationUnverified: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The wipe order is issued no sooner than 15 minutes after the drain completed (server clock). */
+        WipeNotReady: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Sign-in refused. Wrong password, unknown email, wrong or replayed TOTP, lockout and per-address limit all return this same answer. */
+        VendorSignInFailed: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The change would leave no active platform_admin, or a user would deactivate or demote themselves. */
+        VendorUserConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The setup link was used already, expired (24 hours), or is unknown. */
+        SetupLinkInvalid: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The invitation is not pending, or the organisation already has an owner member (no vendor can add or replace owners). */
+        InvitationConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The revoke is over the quota (2 per organisation, 10 per vendor user, rolling 24 hours); a second holder of admin.device.revoke must approve first (ADR-0005 A2.5). */
+        VendorApprovalRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Act mode is not available in Phase 1. */
+        ModeNotSupported: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The vendor user already has an active support session, or the session has ended. */
+        SupportSessionConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The approval is not in a state that allows this, the approver is the requester or too new, or fewer than two eligible vendor users exist. */
+        ApprovalConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The owner role is assigned only through assignOwnerRole. */
+        SwitchOwnerRole: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
         /** @description Request is well-formed but invalid, or an Idempotency-Key was reused with a different request. */
         ValidationFailed: {
             headers: {
@@ -344,6 +2889,7 @@ export interface components {
         /** @description Rate limit exceeded; honour Retry-After. */
         TooManyRequests: {
             headers: {
+                "Retry-After": components["headers"]["RetryAfter"];
                 [name: string]: unknown;
             };
             content: {
@@ -358,7 +2904,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Missing or invalid token. */
+        /** @description Missing or refused token. Every refused token (expired, wrong realm, wrong audience, revoked, bad signature) is the same 401 with code auth.invalid_token; no finer reason is exposed. */
         Unauthorized: {
             headers: {
                 [name: string]: unknown;
@@ -366,27 +2912,10 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "type": "urn:hostry:problem:unauthenticated",
+                 *       "type": "urn:hostry:problem:auth.invalid_token",
                  *       "title": "Authentication required",
                  *       "status": 401,
-                 *       "code": "unauthenticated"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
-        /** @description Token lacks the required permission. */
-        Forbidden: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "urn:hostry:problem:forbidden",
-                 *       "title": "Permission denied",
-                 *       "status": 403,
-                 *       "code": "forbidden"
+                 *       "code": "auth.invalid_token"
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
@@ -409,16 +2938,55 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
+        /** @description Token lacks the required permission. */
+        Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "urn:hostry:problem:forbidden",
+                 *       "title": "Permission denied",
+                 *       "status": 403,
+                 *       "code": "forbidden"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description State conflict, or an Idempotency-Key request still in progress. */
+        Conflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "urn:hostry:problem:idempotency.in_progress",
+                 *       "title": "Conflict",
+                 *       "status": 409,
+                 *       "code": "idempotency.in_progress"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
     };
     parameters: {
         /**
-         * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 or ULID is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+         * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
          * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
          */
         IdempotencyKey: string;
         /**
+         * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+         * @example tok_example_approval
+         */
+        ApprovalToken: string;
+        /**
          * @description Opaque cursor from a previous response's next_cursor.
-         * @example eyJhZnRlciI6IjAxOTBhMWIyIn0
+         * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
          */
         Cursor: string;
         /**
@@ -426,9 +2994,25 @@ export interface components {
          * @example 50
          */
         Limit: number;
+        /**
+         * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+         * @example 203.0.113.7
+         */
+        VendorClientAddress: string;
+        /**
+         * @description Page size for vendor lists (default 25, maximum 100).
+         * @example 25
+         */
+        VendorLimit: number;
     };
     requestBodies: never;
-    headers: never;
+    headers: {
+        /**
+         * @description Seconds to wait before retrying.
+         * @example 30
+         */
+        RetryAfter: number;
+    };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
@@ -438,7 +3022,7 @@ export interface operations {
             query?: never;
             header: {
                 /**
-                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 or ULID is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
                  * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
                  */
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
@@ -450,14 +3034,21 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "mobile_e164": "+910000000000"
+                 *       "mobile_e164": "+919876543210",
+                 *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                 *       "device_public_key": {
+                 *         "kty": "EC",
+                 *         "crv": "P-256",
+                 *         "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                 *         "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
+                 *       }
                  *     }
                  */
                 "application/json": components["schemas"]["CreateOtpChallenge"];
             };
         };
         responses: {
-            /** @description Challenge created; the OTP is sent out of band. */
+            /** @description Challenge created. Identical status, body and timing band for known and unknown numbers; an OTP is sent only to a number with an account or a pending invitation (ADR-0005 section 3, IC-03). A number over a limit gets the 429 below, identically whether or not the number is known. */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -466,7 +3057,8 @@ export interface operations {
                     /**
                      * @example {
                      *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b",
-                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *       "expires_at": "2026-11-24T13:10:11.120Z",
+                     *       "resend_after": "2026-11-24T13:05:41.120Z"
                      *     }
                      */
                     "application/json": components["schemas"]["OtpChallenge"];
@@ -481,7 +3073,7 @@ export interface operations {
             query?: never;
             header: {
                 /**
-                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 or ULID is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
                  * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
                  */
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
@@ -493,15 +3085,18 @@ export interface operations {
             content: {
                 /**
                  * @example {
+                 *       "grant_type": "otp",
                  *       "challenge_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b",
-                 *       "otp": "000000"
+                 *       "code": "482915",
+                 *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                 *       "device_assertion": "assertion.example"
                  *     }
                  */
                 "application/json": components["schemas"]["CreateSession"];
             };
         };
         responses: {
-            /** @description Session created. Next wave adds token pair, offline pack, claims. */
+            /** @description Session created. When the number has a pending owner invitation, the invitation is consumed and the owner member created (invitation_accepted). A replay or a different number is refused. */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -509,8 +3104,24 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5d",
-                     *       "expires_at": "2026-11-24T13:20:11.120Z"
+                     *       "session_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5d",
+                     *       "member_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64",
+                     *       "tokens": {
+                     *         "access_token": "tok_example_access",
+                     *         "token_type": "Bearer",
+                     *         "expires_at": "2026-11-24T13:10:11.120Z",
+                     *         "refresh_token": "tok_example_refresh",
+                     *         "refresh_expires_at": "2026-12-24T13:05:11.120Z"
+                     *       },
+                     *       "amr": "otp",
+                     *       "auth_time": "2026-11-24T13:05:11.120Z",
+                     *       "invitation_accepted": false,
+                     *       "memberships": [
+                     *         {
+                     *           "member_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64",
+                     *           "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60"
+                     *         }
+                     *       ]
                      *     }
                      */
                     "application/json": components["schemas"]["Session"];
@@ -518,6 +3129,267 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    endSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Session ID (the sid claim).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5d
+                 */
+                session_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session ended; an ended session id gets no more tokens. Repeating is a no-op. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    refreshSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "refresh_token": "tok_example_refresh",
+                 *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                 *       "proof": "proof.example"
+                 *     }
+                 */
+                "application/json": components["schemas"]["RefreshSession"];
+            };
+        };
+        responses: {
+            /** @description New token pair. Reuse of a rotated refresh token revokes the session. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "access_token": "tok_example_access",
+                     *       "token_type": "Bearer",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z",
+                     *       "refresh_token": "tok_example_refresh",
+                     *       "refresh_expires_at": "2026-12-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TokenPair"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    switchMember: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "member_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SwitchMember"];
+            };
+        };
+        responses: {
+            /** @description Token for the chosen membership (membership and member status re-read; one tenant per token). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "access_token": "tok_example_access",
+                     *       "token_type": "Bearer",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z",
+                     *       "refresh_token": "tok_example_refresh",
+                     *       "refresh_expires_at": "2026-12-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TokenPair"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createDeviceToken: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "grant_type": "pin",
+                 *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                 *       "assertion": "assertion.example",
+                 *       "session_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5d",
+                 *       "member_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64",
+                 *       "pack_v": 7,
+                 *       "pin_v": 2,
+                 *       "opened_at": "2026-11-24T13:05:11.120Z",
+                 *       "session_proof": "proof.example"
+                 *     }
+                 */
+                "application/json": components["schemas"]["DeviceTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Access token. Pin: sub is the member, sid is the session.open id, amr pin, lifetime 15 minutes and never past opened_at plus 16 hours. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "access_token": "tok_example_access",
+                     *       "token_type": "Bearer",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z",
+                     *       "typ": "pin",
+                     *       "session_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5d"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DeviceToken"];
+                };
+            };
+            401: components["responses"]["InvalidSessionProof"];
+            403: components["responses"]["DeviceRevoked"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    createDrainToken: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                 *       "assertion": "assertion.example"
+                 *     }
+                 */
+                "application/json": components["schemas"]["DrainRequest"];
+            };
+        };
+        responses: {
+            /** @description Drain token: 5 minutes, valid only for quarantine upload and the wipe-order endpoint. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "access_token": "tok_example_drain",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DrainToken"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    createDeviceNonce: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nonce, single use, short lived. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "nonce": "nonce_example_01",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DeviceNonce"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
         };
     };
     getJwks: {
@@ -529,7 +3401,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description JWKS document. Next wave adds realm-specific endpoints. */
+            /** @description JWKS: current and next keys, plus retired keys for 45 days. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -537,7 +3409,17 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "keys": []
+                     *       "keys": [
+                     *         {
+                     *           "kty": "EC",
+                     *           "crv": "P-256",
+                     *           "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                     *           "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0",
+                     *           "kid": "k-2026-09",
+                     *           "alg": "ES256",
+                     *           "use": "sig"
+                     *         }
+                     *       ]
                      *     }
                      */
                     "application/json": components["schemas"]["Jwks"];
@@ -545,12 +3427,255 @@ export interface operations {
             };
         };
     };
+    getVendorJwks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JWKS of the vendor realm. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "keys": [
+                     *         {
+                     *           "kty": "EC",
+                     *           "crv": "P-256",
+                     *           "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                     *           "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0",
+                     *           "kid": "v-2026-09",
+                     *           "alg": "ES256",
+                     *           "use": "sig"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Jwks"];
+                };
+            };
+        };
+    };
+    createActivationCode: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                 *       "kind": "pos"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateActivationCode"];
+            };
+        };
+        responses: {
+            /** @description Code, shown once. A replay returns the same code. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a75",
+                     *       "code": "7QK3M9XD",
+                     *       "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *       "kind": "pos",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ActivationCode"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["ApprovalRequired"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    activateDevice: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "activation_code": "7QK3M9XD",
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                 *       "name": "Counter 1",
+                 *       "public_key": {
+                 *         "kty": "EC",
+                 *         "crv": "P-256",
+                 *         "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                 *         "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
+                 *       },
+                 *       "key_protection": "hardware",
+                 *       "nonce": "nonce_example_01",
+                 *       "nonce_signature": "sig.example"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ActivateDevice"];
+            };
+        };
+        responses: {
+            /** @description Device registered with its signed offline pack, series codes included for billing kinds. A replay returns the same device. A public key already bound to an active device is refused. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "device": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *         "kind": "pos",
+                     *         "name": "Counter 1",
+                     *         "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *         "state": "active",
+                     *         "key_protection": "hardware",
+                     *         "registered_at": "2026-11-24T13:05:11.120Z",
+                     *         "last_contact_at": "2026-11-24T13:10:11.120Z",
+                     *         "billing_capability": "active"
+                     *       },
+                     *       "offline_pack": {
+                     *         "pack_v": 7,
+                     *         "jws": "pack.jws.example",
+                     *         "issued_at": "2026-11-24T13:05:11.120Z",
+                     *         "offline_valid_until": "2026-12-08T13:05:11.120Z",
+                     *         "claims": {
+                     *           "pack_v": 7,
+                     *           "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *           "device": {
+                     *             "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *             "public_key": {
+                     *               "kty": "EC",
+                     *               "crv": "P-256",
+                     *               "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                     *               "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
+                     *             },
+                     *             "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *             "kind": "pos"
+                     *           },
+                     *           "members": [
+                     *             {
+                     *               "member_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64",
+                     *               "display_name": "Asha",
+                     *               "status": "active",
+                     *               "pin_salt": "c2FsdC1leGFtcGxl",
+                     *               "pin_verifier": "kg",
+                     *               "vbits": 12,
+                     *               "pin_v": 2,
+                     *               "permissions": [
+                     *                 "organisation.read",
+                     *                 "brand.read",
+                     *                 "outlet.read",
+                     *                 "tax_registration.read",
+                     *                 "settings.read",
+                     *                 "series.read",
+                     *                 "link.read",
+                     *                 "device.read",
+                     *                 "member.read",
+                     *                 "role.read",
+                     *                 "audit.read"
+                     *               ]
+                     *             }
+                     *           ],
+                     *           "series": [
+                     *             {
+                     *               "code": "A7K",
+                     *               "doc_type": "tax_invoice",
+                     *               "state": "active",
+                     *               "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b"
+                     *             }
+                     *           ],
+                     *           "revoked_device_ids": [],
+                     *           "intent_table_version": 3,
+                     *           "catalogue_version": 1,
+                     *           "issued_at": "2026-11-24T13:05:11.120Z",
+                     *           "offline_valid_until": "2026-12-08T13:05:11.120Z",
+                     *           "idle_lock_minutes": 5,
+                     *           "identity_public_keys": [
+                     *             {
+                     *               "kty": "EC",
+                     *               "crv": "P-256",
+                     *               "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                     *               "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0",
+                     *               "kid": "k-2026-09",
+                     *               "alg": "ES256",
+                     *               "use": "sig"
+                     *             }
+                     *           ],
+                     *           "op_signing_public_key": {
+                     *             "kty": "EC",
+                     *             "crv": "P-256",
+                     *             "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                     *             "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0",
+                     *             "kid": "o-2026-09",
+                     *             "alg": "ES256",
+                     *             "use": "sig"
+                     *           }
+                     *         }
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DeviceActivation"];
+                };
+            };
+            409: components["responses"]["RegistrationUnverified"];
+            422: components["responses"]["ActivationInvalid"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     listDevices: {
         parameters: {
             query?: {
                 /**
+                 * @description Filter by outlet (intersected with the caller's scope).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61
+                 */
+                outlet_id?: components["schemas"]["Id"];
+                /**
+                 * @description Filter by state.
+                 * @example active
+                 */
+                state?: components["schemas"]["DeviceState"];
+                /**
                  * @description Opaque cursor from a previous response's next_cursor.
-                 * @example eyJhZnRlciI6IjAxOTBhMWIyIn0
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
                  */
                 cursor?: components["parameters"]["Cursor"];
                 /**
@@ -565,7 +3690,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A page of devices. */
+            /** @description A page of devices in the caller's outlet scope. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -573,7 +3698,19 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "items": []
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *           "kind": "pos",
+                     *           "name": "Counter 1",
+                     *           "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *           "state": "active",
+                     *           "key_protection": "hardware",
+                     *           "registered_at": "2026-11-24T13:05:11.120Z",
+                     *           "last_contact_at": "2026-11-24T13:10:11.120Z",
+                     *           "billing_capability": "active"
+                     *         }
+                     *       ]
                      *     }
                      */
                     "application/json": components["schemas"]["DevicePage"];
@@ -588,10 +3725,15 @@ export interface operations {
             query?: never;
             header: {
                 /**
-                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 or ULID is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
                  * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
                  */
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
             };
             path?: never;
             cookie?: never;
@@ -601,8 +3743,18 @@ export interface operations {
                 /**
                  * @example {
                  *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
-                 *       "kind": "waiter_tablet",
-                 *       "name": "Tablet 1"
+                 *       "kind": "pos",
+                 *       "name": "Counter 1",
+                 *       "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                 *       "public_key": {
+                 *         "kty": "EC",
+                 *         "crv": "P-256",
+                 *         "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                 *         "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
+                 *       },
+                 *       "key_protection": "hardware",
+                 *       "nonce": "nonce_example_01",
+                 *       "nonce_signature": "sig.example"
                  *     }
                  */
                 "application/json": components["schemas"]["RegisterDevice"];
@@ -618,9 +3770,59 @@ export interface operations {
                     /**
                      * @example {
                      *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
-                     *       "kind": "waiter_tablet",
-                     *       "name": "Tablet 1",
-                     *       "status": "active"
+                     *       "kind": "pos",
+                     *       "name": "Counter 1",
+                     *       "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *       "state": "active",
+                     *       "key_protection": "hardware",
+                     *       "registered_at": "2026-11-24T13:05:11.120Z",
+                     *       "last_contact_at": "2026-11-24T13:10:11.120Z",
+                     *       "billing_capability": "active"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Device"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["ApprovalRequired"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["RegistrationUnverified"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Device ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e
+                 */
+                device_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The device. Another tenant's or an out-of-scope outlet's device is 404. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *       "kind": "pos",
+                     *       "name": "Counter 1",
+                     *       "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *       "state": "active",
+                     *       "key_protection": "hardware",
+                     *       "registered_at": "2026-11-24T13:05:11.120Z",
+                     *       "last_contact_at": "2026-11-24T13:10:11.120Z",
+                     *       "billing_capability": "active"
                      *     }
                      */
                     "application/json": components["schemas"]["Device"];
@@ -628,7 +3830,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-            422: components["responses"]["ValidationFailed"];
+            404: components["responses"]["NotFound"];
         };
     };
     revokeDevice: {
@@ -636,10 +3838,15 @@ export interface operations {
             query?: never;
             header: {
                 /**
-                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 or ULID is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
                  * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
                  */
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
             };
             path: {
                 /**
@@ -661,7 +3868,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Device revoked (idempotent; a repeat returns the same body). */
+            /** @description Device revoked (idempotent; a repeat returns the same body). Identity refuses the key at once for every token type except the drain token. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -670,25 +3877,187 @@ export interface operations {
                     /**
                      * @example {
                      *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
-                     *       "kind": "waiter_tablet",
-                     *       "name": "Tablet 1",
-                     *       "status": "revoked"
+                     *       "kind": "pos",
+                     *       "name": "Counter 1",
+                     *       "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *       "state": "revoked",
+                     *       "key_protection": "hardware",
+                     *       "registered_at": "2026-11-24T13:05:11.120Z",
+                     *       "last_contact_at": "2026-11-24T13:10:11.120Z",
+                     *       "billing_capability": "active"
                      *     }
                      */
                     "application/json": components["schemas"]["Device"];
                 };
             };
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
+            403: components["responses"]["ApprovalRequired"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getDeviceOfflinePack: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Device ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e
+                 */
+                device_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The newest pack for the device; revoked members and changed permissions are dropped. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "pack_v": 7,
+                     *       "jws": "pack.jws.example",
+                     *       "issued_at": "2026-11-24T13:05:11.120Z",
+                     *       "offline_valid_until": "2026-12-08T13:05:11.120Z",
+                     *       "claims": {
+                     *         "pack_v": 7,
+                     *         "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *         "device": {
+                     *           "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *           "public_key": {
+                     *             "kty": "EC",
+                     *             "crv": "P-256",
+                     *             "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                     *             "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
+                     *           },
+                     *           "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *           "kind": "pos"
+                     *         },
+                     *         "members": [
+                     *           {
+                     *             "member_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64",
+                     *             "display_name": "Asha",
+                     *             "status": "active",
+                     *             "pin_salt": "c2FsdC1leGFtcGxl",
+                     *             "pin_verifier": "kg",
+                     *             "vbits": 12,
+                     *             "pin_v": 2,
+                     *             "permissions": [
+                     *               "organisation.read",
+                     *               "brand.read",
+                     *               "outlet.read",
+                     *               "tax_registration.read",
+                     *               "settings.read",
+                     *               "series.read",
+                     *               "link.read",
+                     *               "device.read",
+                     *               "member.read",
+                     *               "role.read",
+                     *               "audit.read"
+                     *             ]
+                     *           }
+                     *         ],
+                     *         "series": [
+                     *           {
+                     *             "code": "A7K",
+                     *             "doc_type": "tax_invoice",
+                     *             "state": "active",
+                     *             "tax_registration_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6b"
+                     *           }
+                     *         ],
+                     *         "revoked_device_ids": [],
+                     *         "intent_table_version": 3,
+                     *         "catalogue_version": 1,
+                     *         "issued_at": "2026-11-24T13:05:11.120Z",
+                     *         "offline_valid_until": "2026-12-08T13:05:11.120Z",
+                     *         "idle_lock_minutes": 5,
+                     *         "identity_public_keys": [
+                     *           {
+                     *             "kty": "EC",
+                     *             "crv": "P-256",
+                     *             "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                     *             "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0",
+                     *             "kid": "k-2026-09",
+                     *             "alg": "ES256",
+                     *             "use": "sig"
+                     *           }
+                     *         ],
+                     *         "op_signing_public_key": {
+                     *           "kty": "EC",
+                     *           "crv": "P-256",
+                     *           "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                     *           "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0",
+                     *           "kid": "o-2026-09",
+                     *           "alg": "ES256",
+                     *           "use": "sig"
+                     *         }
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OfflinePack"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["DeviceRevoked"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getWipeOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Device ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e
+                 */
+                device_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wipe order signed by identity, naming the sequence the device is drained through. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *       "drained_through": [
+                     *         {
+                     *           "stream": "device-ops",
+                     *           "seq": 1842
+                     *         }
+                     *       ],
+                     *       "issued_at": "2026-11-24T13:20:11.120Z",
+                     *       "jws": "wipe.jws.example"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WipeOrder"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["WipeNotReady"];
         };
     };
     listMembers: {
         parameters: {
             query?: {
                 /**
+                 * @description Name contains (case-insensitive).
+                 * @example Asha
+                 */
+                q?: string;
+                /**
                  * @description Opaque cursor from a previous response's next_cursor.
-                 * @example eyJhZnRlciI6IjAxOTBhMWIyIn0
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
                  */
                 cursor?: components["parameters"]["Cursor"];
                 /**
@@ -703,7 +4072,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A page of members. */
+            /** @description A page of members. Mobile numbers appear only masked. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -711,7 +4080,40 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "items": []
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64",
+                     *           "display_name": "Asha",
+                     *           "status": "active",
+                     *           "mobile_masked": "+91*******210",
+                     *           "has_pin": true,
+                     *           "role_assignments": [
+                     *             {
+                     *               "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6f",
+                     *               "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9a"
+                     *             },
+                     *             {
+                     *               "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8b",
+                     *               "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65"
+                     *             }
+                     *           ],
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         },
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9e",
+                     *           "display_name": "Ravi",
+                     *           "status": "active",
+                     *           "mobile_masked": "+91*******211",
+                     *           "has_pin": false,
+                     *           "role_assignments": [
+                     *             {
+                     *               "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9f",
+                     *               "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65"
+                     *             }
+                     *           ],
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ]
                      *     }
                      */
                     "application/json": components["schemas"]["MemberPage"];
@@ -721,12 +4123,545 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
-    listRevocations: {
+    createMember: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9d",
+                 *       "display_name": "Latha",
+                 *       "mobile_e164": "+919876543212",
+                 *       "role_assignments": [
+                 *         {
+                 *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8e",
+                 *           "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65"
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateMember"];
+            };
+        };
+        responses: {
+            /** @description Member created. Identical response whether or not the number has an account; nothing from the account or other organisations is returned (IC-24). */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9d",
+                     *       "display_name": "Latha",
+                     *       "status": "invited",
+                     *       "mobile_masked": "+91*******212",
+                     *       "has_pin": false,
+                     *       "role_assignments": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8e",
+                     *           "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65"
+                     *         }
+                     *       ],
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Member"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Member ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64
+                 */
+                member_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The member. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64",
+                     *       "display_name": "Asha",
+                     *       "status": "active",
+                     *       "mobile_masked": "+91*******210",
+                     *       "has_pin": true,
+                     *       "role_assignments": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6f",
+                     *           "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9a"
+                     *         },
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8b",
+                     *           "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65"
+                     *         }
+                     *       ],
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Member"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateMember: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path: {
+                /**
+                 * @description Member ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9e
+                 */
+                member_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "status": "suspended"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateMember"];
+            };
+        };
+        responses: {
+            /** @description The updated member. Deactivation ends the member's sessions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9e",
+                     *       "display_name": "Ravi",
+                     *       "status": "suspended",
+                     *       "mobile_masked": "+91*******211",
+                     *       "has_pin": false,
+                     *       "role_assignments": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9f",
+                     *           "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65"
+                     *         }
+                     *       ],
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Member"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    clearPinLockout: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path: {
+                /**
+                 * @description Member ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64
+                 */
+                member_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lockout cleared (idempotent). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    authorisePinReset: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path: {
+                /**
+                 * @description Member ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64
+                 */
+                member_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorisation; the member then calls setPin. The authoriser never sees the PIN. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a76",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PinResetAuthorisation"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setPin: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Member ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64
+                 */
+                member_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                 *       "pin": "482915",
+                 *       "pin_reset_authorisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a76"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SetPin"];
+            };
+        };
+        responses: {
+            /** @description PIN set; pin_v advances. The body is excluded from every log and trace. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "pin_v": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PinSet"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    createRoleAssignment: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path: {
+                /**
+                 * @description Member ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9e
+                 */
+                member_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8c",
+                 *       "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9b",
+                 *       "outlet_ids": [
+                 *         "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AssignmentInput"];
+            };
+        };
+        responses: {
+            /** @description Assignment created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8c",
+                     *       "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9b",
+                     *       "outlet_ids": [
+                     *         "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61"
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["RoleAssignment"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["SwitchOwnerRole"];
+        };
+    };
+    deleteRoleAssignment: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path: {
+                /**
+                 * @description Member ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64
+                 */
+                member_id: components["schemas"]["Id"];
+                /**
+                 * @description Assignment ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8b
+                 */
+                assignment_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Assignment removed (idempotent). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    assignOwnerRole: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path: {
+                /**
+                 * @description Member ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9e
+                 */
+                member_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8d"
+                 *     }
+                 */
+                "application/json": components["schemas"]["OwnerRoleAssignment"];
+            };
+        };
+        responses: {
+            /** @description The member holds the owner role. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9e",
+                     *       "display_name": "Ravi",
+                     *       "status": "active",
+                     *       "mobile_masked": "+91*******211",
+                     *       "has_pin": false,
+                     *       "role_assignments": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9f",
+                     *           "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65"
+                     *         },
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8d",
+                     *           "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9a"
+                     *         }
+                     *       ],
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Member"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    removeOwnerRole: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path: {
+                /**
+                 * @description Member ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9e
+                 */
+                member_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Owner role removed; the removed owner is told on all channels. The last owner cannot be removed (409 from the owner rule). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listRoles: {
         parameters: {
             query?: {
                 /**
                  * @description Opaque cursor from a previous response's next_cursor.
-                 * @example eyJhZnRlciI6IjAxOTBhMWIyIn0
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
                  */
                 cursor?: components["parameters"]["Cursor"];
                 /**
@@ -741,7 +4676,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A page of revocations. */
+            /** @description A page of roles. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -749,7 +4684,1048 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "items": []
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9a",
+                     *           "name": "Owner",
+                     *           "permissions": [
+                     *             "organisation.read",
+                     *             "organisation.manage",
+                     *             "brand.read",
+                     *             "brand.manage",
+                     *             "outlet.read",
+                     *             "outlet.create",
+                     *             "outlet.manage",
+                     *             "tax_registration.read",
+                     *             "tax_registration.manage",
+                     *             "settings.read",
+                     *             "settings.manage",
+                     *             "series.read",
+                     *             "series.close_unreconciled",
+                     *             "link.read",
+                     *             "link.manage",
+                     *             "link.revoke",
+                     *             "device.read",
+                     *             "device.register",
+                     *             "device.activation_code.create",
+                     *             "device.revoke",
+                     *             "member.read",
+                     *             "member.manage",
+                     *             "member.pin.authorise",
+                     *             "member.role.assign",
+                     *             "member.owner.assign",
+                     *             "role.read",
+                     *             "role.manage",
+                     *             "audit.read",
+                     *             "support.code.create"
+                     *           ],
+                     *           "built_in": true,
+                     *           "created_at": "2026-11-24T13:05:11.120Z",
+                     *           "updated_at": "2026-11-24T13:05:11.120Z"
+                     *         },
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65",
+                     *           "name": "Cashier",
+                     *           "permissions": [
+                     *             "outlet.read",
+                     *             "device.read"
+                     *           ],
+                     *           "built_in": false,
+                     *           "created_at": "2026-11-24T13:05:11.120Z",
+                     *           "updated_at": "2026-11-24T13:05:11.120Z"
+                     *         },
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9b",
+                     *           "name": "Waiter",
+                     *           "permissions": [
+                     *             "outlet.read"
+                     *           ],
+                     *           "built_in": false,
+                     *           "created_at": "2026-11-24T13:05:11.120Z",
+                     *           "updated_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["RolePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createRole: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8f",
+                 *       "name": "Kitchen",
+                 *       "permissions": [
+                 *         "outlet.read"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["RoleInput"];
+            };
+        };
+        responses: {
+            /** @description Role created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8f",
+                     *       "name": "Kitchen",
+                     *       "permissions": [
+                     *         "outlet.read"
+                     *       ],
+                     *       "built_in": false,
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "updated_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Role ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65
+                 */
+                role_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The role. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65",
+                     *       "name": "Cashier",
+                     *       "permissions": [
+                     *         "outlet.read",
+                     *         "device.read"
+                     *       ],
+                     *       "built_in": false,
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "updated_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateRole: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path: {
+                /**
+                 * @description Role ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65
+                 */
+                role_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Cashier",
+                 *       "permissions": [
+                 *         "outlet.read",
+                 *         "device.read"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["RoleInput"];
+            };
+        };
+        responses: {
+            /** @description The updated role. Effective for members within 15 minutes (next token). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65",
+                     *       "name": "Cashier",
+                     *       "permissions": [
+                     *         "outlet.read",
+                     *         "device.read"
+                     *       ],
+                     *       "built_in": false,
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "updated_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    deleteRole: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Per-operation approval token (ADR-0005 A2.2). ES256, typ approval, 5 minutes, single use; claims include op (the operationId) and bh (hash of the request body), so it releases only that one request. Needed when the binding is under caution and the operation is blocked.
+                 * @example tok_example_approval
+                 */
+                "Hostry-Approval"?: components["parameters"]["ApprovalToken"];
+            };
+            path: {
+                /**
+                 * @description Role ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9b
+                 */
+                role_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Role deleted (idempotent). The built-in owner role cannot be deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["GrantNotPermitted"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Catalogue entries with their flags. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "catalogue_version": 1,
+                     *       "items": [
+                     *         {
+                     *           "key": "organisation.read",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.organisation.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": true,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "organisation.manage",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.organisation.manage",
+                     *           "sensitive": false,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "brand.read",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.brand.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": true,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "brand.manage",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.brand.manage",
+                     *           "sensitive": false,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "outlet.read",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.outlet.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": true,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "outlet.create",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.outlet.create",
+                     *           "sensitive": false,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "outlet.manage",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.outlet.manage",
+                     *           "sensitive": false,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "tax_registration.read",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.tax_registration.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": true,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "tax_registration.manage",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.tax_registration.manage",
+                     *           "sensitive": true,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "settings.read",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.settings.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": true,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "settings.manage",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.settings.manage",
+                     *           "sensitive": false,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "series.read",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.series.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": true,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "series.close_unreconciled",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.series.close_unreconciled",
+                     *           "sensitive": true,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "link.read",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.link.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "link.manage",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.link.manage",
+                     *           "sensitive": true,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "link.revoke",
+                     *           "service": "tenancy",
+                     *           "description_key": "perm.link.revoke",
+                     *           "sensitive": true,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "device.read",
+                     *           "service": "identity",
+                     *           "description_key": "perm.device.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": true,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "device.register",
+                     *           "service": "identity",
+                     *           "description_key": "perm.device.register",
+                     *           "sensitive": false,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "device.activation_code.create",
+                     *           "service": "identity",
+                     *           "description_key": "perm.device.activation_code.create",
+                     *           "sensitive": false,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "device.revoke",
+                     *           "service": "identity",
+                     *           "description_key": "perm.device.revoke",
+                     *           "sensitive": true,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "member.read",
+                     *           "service": "identity",
+                     *           "description_key": "perm.member.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": true,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "member.manage",
+                     *           "service": "identity",
+                     *           "description_key": "perm.member.manage",
+                     *           "sensitive": true,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "member.pin.authorise",
+                     *           "service": "identity",
+                     *           "description_key": "perm.member.pin.authorise",
+                     *           "sensitive": false,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "member.role.assign",
+                     *           "service": "identity",
+                     *           "description_key": "perm.member.role.assign",
+                     *           "sensitive": true,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "member.owner.assign",
+                     *           "service": "identity",
+                     *           "description_key": "perm.member.owner.assign",
+                     *           "sensitive": true,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "role.read",
+                     *           "service": "identity",
+                     *           "description_key": "perm.role.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": true,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "role.manage",
+                     *           "service": "identity",
+                     *           "description_key": "perm.role.manage",
+                     *           "sensitive": false,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "audit.read",
+                     *           "service": "identity",
+                     *           "description_key": "perm.audit.read",
+                     *           "sensitive": false,
+                     *           "strong_only": false,
+                     *           "owner_grant": false,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         },
+                     *         {
+                     *           "key": "support.code.create",
+                     *           "service": "identity",
+                     *           "description_key": "perm.support.code.create",
+                     *           "sensitive": false,
+                     *           "strong_only": true,
+                     *           "owner_grant": true,
+                     *           "support_viewable": false,
+                     *           "support_actable": false
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PermissionList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listAuditEntries: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Entries at or after this time.
+                 * @example 2026-11-24T13:05:11.120Z
+                 */
+                from?: components["schemas"]["Timestamp"];
+                /**
+                 * @description Entries before this time.
+                 * @example 2026-11-24T13:10:11.120Z
+                 */
+                to?: components["schemas"]["Timestamp"];
+                /**
+                 * @description Exact action key.
+                 * @example support.session.started
+                 */
+                action?: string;
+                /**
+                 * @description Filter by actor kind.
+                 * @example vendor
+                 */
+                actor_kind?: "member" | "device" | "vendor" | "system";
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size (default 50, maximum 200).
+                 * @example 50
+                 */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entries newest first, including vendor and support access to this organisation and nothing of any other organisation. Append-only: no operation edits or deletes an entry. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a69",
+                     *           "occurred_at": "2026-11-24T13:05:11.120Z",
+                     *           "actor_kind": "vendor",
+                     *           "actor_label": "Hostry support",
+                     *           "action": "support.session.started",
+                     *           "target_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a68",
+                     *           "outcome": "succeeded",
+                     *           "show_to_owner": true,
+                     *           "support_session_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a68",
+                     *           "ticket_reference": "SUP-2041",
+                     *           "reason": "Owner phoned to report a lost tablet."
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TenantAuditPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listApprovalRequests: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size (default 50, maximum 200).
+                 * @example 50
+                 */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pending requests for the same account (from a binding not under caution) or for another owner. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a70",
+                     *           "operation_id": "createMember",
+                     *           "body_hash": "sha256:cf03a846706f29a88ba61a212f79e7c224142fdd5df92fc1d7ed8bb1283fb8c8",
+                     *           "state": "pending",
+                     *           "created_at": "2026-11-24T13:05:11.120Z",
+                     *           "expires_at": "2026-11-24T13:10:11.120Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApprovalRequestPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createApprovalRequest: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "operation_id": "createMember",
+                 *       "request_body": {
+                 *         "display_name": "Latha",
+                 *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a9d",
+                 *         "mobile_e164": "+919876543212",
+                 *         "role_assignments": [
+                 *           {
+                 *             "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8e",
+                 *             "role_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a65"
+                 *           }
+                 *         ]
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateApprovalRequest"];
+            };
+        };
+        responses: {
+            /** @description Request filed; lapses after 10 minutes. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a70",
+                     *       "operation_id": "createMember",
+                     *       "body_hash": "sha256:cf03a846706f29a88ba61a212f79e7c224142fdd5df92fc1d7ed8bb1283fb8c8",
+                     *       "state": "pending",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApprovalRequest"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getApprovalRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Approval request ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a70
+                 */
+                request_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request. On approval the approval token appears once, to the requester. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a70",
+                     *       "operation_id": "createMember",
+                     *       "body_hash": "sha256:cf03a846706f29a88ba61a212f79e7c224142fdd5df92fc1d7ed8bb1283fb8c8",
+                     *       "state": "approved",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z",
+                     *       "approval_token": "tok_example_approval"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApprovalRequest"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    decideApprovalRequest: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Approval request ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a70
+                 */
+                request_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "decision": "approve"
+                 *     }
+                 */
+                "application/json": components["schemas"]["DecideApproval"];
+            };
+        };
+        responses: {
+            /** @description Decision recorded. A binding under caution can approve nothing, reject nothing and cancel no recovery (403). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a70",
+                     *       "operation_id": "createMember",
+                     *       "body_hash": "sha256:cf03a846706f29a88ba61a212f79e7c224142fdd5df92fc1d7ed8bb1283fb8c8",
+                     *       "state": "approved",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApprovalRequest"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listBindings: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size (default 50, maximum 200).
+                 * @example 50
+                 */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bindings of the signed-in account, with caution state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6e",
+                     *           "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *           "created_at": "2026-11-24T13:05:11.120Z",
+                     *           "caution_until": "2026-12-08T13:05:11.120Z",
+                     *           "state": "active"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BindingPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    rejectBinding: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Binding ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6e
+                 */
+                binding_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The binding and its sessions are revoked at once. Allowed only from a binding not under caution. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6e",
+                     *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "state": "rejected"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Binding"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    cancelOwnerRecovery: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Recovery ID (the vendor approval id).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8d
+                 */
+                recovery_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "Not requested by me."
+                 *     }
+                 */
+                "application/json": components["schemas"]["RecoveryCancellation"];
+            };
+        };
+        responses: {
+            /** @description Recovery cancelled. Any binding not under caution, or another owner of the organisation, may cancel. A new request for the account then needs a platform_admin approver. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8d",
+                     *       "state": "cancelled"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OwnerRecovery"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listRevocations: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size (default 50, maximum 200).
+                 * @example 50
+                 */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of revocations from a tenant-id-only feed, in order. The gateway polls every 60 seconds and on start. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a77",
+                     *           "subject_type": "device",
+                     *           "subject_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *           "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *           "revoked_at": "2026-11-24T13:15:11.120Z"
+                     *         }
+                     *       ]
                      *     }
                      */
                     "application/json": components["schemas"]["RevocationPage"];
@@ -757,6 +5733,1840 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    recordDeviceDrained: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Device ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e
+                 */
+                device_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "drained_through": [
+                 *         {
+                 *           "stream": "device-ops",
+                 *           "seq": 1842
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["RecordDrain"];
+            };
+        };
+        responses: {
+            /** @description Device state becomes drained; the 15-minute wipe delay starts on the server clock. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *       "kind": "pos",
+                     *       "name": "Counter 1",
+                     *       "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *       "state": "drained",
+                     *       "key_protection": "hardware",
+                     *       "registered_at": "2026-11-24T13:05:11.120Z",
+                     *       "last_contact_at": "2026-11-24T13:10:11.120Z",
+                     *       "billing_capability": "active"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Device"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    verifyProof: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "kind": "session",
+                 *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                 *       "member_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64",
+                 *       "session_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5d",
+                 *       "pack_v": 7,
+                 *       "pin_v": 2,
+                 *       "opened_at": "2026-11-24T13:05:11.120Z",
+                 *       "proof": "proof.example"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ProofVerification"];
+            };
+        };
+        responses: {
+            /** @description Verdict. The same function answers the pin grant, so the identity double implements one verifier. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "valid": true,
+                     *       "label": "verified"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ProofVerdict"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    checkPackHistory: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                 *       "pack_v": 7,
+                 *       "member_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a64",
+                 *       "series_code": "A7K"
+                 *     }
+                 */
+                "application/json": components["schemas"]["PackHistoryCheck"];
+            };
+        };
+        responses: {
+            /** @description Judged against the pack held, not against today (ADR-0005 section 7). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "pack_known": true,
+                     *       "member_in_pack": true,
+                     *       "series_issued": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PackHistoryVerdict"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    createVendorSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "email": "staff@example.invalid",
+                 *       "password": "correct-horse-battery-staple",
+                 *       "totp_code": "123456"
+                 *     }
+                 */
+                "application/json": components["schemas"]["VendorSignIn"];
+            };
+        };
+        responses: {
+            /** @description Vendor-realm credential with the vendor issuer and audience. Argon2id password hash only; TOTP accepted once; 5 failures in 15 minutes lock the account for 15 minutes; per-address limits also apply. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "access_token": "tok_example_vendor",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z",
+                     *       "renewal_handle": "renew_example",
+                     *       "session_ends_at": "2026-11-25T01:05:11.120Z",
+                     *       "user": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *         "display_name": "Priya",
+                     *         "role": "support",
+                     *         "permissions": [
+                     *           "admin.org.read",
+                     *           "admin.device.read",
+                     *           "admin.device.revoke",
+                     *           "admin.support.session.start",
+                     *           "admin.audit.read_own",
+                     *           "admin.approval.create",
+                     *           "admin.approval.read",
+                     *           "admin.approval.decide"
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorSession"];
+                };
+            };
+            401: components["responses"]["VendorSignInFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    renewVendorSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "renewal_handle": "renew_example"
+                 *     }
+                 */
+                "application/json": components["schemas"]["VendorSessionRenewal"];
+            };
+        };
+        responses: {
+            /** @description New access token and handle; refused for a deactivated user or after the absolute session end. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "access_token": "tok_example_vendor",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z",
+                     *       "renewal_handle": "renew_example2",
+                     *       "session_ends_at": "2026-11-25T01:05:11.120Z",
+                     *       "user": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *         "display_name": "Priya",
+                     *         "role": "support",
+                     *         "permissions": [
+                     *           "admin.org.read",
+                     *           "admin.device.read",
+                     *           "admin.device.revoke",
+                     *           "admin.support.session.start",
+                     *           "admin.audit.read_own",
+                     *           "admin.approval.create",
+                     *           "admin.approval.read",
+                     *           "admin.approval.decide"
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorSession"];
+                };
+            };
+            401: components["responses"]["VendorSignInFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    endVendorSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session ended; the renewal handle is dead and any support session of this user ends. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    beginVendorSetup: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "setup_token": "setup_example"
+                 *     }
+                 */
+                "application/json": components["schemas"]["BeginVendorSetup"];
+            };
+        };
+        responses: {
+            /** @description TOTP enrolment material. Until password and TOTP are both set, nothing else is reachable. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "email": "staff@example.invalid",
+                     *       "totp_provisioning_uri": "otpauth://totp/Hostry:staff@example.invalid?secret=EXAMPLEEXAMPLE234&issuer=Hostry",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorSetupChallenge"];
+                };
+            };
+            422: components["responses"]["SetupLinkInvalid"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    completeVendorSetup: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "setup_token": "setup_example",
+                 *       "password": "example-passphrase-twelve",
+                 *       "totp_code": "123456"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CompleteVendorSetup"];
+            };
+        };
+        responses: {
+            /** @description Account active. The link is single use and valid 24 hours. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *       "email": "staff@example.invalid",
+                     *       "display_name": "Priya",
+                     *       "role": "support",
+                     *       "status": "active",
+                     *       "totp_enrolled": true,
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorUser"];
+                };
+            };
+            422: components["responses"]["SetupLinkInvalid"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listVendorUsers: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size for vendor lists (default 25, maximum 100).
+                 * @example 25
+                 */
+                limit?: components["parameters"]["VendorLimit"];
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of vendor users. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *           "email": "staff@example.invalid",
+                     *           "display_name": "Priya",
+                     *           "role": "support",
+                     *           "status": "active",
+                     *           "totp_enrolled": true,
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         },
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a78",
+                     *           "email": "admin@example.invalid",
+                     *           "display_name": "Arun",
+                     *           "role": "platform_admin",
+                     *           "status": "active",
+                     *           "totp_enrolled": true,
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorUserPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createVendorUser: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a88",
+                 *       "email": "new.staff@example.invalid",
+                 *       "display_name": "Karthik",
+                 *       "role": "support"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateVendorUser"];
+            };
+        };
+        responses: {
+            /** @description User in setup_pending. The setup link is sent through the email sender interface, never returned. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a88",
+                     *       "email": "new.staff@example.invalid",
+                     *       "display_name": "Karthik",
+                     *       "role": "support",
+                     *       "status": "setup_pending",
+                     *       "totp_enrolled": false,
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorUser"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    updateVendorUser: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Vendor user ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66
+                 */
+                vendor_user_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "status": "deactivated"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateVendorUser"];
+            };
+        };
+        responses: {
+            /** @description The updated user. Deactivation ends that user's admin and support sessions at once; audit entries are kept. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *       "email": "staff@example.invalid",
+                     *       "display_name": "Priya",
+                     *       "role": "support",
+                     *       "status": "deactivated",
+                     *       "totp_enrolled": true,
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorUser"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["VendorUserConflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    resetVendorUserTotp: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Vendor user ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66
+                 */
+                vendor_user_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User returns to setup_pending and must enrol again; a setup link is sent by email. The account counts as new for the 7-day approver rule. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *       "email": "staff@example.invalid",
+                     *       "display_name": "Priya",
+                     *       "role": "support",
+                     *       "status": "setup_pending",
+                     *       "totp_enrolled": false,
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorUser"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listVendorAuditEntries: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Entries at or after this time.
+                 * @example 2026-11-24T13:05:11.120Z
+                 */
+                from?: components["schemas"]["Timestamp"];
+                /**
+                 * @description Entries before this time.
+                 * @example 2026-11-24T13:10:11.120Z
+                 */
+                to?: components["schemas"]["Timestamp"];
+                /**
+                 * @description Filter by actor (platform_admin only; others get nothing for another user).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66
+                 */
+                actor_vendor_user_id?: components["schemas"]["Id"];
+                /**
+                 * @description Filter by organisation.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id?: components["schemas"]["Id"];
+                /**
+                 * @description Exact action key.
+                 * @example vendor.device.revoked
+                 */
+                action?: string;
+                /**
+                 * @description Entries of one support session (its reads).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a68
+                 */
+                support_session_id?: components["schemas"]["Id"];
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size for vendor lists (default 25, maximum 100).
+                 * @example 25
+                 */
+                limit?: components["parameters"]["VendorLimit"];
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entries newest first. admin.audit.read holders see all entries; everyone else sees only their own. No update or delete operation exists. Chain-verified; entries for tenancy-served actions arrive by event within seconds. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a8a",
+                     *           "occurred_at": "2026-11-24T13:15:11.120Z",
+                     *           "actor_vendor_user_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *           "action": "vendor.device.revoked",
+                     *           "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *           "target_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *           "ticket_reference": "SUP-2041",
+                     *           "result": "succeeded",
+                     *           "request_id": "req_0190a1b2c3d4",
+                     *           "source_address": "203.0.113.7"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorAuditPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    lookupOrganisationsByOwnerMobile: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "mobile_e164": "+919876543210"
+                 *     }
+                 */
+                "application/json": components["schemas"]["OwnerLookup"];
+            };
+        };
+        responses: {
+            /** @description Organisation ids only, and only for a pending invitation or an owner membership on that exact number; nothing for a prefix. One audit entry per lookup. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "organisation_ids": [
+                     *         "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60"
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OwnerLookupResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getOwnerStatuses: {
+        parameters: {
+            query: {
+                /**
+                 * @description Comma-separated organisation ids, at most 100.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_ids: string;
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One item per requested id. No phone number, member or device data. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *           "owner_status": "pending"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OwnerStatusList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listOwnerInvitations: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Organisation ID (vendor routes take the organisation from the path).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invitations, newest first, with masked numbers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a67",
+                     *           "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *           "status": "pending",
+                     *           "mobile_masked": "+91*******210",
+                     *           "owner_name": "Asha",
+                     *           "expires_at": "2026-12-08T13:05:11.120Z",
+                     *           "created_at": "2026-11-24T13:05:11.120Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OwnerInvitationList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createOwnerInvitation: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation ID (vendor routes take the organisation from the path).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "mobile_e164": "+919876543210",
+                 *       "owner_name": "Asha"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateOwnerInvitation"];
+            };
+        };
+        responses: {
+            /** @description Pending invitation with a 14-day expiry. A repeat for the same organisation and number returns the same pending invitation (also on replay of the same Idempotency-Key). After expiry a new pending invitation is created and the old one stays expired. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a67",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "status": "pending",
+                     *       "mobile_masked": "+91*******210",
+                     *       "owner_name": "Asha",
+                     *       "expires_at": "2026-12-08T13:05:11.120Z",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OwnerInvitation"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["InvitationConflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    renewOwnerInvitation: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation ID (vendor routes take the organisation from the path).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Owner invitation ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a67
+                 */
+                invitation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Expiry moves to 14 days from now; the invitation id is unchanged. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a67",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "status": "pending",
+                     *       "mobile_masked": "+91*******210",
+                     *       "owner_name": "Asha",
+                     *       "expires_at": "2026-12-08T13:10:11.120Z",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OwnerInvitation"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["InvitationConflict"];
+        };
+    };
+    cancelOwnerInvitation: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation ID (vendor routes take the organisation from the path).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Owner invitation ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a67
+                 */
+                invitation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelled; an OTP request for that number (with no other invitation or account) then sends nothing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a67",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "status": "cancelled",
+                     *       "mobile_masked": "+91*******210",
+                     *       "owner_name": "Asha",
+                     *       "expires_at": "2026-12-08T13:05:11.120Z",
+                     *       "created_at": "2026-11-24T13:05:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OwnerInvitation"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["InvitationConflict"];
+        };
+    };
+    listOrganisationDevices: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size for vendor lists (default 25, maximum 100).
+                 * @example 25
+                 */
+                limit?: components["parameters"]["VendorLimit"];
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Organisation ID (vendor routes take the organisation from the path).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Closed device view: no key, PIN data or pack. One audit entry per read, in the vendor log and the tenant's log. No cross-organisation search. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *           "kind": "pos",
+                     *           "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *           "state": "active",
+                     *           "registered_at": "2026-11-24T13:05:11.120Z",
+                     *           "last_contact_at": "2026-11-24T13:10:11.120Z",
+                     *           "billing_capable": true,
+                     *           "key_protection": "hardware"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorDevicePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getOrganisationDevice: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Organisation ID (vendor routes take the organisation from the path).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Device ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e
+                 */
+                device_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The device. A device of another organisation is 404. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *       "kind": "pos",
+                     *       "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *       "state": "active",
+                     *       "registered_at": "2026-11-24T13:05:11.120Z",
+                     *       "last_contact_at": "2026-11-24T13:10:11.120Z",
+                     *       "billing_capable": true,
+                     *       "key_protection": "hardware"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorDevice"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    revokeOrganisationDevice: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Organisation ID (vendor routes take the organisation from the path).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60
+                 */
+                organisation_id: components["schemas"]["Id"];
+                /**
+                 * @description Device ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e
+                 */
+                device_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "ticket_reference": "SUP-2041",
+                 *       "reason": "Owner phoned to report a lost tablet.",
+                 *       "verification_method": "callback_to_registered_number",
+                 *       "confirm": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["VendorRevoke"];
+            };
+        };
+        responses: {
+            /** @description Revoked, or no change when the device is already revoked, drained, wiped or lost (also when two staff revoke concurrently). No wipe order is issued or hastened. Written to the vendor log and the tenant's log, naming "Hostry support", the ticket and the reason. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "device": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+                     *         "kind": "pos",
+                     *         "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+                     *         "state": "revoked",
+                     *         "registered_at": "2026-11-24T13:05:11.120Z",
+                     *         "last_contact_at": "2026-11-24T13:10:11.120Z",
+                     *         "billing_capable": true,
+                     *         "key_protection": "hardware"
+                     *       },
+                     *       "outcome": "revoked",
+                     *       "changed": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorRevokeResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["VendorApprovalRequired"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    startSupportSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                 *       "ticket_reference": "SUP-2041",
+                 *       "reason": "Owner phoned to report a lost tablet.",
+                 *       "duration_minutes": 30,
+                 *       "mode": "view"
+                 *     }
+                 */
+                "application/json": components["schemas"]["StartSupportSession"];
+            };
+        };
+        responses: {
+            /** @description Session record and the first support token (tenant realm, type support, organisation only, support_viewable permissions, 15 minutes). Start entries appear in the vendor log and the tenant's log. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "session": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a68",
+                     *         "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *         "vendor_user_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *         "mode": "view",
+                     *         "status": "active",
+                     *         "ticket_reference": "SUP-2041",
+                     *         "started_at": "2026-11-24T13:05:11.120Z",
+                     *         "ends_at": "2026-11-24T13:35:11.120Z"
+                     *       },
+                     *       "token": {
+                     *         "access_token": "tok_example_support",
+                     *         "expires_at": "2026-11-24T13:10:11.120Z"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SupportSessionStarted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["SupportSessionConflict"];
+            422: components["responses"]["ModeNotSupported"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getSupportSession: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Support session ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a68
+                 */
+                support_session_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session (own sessions only). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a68",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "vendor_user_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *       "mode": "view",
+                     *       "status": "active",
+                     *       "ticket_reference": "SUP-2041",
+                     *       "started_at": "2026-11-24T13:05:11.120Z",
+                     *       "ends_at": "2026-11-24T13:35:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SupportSession"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    renewSupportToken: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Support session ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a68
+                 */
+                support_session_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A new token with the same session end time. Refused after the end. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "access_token": "tok_example_support",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SupportToken"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["SupportSessionConflict"];
+        };
+    };
+    endSupportSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Support session ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a68
+                 */
+                support_session_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session ended; the token is refused immediately afterwards and an end entry is written (idempotent). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a68",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "vendor_user_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *       "mode": "view",
+                     *       "status": "ended",
+                     *       "ticket_reference": "SUP-2041",
+                     *       "started_at": "2026-11-24T13:05:11.120Z",
+                     *       "ends_at": "2026-11-24T13:35:11.120Z",
+                     *       "ended_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SupportSession"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listVendorApprovals: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Filter by state.
+                 * @example pending
+                 */
+                state?: "pending" | "approved" | "rejected" | "expired" | "cancelled" | "completed";
+                /**
+                 * @description Opaque cursor from a previous response's next_cursor.
+                 * @example eyJhZnRlciI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1YiJ9
+                 */
+                cursor?: components["parameters"]["Cursor"];
+                /**
+                 * @description Page size for vendor lists (default 25, maximum 100).
+                 * @example 25
+                 */
+                limit?: components["parameters"]["VendorLimit"];
+            };
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approvals the caller requested or may approve. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6d",
+                     *           "kind": "sign_in_code",
+                     *           "state": "pending",
+                     *           "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *           "mobile_masked": "+91*******210",
+                     *           "requested_by": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *           "ticket_reference": "SUP-2041",
+                     *           "verification_method": "callback_to_registered_number",
+                     *           "created_at": "2026-11-24T13:05:11.120Z",
+                     *           "expires_at": "2026-11-24T13:10:11.120Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorApprovalPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createVendorApproval: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "kind": "sign_in_code",
+                 *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                 *       "mobile_e164": "+919876543210",
+                 *       "ticket_reference": "SUP-2041",
+                 *       "reason": "Owner has no working SMS during the pilot.",
+                 *       "verification_method": "callback_to_registered_number"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateVendorApproval"];
+            };
+        };
+        responses: {
+            /** @description Pending approval. Off by default (vendor_assist.signin_code.enabled, vendor_assist.recovery.enabled); refused for a number with no account or pending invitation, or an account with a verified email. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6d",
+                     *       "kind": "sign_in_code",
+                     *       "state": "pending",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "mobile_masked": "+91*******210",
+                     *       "requested_by": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *       "ticket_reference": "SUP-2041",
+                     *       "verification_method": "callback_to_registered_number",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorApproval"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ApprovalConflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getVendorApproval: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+            };
+            path: {
+                /**
+                 * @description Vendor approval ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6d
+                 */
+                approval_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The approval, if the caller requested it or may approve it; otherwise 404. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6d",
+                     *       "kind": "sign_in_code",
+                     *       "state": "pending",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "mobile_masked": "+91*******210",
+                     *       "requested_by": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *       "ticket_reference": "SUP-2041",
+                     *       "verification_method": "callback_to_registered_number",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorApproval"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    approveVendorApproval: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Vendor approval ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6d
+                 */
+                approval_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "totp_code": "123456"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ApproveVendorApproval"];
+            };
+        };
+        responses: {
+            /** @description Approved. For a sign-in code the approver receives characters 5 to 8 once; the requester claims characters 1 to 4 with claimCodeHalf. For recovery the 24-hour delay starts now on identity's clock. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "approval": {
+                     *         "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6d",
+                     *         "kind": "sign_in_code",
+                     *         "state": "approved",
+                     *         "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *         "mobile_masked": "+91*******210",
+                     *         "requested_by": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *         "approved_by": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a78",
+                     *         "ticket_reference": "SUP-2041",
+                     *         "verification_method": "callback_to_registered_number",
+                     *         "created_at": "2026-11-24T13:05:11.120Z",
+                     *         "expires_at": "2026-11-24T13:10:11.120Z"
+                     *       },
+                     *       "code_half": {
+                     *         "half": "9XD2",
+                     *         "position": "second"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApprovalDecision"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ApprovalConflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    claimCodeHalf: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Vendor approval ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6d
+                 */
+                approval_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Characters 1 to 4, shown once. Neither vendor user ever sees the other half. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "half": "7QK3",
+                     *       "position": "first"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CodeHalf"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ApprovalConflict"];
+        };
+    };
+    cancelVendorApproval: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Network address of the staff member's browser, passed down by the admin service. Trusted only together with the admin service token; used for the audit record alone.
+                 * @example 203.0.113.7
+                 */
+                "X-Vendor-Client-Address"?: components["parameters"]["VendorClientAddress"];
+                /**
+                 * @description Client-generated unique key, 1-128 visible ASCII characters (a UUIDv7 is recommended). A replay with the same key and request returns the original status and body without repeating the effect. The same key with a different request returns 422 (code idempotency.mismatch); the same key while the first request is still in progress returns 409 (code idempotency.in_progress); an invalid key returns 422 (code idempotency.key_invalid).
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /**
+                 * @description Vendor approval ID.
+                 * @example 0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6d
+                 */
+                approval_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "Requester could not be verified by callback."
+                 *     }
+                 */
+                "application/json": components["schemas"]["RejectVendorApproval"];
+            };
+        };
+        responses: {
+            /** @description Approval cancelled. Either vendor user may cancel an owner recovery during its delay. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6d",
+                     *       "kind": "sign_in_code",
+                     *       "state": "cancelled",
+                     *       "organisation_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+                     *       "mobile_masked": "+91*******210",
+                     *       "requested_by": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a66",
+                     *       "ticket_reference": "SUP-2041",
+                     *       "verification_method": "callback_to_registered_number",
+                     *       "created_at": "2026-11-24T13:05:11.120Z",
+                     *       "expires_at": "2026-11-24T13:10:11.120Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["VendorApproval"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ApprovalConflict"];
         };
     };
 }

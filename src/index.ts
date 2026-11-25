@@ -5,3 +5,6 @@ export * from "./auth";
 export * from "./devices";
 export { uuidv7 } from "./ids";
 export * from "./printing";
+export * from "./tax";
+export * from "./catalog";
+export * from "./documents";

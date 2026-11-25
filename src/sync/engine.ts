@@ -1,5 +1,5 @@
 import { uuidv7 } from "../ids";
-import type { LocalStore, Row, StoreTx } from "../store";
+import { InMemoryStore, type LocalStore, type Row, type StoreTx } from "../store";
 import {
   applyMutations,
   applyVoidTo,
@@ -1271,6 +1271,40 @@ export class SyncEngine {
     for (const name of this.schemas.names()) {
       const rows = (await this.store.list(name)).map(visible).sort((a, b) => (a.id < b.id ? -1 : 1));
       if (rows.length) out[name] = rows;
+    }
+    return sha256Hex(canonicalize(out));
+  }
+
+  /**
+   * State hash of what the cloud accepted: the same rows as `stateHash`, rebuilt from the op log without this
+   * device's own ops the cloud holds (`pending`, `held_manager`, `held_support`). The origin applies such an op
+   * locally at once while every peer holds only its placeholder until a release (ADR-0002 A1.2, RB3), so
+   * `stateHash` differs between the origin and its peers by design; this one is what convergence is judged on
+   * (Phase 2 soak T1). Costs a replay of the log: for checks and diagnostics, not the hot path.
+   */
+  async acceptedStateHash(): Promise<string> {
+    const heldOwn = new Set(this.held.map((h) => `${h.stream}|${this.deviceId}|${h.seq}`));
+    const rows = (await this.store.list(T.op)) as OpRow[];
+    const ops: OpEnvelope[] = [];
+    for (const r of rows) {
+      if (r.state !== "applied" || r.body === undefined) continue;
+      const op = rowOp(r);
+      if (!op) continue;
+      if (op.origin === this.deviceId && heldOwn.has(opId(op))) continue;
+      ops.push(op);
+    }
+    ops.sort((a, b) => (a.hlc < b.hlc ? -1 : a.hlc > b.hlc ? 1 : a.origin < b.origin ? -1 : a.origin > b.origin ? 1 : a.seq - b.seq));
+    const scratch = new InMemoryStore(this.tenantId);
+    const voids = await this.store.list(T.void);
+    await scratch.transact((tx) => {
+      for (const v of voids) tx.put(T.void, v);
+      const ctx: ApplyCtx = { tenantId: this.tenantId, schemas: this.schemas, confirmed: () => true };
+      for (const op of ops) if (!tx.get(T.void, opId(op))) applyMutations(tx, ctx, op);
+    });
+    const out: Record<string, Row[]> = {};
+    for (const name of this.schemas.names()) {
+      const rs = (await scratch.list(name)).map(visible).sort((a, b) => (a.id < b.id ? -1 : 1));
+      if (rs.length) out[name] = rs;
     }
     return sha256Hex(canonicalize(out));
   }

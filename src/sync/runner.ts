@@ -263,6 +263,23 @@ export class SyncRunner implements SyncClient {
       await e.setHeld(toHeld(res.own_held ?? [], e.deviceId));
       if (!res.more || !progress) break;
     }
+
+    // `pii_incomplete` (ADR-0014 A3.1 item 4): ask this upstream again from just below the oldest op missing a value.
+    // The re-served slots are held already, so they only fill the missing fields; a kds has nothing to ask for.
+    const missing = await e.piiIncomplete();
+    if (missing.length > 0) {
+      const from: Record<string, Record<string, number>> = {};
+      for (const s of e.streams) from[s] = await e.vector(s);
+      for (const m of missing) {
+        const v = from[m.stream];
+        if (v && m.origin in v) v[m.origin] = Math.min(v[m.origin]!, m.seq - 1);
+      }
+      const res = await t.pull({ vector: toWireVector(from), streams: e.streams, limit: batch });
+      for (const s of e.streams) {
+        const items = res.items.filter((it) => it.stream === s && it.pii !== undefined);
+        if (items.length > 0) await e.applyRemote(s, items, res.seals ?? [], { fromCloud: kind === "cloud" });
+      }
+    }
   }
 }
 

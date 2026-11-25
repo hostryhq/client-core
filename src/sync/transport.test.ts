@@ -65,7 +65,7 @@ describe("LAN authentication (ADR-0002 S10)", () => {
     const hubKey = await SoftwareSigner.generate("hub-k");
     const devKey = await SoftwareSigner.generate("dev-k");
     const sign = async (cred: CredentialEnvelope["cred"]): Promise<CredentialEnvelope> => ({ cred, sig: await identity.sign(`hostry-cred-v1\n${canonicalize(cred)}`) });
-    const base = { tenant_id: "t1", outlet_id: "o1", not_after: 2_000_000_000 };
+    const base = { tenant_id: "t1", outlet_id: "o1", brand_id: "b1", not_after: 2_000_000_000 };
     const devCred = await sign({ ...base, device_id: "devA", kind: "pos", kid: "dev-k", pub: devKey.publicB64 });
     const hubCred = await sign({ ...base, device_id: "hub-1", kind: "hub", kid: "hub-k", pub: hubKey.publicB64 });
     return { identity, hubKey, devKey, devCred, hubCred };

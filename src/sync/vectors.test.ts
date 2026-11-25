@@ -48,7 +48,7 @@ describe("released unsealed tail under endorsement (ADR-0002 A2.1, KL12-KL13)", 
     const fresh = await w.addDevice("devNew", { withHub: false, store: old.store });
     const [up] = await fresh.engine.recoveryUpload("devOld", { [OUTLET]: { devOld: 0 } }, "rec-1");
     const identity = await SoftwareSigner.generate("id");
-    const cred = { device_id: "devNew", tenant_id: "t1", outlet_id: "o1", kind: "pos", kid: fresh.signer.kid, pub: fresh.signer.publicB64, recovers: "devOld", not_after: 9e9 };
+    const cred = { device_id: "devNew", tenant_id: "t1", outlet_id: "o1", brand_id: "b1", kind: "pos" as const, kid: fresh.signer.kid, pub: fresh.signer.publicB64, recovers: "devOld", not_after: 9e9 };
     const envelope = { cred, sig: await identity.sign(`hostry-cred-v1\n${canonicalize(cred)}`) };
     const endorse = async (it: WireItem, rec = "rec-1", key: SoftwareSigner = w.cloudSigner): Promise<Endorsement> => {
       const e = { origin: it.origin, stream: it.stream, seq: it.seq, h: it.h, rec };

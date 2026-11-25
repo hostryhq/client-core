@@ -1,6 +1,7 @@
 import { canonicalize } from "../canonical";
 import { genesisHash, makeSeal, sha256Hex, verifySeal, type SealVerifier, type SoftwareSigner } from "../crypto";
 import { packHlc } from "../hlc";
+import { servesPii, type DeviceKind } from "../pii-serve";
 import {
   TransportError,
   fromWireVector,
@@ -49,6 +50,13 @@ type State = {
   cloudLastMs: number;
 };
 
+
+function withoutPii(it: WireItem): WireItem {
+  const { pii, ...rest } = it;
+  void pii;
+  return rest;
+}
+
 export type Fault = { call: "hello" | "push" | "pull"; when: "before" | "after" };
 
 export class FakeNode {
@@ -83,14 +91,14 @@ export class FakeNode {
   }
 
   /** A transport as seen by one caller; `link.up` lets a test partition that one link. */
-  connect(caller: string, link: { up: boolean } = { up: true }): SyncTransport {
+  connect(caller: string, link: { up: boolean } = { up: true }, kind: DeviceKind = "pos"): SyncTransport {
     const gate = (): void => {
       if (!this.up || !link.up) throw new TransportError(0, "network unreachable", true);
     };
     return {
       hello: async (r) => (gate(), this.hello(r)),
       push: async (r) => (gate(), this.push(r)),
-      pull: async (r) => (gate(), this.pull(r, caller)),
+      pull: async (r) => (gate(), this.pull(r, caller, kind)),
     };
   }
 
@@ -192,7 +200,8 @@ export class FakeNode {
     return res;
   }
 
-  async pull(req: PullRequest, caller: string): Promise<PullResponse> {
+  /** `kind` is the puller's credential kind: a `kds` is answered with no `pii` at all (ADR-0014 A3.1 item 1). */
+  async pull(req: PullRequest, caller: string, kind: DeviceKind = "pos"): Promise<PullResponse> {
     this.fault("pull", "before");
     const want = fromWireVector(req.vector);
     const limit = req.limit ?? 500;
@@ -237,7 +246,7 @@ export class FakeNode {
     }
     const res: PullResponse = {
       epoch: this.st.epoch,
-      items,
+      items: servesPii(kind) ? items : items.map(withoutPii),
       seals,
       more: items.length >= limit,
       own_held: own,

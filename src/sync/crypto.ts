@@ -1,4 +1,5 @@
 import { canonicalize } from "./canonical";
+import type { DeviceKind } from "./pii-serve";
 import type { Seal } from "./types";
 
 const enc = new TextEncoder();
@@ -110,8 +111,9 @@ export type Credential = {
   device_id: string;
   tenant_id: string;
   outlet_id: string;
-  brand_id?: string;
-  kind: string;
+  /** Always present (ADR-0014 A3.4): identity reads it from tenancy at activation and signs it, so a hub judges brand streams offline. */
+  brand_id: string;
+  kind: DeviceKind;
   kid: string;
   pub: string;
   recovers?: string;

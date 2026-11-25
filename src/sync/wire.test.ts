@@ -75,7 +75,7 @@ describe("seals", () => {
     const identity = await SoftwareSigner.generate("id");
     const dev = await SoftwareSigner.generate("k1");
     const ring = new KeyRing(identity.publicB64);
-    const cred = { device_id: "dev-9", tenant_id: "t1", outlet_id: "o1", kind: "pos", kid: "k1", pub: dev.publicB64, not_after: 2000000000 };
+    const cred = { device_id: "dev-9", tenant_id: "t1", outlet_id: "o1", brand_id: "b1", kind: "pos" as const, kid: "k1", pub: dev.publicB64, not_after: 2000000000 };
     const good = { cred, sig: await identity.sign(`hostry-cred-v1\n${canonicalize(cred)}`) };
     const forged = { cred: { ...cred, device_id: "dev-evil" }, sig: good.sig };
     expect(await ring.ingest([forged])).toBe(0);

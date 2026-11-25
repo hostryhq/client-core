@@ -61,3 +61,16 @@ export {
   type PiiWire,
   type RandomBytes,
 } from "./pii-commit";
+export { mergePii, missingPiiFields, servesPii, withCommits, type DeviceKind } from "./pii-serve";
+export { COMMIT_PREFIX, digestRowText, entityDigest, stateDigest } from "./digest";
+export {
+  actionHash,
+  actionValues,
+  approvalProofMessage,
+  goQuote,
+  proofTime,
+  sessionProofMessage,
+  type ActionHashFields,
+  type ApprovalProofFields,
+  type SessionProofFields,
+} from "./proof";

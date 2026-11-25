@@ -33,6 +33,8 @@ export type EntitySchema = {
   docType?: DocType;
   /** Money or tax: only modelled as append facts; invariants are checked by detectors, never merged. */
   guarded?: boolean;
+  /** Fields declared `pii: true` in the entity file: they travel in the op's `pii`, never in the hashed body (S4, review M-10). */
+  pii?: string[];
 };
 
 export class SchemaRegistry {

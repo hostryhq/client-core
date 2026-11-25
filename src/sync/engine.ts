@@ -3,6 +3,7 @@ import { InMemoryStore, type LocalStore, type Row, type StoreTx } from "../store
 import {
   applyMutations,
   eraseRowFields,
+  fillRowFields,
   applyVoidTo,
   opId,
   opRowId,
@@ -28,6 +29,9 @@ import { commitPii, openPii, stripSalts, systemRandom, type PiiValues, type Rand
 import type { SchemaRegistry, DocType } from "./schema";
 import { drainSigningMessage, drainStatementHash, type DrainStatement, type UnsignedDrainStatement } from "./drain";
 import { allocateNumber, financialYear, putGrants, type SeriesGrant } from "./series";
+import { digestRowText, entityDigest, stateDigest } from "./digest";
+import type { PiiWire } from "./pii-commit";
+import { missingPiiFields, mergePii, servesPii, withCommits, type DeviceKind } from "./pii-serve";
 import type {
   Attestation,
   ChainConflict,
@@ -70,6 +74,11 @@ export type EngineConfig = {
   signer: Signer;
   verifier: SealVerifier;
   packVersion: number;
+  /**
+   * Credential kind of this device (ADR-0014 A3.1). Decides whether it receives personal data: `pos`, `waiter`,
+   * `personal` and `hub` do; a `kds` never does and never fetches it. Default `pos`.
+   */
+  deviceKind?: DeviceKind;
   /** Wall clock in ms; injectable. */
   now?: () => number;
   clockMode?: ClockMode;
@@ -109,8 +118,8 @@ export type RecordSpec = {
   /** PIN version the proof was made under (A3.1). */
   pinV?: number;
   /**
-   * The opening time a `session.open` proof binds: take it from `stampTime()` before the proof is made. Used as the
-   * op's `at` on `session.open` only; ignored elsewhere (A3.1).
+   * The time a proof binds: take it from `stampTime()` before the proof is made. Used as the op's `at` on `session.open`
+   * (the opening time), `approval.grant` and `approval.self_confirm` (the approval time); ignored elsewhere (A3.1).
    */
   at?: string;
   /**
@@ -151,7 +160,9 @@ const PII_ERASE_INTENT = "sync.pii.erase";
 const PII_ERASE_RECORD = "pii_erase";
 const SESSION_OPEN = "session.open";
 /** The only intents whose op carries `proof` and `pin_v` (ADR-0005 A3.1). */
-const PROOF_INTENTS = new Set([SESSION_OPEN, "approval.grant"]);
+const PROOF_INTENTS = new Set([SESSION_OPEN, "approval.grant", "approval.self_confirm"]);
+/** Intents whose proof binds the op's own `at`: the shell stamps the time (`stampTime`), makes the proof and passes the time back (A3.1, the approval proof). */
+const AT_INTENTS = new Set(PROOF_INTENTS);
 const piiErasedId = (r: OpRef): string => `pii_erased:${opId(r)}`;
 
 type CcRow = Row & { origin: string; stream: string; seq: number; held: string; seen?: string; src: "cloud" | "relay"; reported: boolean };
@@ -212,6 +223,7 @@ export class SyncEngine {
   private readonly random: RandomBytes;
   private readonly onPiiErased: ((e: { ref: OpRef; values: PiiValues }) => void) | undefined;
   private erasedNow: Array<{ ref: OpRef; values: PiiValues }> = [];
+  readonly deviceKind: DeviceKind;
   private packVersion: number;
   private readonly clockMode: ClockMode;
   private readonly sealIntervalMs: number;
@@ -248,6 +260,7 @@ export class SyncEngine {
     this.newId = cfg.newId ?? (() => uuidv7(this.now));
     this.random = cfg.randomBytes ?? systemRandom;
     this.onPiiErased = cfg.onPiiErased;
+    this.deviceKind = cfg.deviceKind ?? "pos";
     if (!Number.isInteger(cfg.packVersion) || cfg.packVersion < 1) throw new Error("packVersion must be an integer >= 1");
     this.packVersion = cfg.packVersion;
     this.clockMode = cfg.clockMode ?? "sync";
@@ -323,7 +336,7 @@ export class SyncEngine {
     // A proof travels once, on the op that carries it, with the PIN version it was made under (ADR-0005 A3.1).
     const carriesProof = spec.proof !== undefined && PROOF_INTENTS.has(spec.intent);
     if (carriesProof && (!Number.isInteger(spec.pinV) || (spec.pinV as number) < 1)) throw new Error(`record: ${spec.intent} with a proof needs pinV (integer >= 1)`);
-    if (spec.intent === SESSION_OPEN && spec.at !== undefined && new Date(spec.at).toISOString() !== spec.at) throw new Error("record: session.open at must be an RFC 3339 UTC time with milliseconds");
+    if (AT_INTENTS.has(spec.intent) && spec.at !== undefined && new Date(spec.at).toISOString() !== spec.at) throw new Error(`record: ${spec.intent} at must be an RFC 3339 UTC time with milliseconds`);
 
     const op = await this.store.transact(async (tx) => {
       const head: Head =
@@ -365,7 +378,7 @@ export class SyncEngine {
         ...(carriesProof ? { proof: spec.proof, pin_v: spec.pinV } : {}),
         intent: spec.intent,
         intent_v: spec.intentV ?? 1,
-        at: spec.intent === SESSION_OPEN && spec.at !== undefined ? spec.at : new Date(nowMs).toISOString(),
+        at: AT_INTENTS.has(spec.intent) && spec.at !== undefined ? spec.at : new Date(nowMs).toISOString(),
         // `doc` is the first number (what a reader that knows one number sees); `docs` lists all of them when there are several.
         ...(allocated.length ? { doc: allocated[0]! } : {}),
         ...(allocated.length > 1 ? { docs: allocated } : {}),
@@ -389,7 +402,7 @@ export class SyncEngine {
       if (piiBytes > MAX_PII_BYTES) throw new OpTooLargeError("pii", piiBytes, MAX_PII_BYTES);
       const h = await sha256Hex(body);
       const applied = JSON.parse(body) as OpEnvelope; // apply exactly what receivers will parse
-      applyMutations(tx, this.applyCtx(tx), withPii(applied, pii));
+      applyMutations(tx, this.applyCtx(tx), withPii(withCommits(applied), pii));
       tx.put(T.op, {
         id: opRowId(applied),
         tenant_id: this.tenantId,
@@ -870,6 +883,8 @@ export class SyncEngine {
             this.noteConflict(tx, { origin, stream, seq: it.seq, held: row.h, seen: it.h }, src);
             result.rejected.push({ origin, seq: it.seq, reason: "chain_conflict" });
           } else {
+            // A slot already held that comes again with pii: it fills a field the row was missing (`pii_incomplete`).
+            if (row && it.pii !== undefined && it.h === row.h) await this.fillPii(tx, row, it);
             result.skipped++;
           }
         }
@@ -1158,6 +1173,43 @@ export class SyncEngine {
     if (!tx.get(T.piiack, opId(ref))) tx.put(T.piiack, { id: opId(ref), tenant_id: this.tenantId, ...ref });
   }
 
+  /**
+   * Takes the personal data a re-served op brings for fields this node holds a commitment for and no value (ADR-0014
+   * A3.1 item 4). Only fields that verify against the commitment are kept; an erased op and a `kds` take nothing.
+   */
+  private async fillPii(tx: StoreTx, row: OpRow, it: WireItem): Promise<void> {
+    if (!servesPii(this.deviceKind) || row.body === undefined || tx.get(T.meta, piiErasedId(opRefOf(row.id))) !== undefined) return;
+    const op = rowOp(row);
+    if (!op?.pii_c || missingPiiFields(op.pii_c, row.pii).length === 0) return;
+    const opened = await openPii(it.pii, op.pii_c);
+    if (!opened.verified) return;
+    tx.put(T.op, { ...row, pii: mergePii(row.pii as PiiWire | undefined, opened.verified) });
+    this.fillRows(tx, op, opened.values);
+  }
+
+  /** Puts newly arrived pii values into the rows whose winning write is this op's (ADR-0014 A3.1 item 4). */
+  protected fillRows(tx: StoreTx, op: OpEnvelope, values: PiiValues | undefined): void {
+    if (values) fillRowFields(tx, this.applyCtx(tx), op, values);
+  }
+
+  /**
+   * Ops whose sealed body commits to a personal field this node holds no value for and that no erasure names:
+   * `pii_incomplete`. The row applies and the field shows as pending; the next contact with any upstream fetches it
+   * (the runner pulls with the vector just below the op). A `kds` expects no value and has none.
+   */
+  async piiIncomplete(): Promise<Array<OpRef & { fields: Array<{ e: string; id: string; f: string }> }>> {
+    if (!servesPii(this.deviceKind)) return [];
+    const out: Array<OpRef & { fields: Array<{ e: string; id: string; f: string }> }> = [];
+    for (const row of (await this.store.list(T.op)) as OpRow[]) {
+      if (row.state !== "applied" || row.body === undefined || !row.body.includes('"pii_c"')) continue;
+      const op = rowOp(row);
+      if (!op?.pii_c || (await this.store.get(T.meta, piiErasedId(op))) !== undefined) continue;
+      const fields = missingPiiFields(op.pii_c, row.pii);
+      if (fields.length) out.push({ origin: op.origin, stream: op.stream, seq: op.seq, fields });
+    }
+    return out;
+  }
+
   /** Marks conflicts as sent: call with the ones a direct cloud hello carried, after it succeeded. */
   async markConflictsReported(sent: ChainConflict[]): Promise<void> {
     if (sent.length === 0) return;
@@ -1276,7 +1328,7 @@ export class SyncEngine {
     const ref: OpRef = { origin: op.origin, stream: op.stream, seq: op.seq };
     // Personal data is kept only if it matches the commitments of the sealed body; an erased op keeps none.
     const erased = tx.get(T.meta, piiErasedId(ref)) !== undefined;
-    const opened = erased || it.pii === undefined ? undefined : await openPii(it.pii, op.pii_c);
+    const opened = erased || it.pii === undefined || !servesPii(this.deviceKind) ? undefined : await openPii(it.pii, op.pii_c);
     const row: OpRow = {
       id: opRowId(ref),
       tenant_id: this.tenantId,
@@ -1313,7 +1365,7 @@ export class SyncEngine {
       row.state = "clock_quarantined"; // LWW op with an untrusted stamp: manager review, not applied (S5)
       tx.put(T.clockq, { id: opId(ref), tenant_id: this.tenantId, origin: op.origin, stream: op.stream, seq: op.seq });
     } else {
-      applyMutations(tx, ctx, withPii(op, opened?.values));
+      applyMutations(tx, ctx, withPii(withCommits(op), opened?.values));
     }
     if (fresh && op.v === 1) this.clock.observe(op.hlc);
     tx.put(T.op, row);
@@ -1361,7 +1413,7 @@ export class SyncEngine {
       const op = row && rowOp(row);
       if (!row || !op || row.state !== "clock_quarantined") return;
       const ctx = this.applyCtx(tx);
-      if (!tx.get(T.void, opId(ref))) applyMutations(tx, ctx, withPii(op, stripSalts(row.pii)));
+      if (!tx.get(T.void, opId(ref))) applyMutations(tx, ctx, withPii(withCommits(op), stripSalts(row.pii)));
       tx.put(T.op, { ...row, state: "applied" });
       tx.del(T.clockq, opId(ref));
     });
@@ -1414,12 +1466,22 @@ export class SyncEngine {
    * compare (ADR-0002 S15). Internal tables, candidates and conflict rows are not part of it.
    */
   async stateHash(): Promise<string> {
-    const out: Record<string, Row[]> = {};
+    return this.hashRows((name) => this.store.list(name));
+  }
+
+  /**
+   * The convergence hash (api-specs "Projection digest", ADR-0014 A3.2): per entity the SHA-256 over the row texts, a
+   * row text being its non-pii fields plus one `~c:<field>` commitment per pii field it holds one for, never a
+   * value or a salt. So it is equal on a till, a kds, the hub and the cloud, and unchanged by an erasure.
+   */
+  private async hashRows(list: (entity: string) => Promise<Row[]>): Promise<string> {
+    const entities: Array<{ name: string; rowCount: number; hash: string }> = [];
     for (const name of this.schemas.names()) {
-      const rows = (await this.store.list(name)).map(visible).sort((a, b) => (a.id < b.id ? -1 : 1));
-      if (rows.length) out[name] = rows;
+      const pii = this.schemas.get(name)?.pii ?? [];
+      const rows = (await list(name)).filter((r) => r.deleted !== true).map((r) => ({ id: String(r.id), text: digestRowText(r, pii) }));
+      if (rows.length) entities.push({ name, ...(await entityDigest(rows)) });
     }
-    return sha256Hex(canonicalize(out));
+    return stateDigest(entities);
   }
 
   /**
@@ -1446,14 +1508,9 @@ export class SyncEngine {
     await scratch.transact((tx) => {
       for (const v of voids) tx.put(T.void, v);
       const ctx: ApplyCtx = { tenantId: this.tenantId, schemas: this.schemas, confirmed: () => true };
-      for (const op of ops) if (!tx.get(T.void, opId(op))) applyMutations(tx, ctx, op);
+      for (const op of ops) if (!tx.get(T.void, opId(op))) applyMutations(tx, ctx, withCommits(op));
     });
-    const out: Record<string, Row[]> = {};
-    for (const name of this.schemas.names()) {
-      const rs = (await scratch.list(name)).map(visible).sort((a, b) => (a.id < b.id ? -1 : 1));
-      if (rs.length) out[name] = rs;
-    }
-    return sha256Hex(canonicalize(out));
+    return this.hashRows((name) => scratch.list(name));
   }
 
   // ---- key loss (A1.3) -----------------------------------------------------------------------

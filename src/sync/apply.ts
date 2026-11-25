@@ -1,4 +1,5 @@
 import type { Row, StoreTx } from "../store";
+import { COMMIT_PREFIX } from "./digest";
 import { compareStamp } from "./hlc";
 import { reviewFields, type EntitySchema, type SchemaRegistry } from "./schema";
 import type { Hlc, Mutation, OpEnvelope, OpRef } from "./types";
@@ -181,14 +182,19 @@ function applyMixed(
     // A lower stamp replaces the immutable fields of an earlier insert of the same id, so every node settles on one.
     takesImmutable = row._ih === undefined || compareStamp(op.hlc, op.origin, row._ih, row._io as string) < 0;
     if (takesImmutable) {
-      for (const [k, r] of Object.entries(rules)) if (r.policy === "immutable") delete row[k];
+      for (const [k, r] of Object.entries(rules)) {
+        if (r.policy !== "immutable") continue;
+        delete row[k];
+        delete row[COMMIT_PREFIX + k];
+      }
       row._ih = op.hlc;
       row._io = op.origin;
     }
   }
 
   for (const [k, v] of Object.entries(f)) {
-    const r = rules[k];
+    // `~c:<field>` is the commitment of a pii field: it follows the field's own rule (ADR-0014 A3.2).
+    const r = rules[k.startsWith(COMMIT_PREFIX) ? k.slice(COMMIT_PREFIX.length) : k];
     if (!r) {
       out.ignored.push(`${m.e}.${k}: unknown field`);
       continue;
@@ -383,8 +389,34 @@ export function applyVoidTo(tx: StoreTx, ctx: ApplyCtx, target: OpRef, appliedOp
 /** Strip internal fields: what a screen or a state hash sees. */
 export function visible(row: Row): Row {
   const out: Row = { id: row.id, tenant_id: row.tenant_id };
-  for (const [k, v] of Object.entries(row)) if (!k.startsWith("_") && k !== "deleted") out[k] = v;
+  for (const [k, v] of Object.entries(row)) if (!k.startsWith("_") && !k.startsWith(COMMIT_PREFIX) && k !== "deleted") out[k] = v;
   return out;
+}
+
+/**
+ * Puts pii values that arrived after their row (a `pii_incomplete` fetch) into the row, when this op's write is the one
+ * showing for the field: its commitment is the row's current `~c:<field>` winner. An lww field gains the value as a
+ * candidate with the stamp of its commitment candidate, so it wins or loses exactly as the commitment does.
+ */
+export function fillRowFields(tx: StoreTx, ctx: ApplyCtx, op: OpEnvelope, values: Record<string, Record<string, Record<string, unknown>>>): void {
+  const i = opId(op);
+  for (const [e, rows] of Object.entries(values)) {
+    for (const [id, fields] of Object.entries(rows)) {
+      const row = tx.get(e, id) as (Row & { _g?: Groups }) | undefined;
+      if (!row) continue;
+      for (const [f, v] of Object.entries(fields)) {
+        const cg = row._g?.[COMMIT_PREFIX + f]?.find((c) => c.i === i);
+        if (cg) {
+          const list = (row._g![f] ??= []);
+          if (!list.some((c) => c.i === i)) list.push({ h: cg.h, o: cg.o, i, v, ...(cg.p !== undefined ? { p: cg.p } : {}) });
+        } else if (row[COMMIT_PREFIX + f] !== undefined && op.pii_c?.[e]?.[id]?.[f] === row[COMMIT_PREFIX + f]) {
+          row[f] = v;
+        }
+      }
+      if (row._g) recompute(tx, row, ctx.schemas.get(e)?.policy === "mixed");
+      tx.put(e, row);
+    }
+  }
 }
 
 /**

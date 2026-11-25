@@ -13,7 +13,11 @@ export type IntentDef = {
   owner: string | null;
   permission: string | null;
   proof: "session" | "action" | null;
+  /** `proof.binds`: the overridden fields whose recorded values form `values` in the action hash (sync/protocol-v1.md). */
+  binds: string[];
   override: boolean;
+  /** Session types that may record the intent (`pin`, `strong`, `device`). */
+  sessions: string[];
   deviceKinds: string[];
   streams: string[];
   numbering: "allocated" | "typed" | "none";

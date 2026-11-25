@@ -18,6 +18,7 @@ export {
 export { DEMO_SCHEMAS, SchemaRegistry, demoRegistry, type DocType, type EntitySchema, type Policy } from "./schema";
 export { SeriesError, financialYear, formatNumber, type SeriesGrant, type SeriesState } from "./series";
 export { detect, type Violation } from "./detectors";
+export { DRAIN_TAG, drainSigningMessage, drainStatementHash, type DrainStatement } from "./drain";
 export { visible, type ConflictRow } from "./apply";
 export {
   KeyLostError,

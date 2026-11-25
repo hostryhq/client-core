@@ -17,6 +17,8 @@ export type SeriesGrant = {
   code: string;
   docType: DocType;
   state: SeriesState;
+  /** Tenancy's series id, from the offline pack: named by the drain statement (ADR-0005 A3.3). */
+  seriesId?: string;
 };
 
 /**

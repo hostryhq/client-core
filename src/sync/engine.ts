@@ -24,7 +24,8 @@ import {
 import { HlcClock, MAX_FUTURE_MS, unpackHlc } from "./hlc";
 import { commitPii, openPii, systemRandom, type PiiValues, type RandomBytes } from "./pii-commit";
 import type { SchemaRegistry, DocType } from "./schema";
-import { allocateNumber, putGrants, type SeriesGrant } from "./series";
+import { drainSigningMessage, drainStatementHash, type DrainStatement, type UnsignedDrainStatement } from "./drain";
+import { allocateNumber, financialYear, putGrants, type SeriesGrant } from "./series";
 import type {
   Attestation,
   ChainConflict,
@@ -46,6 +47,12 @@ import type {
 export class KeyLostError extends Error {
   constructor() {
     super("device key unavailable: this device must be recovered or re-activated before it records anything");
+  }
+}
+
+export class DrainingError extends Error {
+  constructor() {
+    super("this device is in drain mode: it records nothing new (ADR-0005 A3.3)");
   }
 }
 
@@ -203,6 +210,7 @@ export class SyncEngine {
   private deliv = new Map<string, Deliv>();
   private held: HeldItem[] = [];
   private refused = new Set<string>();
+  private draining = false;
   private conflictCount = 0;
   private chainConflictCount = 0;
   private clockqCount = 0;
@@ -252,6 +260,7 @@ export class SyncEngine {
     e.reoffer = ((await store.get(T.meta, "reoffer"))?.v as boolean | undefined) ?? false;
     e.reofferedEpoch = (await store.get(T.meta, "reoffered_epoch"))?.v as string | undefined;
     e.refused = new Set(((await store.get(T.meta, "refused"))?.list as string[] | undefined) ?? []);
+    e.draining = (await store.get(T.meta, "drain"))?.v === true;
     e.held = ((await store.get(T.held, "own"))?.items as HeldItem[] | undefined) ?? [];
     for (const s of e.streams) {
       const h = (await store.get(T.head, `${s}|${cfg.deviceId}`)) as Head | undefined;
@@ -295,6 +304,7 @@ export class SyncEngine {
    */
   async record(spec: RecordSpec): Promise<OpEnvelope> {
     if (this.keyLost) throw new KeyLostError();
+    if (this.draining) throw new DrainingError();
     const stream = spec.stream ?? this.outletStream;
     const actor = spec.actor ?? this.session?.actor;
     const sid = spec.sid ?? this.session?.sid;
@@ -555,6 +565,83 @@ export class SyncEngine {
       tx.put(T.meta, { id: "clock", tenant_id: this.tenantId, offset, src: kind });
     });
     this.emit();
+  }
+
+  // ---- drain (ADR-0005 A3.3) -----------------------------------------------------------------
+
+  get isDraining(): boolean {
+    return this.draining;
+  }
+
+  /** Enters drain mode for good: the device records nothing new, so what it signs stays true. Survives a restart. */
+  async beginDrain(): Promise<void> {
+    this.draining = true;
+    await this.store.transact((tx) => {
+      tx.put(T.meta, { id: "drain", tenant_id: this.tenantId, v: true });
+    });
+    this.emit();
+  }
+
+  /**
+   * The signed `hostry-drain-v1` statement: the head of every stream in which the log holds an op of `origin`
+   * (default this device), and the last number of every series in the pack, 0 when never used. Signed with the
+   * device key; for a key-lost device `origin` is the old one and `by`/`rec` name the adopting device and the
+   * recovery. Built once: the cloud refuses a second, different statement for an origin, so later calls return
+   * the stored one. Throws when a series in the pack carries no `seriesId`.
+   */
+  async drainStatement(opts: { origin?: string; rec?: string } = {}): Promise<DrainStatement> {
+    const origin = opts.origin ?? this.deviceId;
+    const key = `drain_statement:${origin}`;
+    const kept = (await this.store.get(T.meta, key))?.statement as DrainStatement | undefined;
+    if (kept) return kept;
+    if (this.keyLost) throw new KeyLostError();
+    const streams: DrainStatement["streams"] = [];
+    for (const stream of this.streams) {
+      const seq = (await this.vector(stream))[origin] ?? 0;
+      if (seq < 1) continue;
+      const h = await this.hashAt({ origin, stream, seq });
+      if (h === undefined) throw new Error(`drain: op ${origin}/${stream}/${seq} not held`);
+      streams.push({ stream, seq, h });
+    }
+    streams.sort((a, b) => (a.stream < b.stream ? -1 : 1));
+    const counters = (await this.store.list(T.series)) as Array<Row & { next: number }>;
+    const fyNow = financialYear(this.correctedNow());
+    const series: DrainStatement["series"] = [];
+    for (const g of (await this.store.list(T.grant)) as Array<Row & SeriesGrant>) {
+      if (!g.seriesId) throw new Error(`drain: series ${g.code} has no series_id in the pack`);
+      const rows = counters.filter((c) => c.id.startsWith(`${g.code}|${g.docType}|`));
+      if (rows.length === 0) series.push({ series_id: g.seriesId, code: g.code, fy: fyNow, last_number: 0 });
+      for (const c of rows) series.push({ series_id: g.seriesId, code: g.code, fy: c.id.split("|")[2]!, last_number: c.next });
+    }
+    series.sort((a, b) => (a.series_id + a.fy < b.series_id + b.fy ? -1 : 1));
+    const unsigned: UnsignedDrainStatement = {
+      origin,
+      streams,
+      series,
+      by: this.deviceId,
+      ...(opts.rec !== undefined ? { rec: opts.rec } : {}),
+      kid: this.signer.kid,
+      at: new Date(this.correctedNow()).toISOString().replace(/\.\d{3}Z$/, "Z"),
+    };
+    const statement: DrainStatement = { ...unsigned, sig: await this.signer.sign(drainSigningMessage(unsigned)) };
+    await this.store.transact((tx) => {
+      tx.put(T.meta, { id: key, tenant_id: this.tenantId, statement });
+    });
+    return statement;
+  }
+
+  /**
+   * True when `hash` is the hash of the statement this device signed and every op it holds is still covered by it:
+   * the shell wipes only on an order quoting such a hash (ADR-0005 A3.3 item 6).
+   */
+  async ownsDrainStatement(hash: string): Promise<boolean> {
+    const s = (await this.store.get(T.meta, `drain_statement:${this.deviceId}`))?.statement as DrainStatement | undefined;
+    if (!s || (await drainStatementHash(s)) !== hash) return false;
+    for (const stream of this.streams) {
+      const stated = s.streams.find((x) => x.stream === stream)?.seq ?? 0;
+      if (((await this.vector(stream))[this.deviceId] ?? 0) !== stated) return false;
+    }
+    return true;
   }
 
   /** Sets the pack version stamped on new ops (a pack refresh); an integer >= 1. */

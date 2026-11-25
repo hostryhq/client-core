@@ -7,6 +7,7 @@ import {
   type SyncTransport,
   TransportError,
 } from "./transport";
+import type { DrainStatement } from "./drain";
 import type { HeldItem, SyncClient, SyncStatus, Unsubscribe } from "./types";
 
 export type RunnerConfig = {
@@ -88,6 +89,43 @@ export class SyncRunner implements SyncClient {
   }
 
   /** Runs one round now. Concurrent calls share the round in flight. Never throws. */
+  /**
+   * Drain a revoked device (ADR-0005 A3.3). With the drain token as the cloud credential: enter drain mode (nothing new is
+   * recorded), upload every own op to quarantine until the answered vector covers every own head, then send the last
+   * upload with no items and the signed statement. Safe to repeat after a cut: it starts over and the statement is
+   * built once. `drained: false` means the cloud was not reached or did not cover every head, and nothing was signed
+   * into a send.
+   */
+  async drain(): Promise<{ drained: boolean; statement?: DrainStatement }> {
+    const up = this.cfg.cloud?.uploadQuarantine?.bind(this.cfg.cloud);
+    if (!up) throw new Error("drain: needs a cloud transport with uploadQuarantine");
+    const e = this.e;
+    await e.beginDrain();
+    const batch = this.cfg.batch ?? 500;
+    try {
+      for (const stream of e.streams) {
+        const head = (await e.vector(stream))[e.deviceId] ?? 0;
+        let have: Record<string, number> = {};
+        for (let i = 0; i < MAX_BATCHES && (have[e.deviceId] ?? 0) < head; i++) {
+          const { items, seals } = await e.outbox(stream, have, "own", batch);
+          if (items.length === 0) break;
+          const res = await up({ items, seals });
+          const accepted = fromWireVector(res.vector)[stream] ?? {};
+          const before = have[e.deviceId] ?? 0;
+          have = { ...have, ...accepted };
+          if ((have[e.deviceId] ?? 0) <= before) return { drained: false }; // refused or no progress
+        }
+        if ((have[e.deviceId] ?? 0) < head) return { drained: false };
+      }
+      const statement = await e.drainStatement();
+      await up({ items: [], drain_statement: statement });
+      return { drained: true, statement };
+    } catch (err) {
+      this.cfg.onError?.(err);
+      return { drained: false };
+    }
+  }
+
   syncNow(): Promise<void> {
     this.inflight ??= this.round().finally(() => {
       this.inflight = undefined;

@@ -1,6 +1,6 @@
 import { canonicalize } from "./canonical";
 import type { DrainStatement } from "./drain";
-import { b64url, fromB64url, importPublicKey, sha256Hex, verifyRaw, type CredentialEnvelope, type Signer } from "./crypto";
+import { sha256Hex, type CredentialEnvelope } from "./crypto";
 import type { Attestation, ChainConflict, Endorsement, HeldCode, OpRef, Seal, SlotHash, VersionVector, WireItem } from "./types";
 
 /**
@@ -112,10 +112,10 @@ export class TransportError extends Error {
   }
 }
 
-/** Request authentication and, for the LAN, verification of the answering hub. */
+/** Request authentication (the cloud's bearer token). The LAN does not use this: its handshake and session token are `LanTransport` (lan.ts). */
 export type HttpAuth = {
   authorize(method: string, path: string, body: string): Promise<Record<string, string>> | Record<string, string>;
-  /** Throws when the response is not from who it should be (the hub's proof header). */
+  /** Optional response check. */
   verify?(reqHeaders: Record<string, string>, resp: Response, bodyText: string): Promise<void>;
 };
 
@@ -180,47 +180,4 @@ export class HttpTransport implements SyncTransport {
 /** Cloud: a device access token from identity (ADR-0005) as a bearer token. */
 export function bearerAuth(getToken: () => Promise<string> | string): HttpAuth {
   return { authorize: async () => ({ authorization: `Bearer ${await getToken()}` }) };
-}
-
-export type LanAuthConfig = {
-  cred: CredentialEnvelope;
-  signer: Signer;
-  /** Identity's public key (X9.62 point, base64url): used to check the hub's credential. */
-  identityPub: string;
-  outlet: string;
-  nowSeconds?: () => number;
-};
-
-/**
- * LAN authentication (ADR-0002 S10; svc-sync `hub.LANClient`): the device presents its identity-signed
- * credential and signs method, path, timestamp and body hash with its device key; the hub answers with a
- * proof that is checked here: only a credential of kind `hub` for this outlet, signed by identity, whose
- * key signed this request and this answer, is accepted. A fake hub on the Wi-Fi gains nothing.
- */
-export function lanAuth(c: LanAuthConfig): HttpAuth {
-  const now = c.nowSeconds ?? (() => Math.floor(Date.now() / 1000));
-  const enc = new TextEncoder();
-  const dec = new TextDecoder();
-  return {
-    async authorize(method, path, body) {
-      const ts = now();
-      const sig = await c.signer.sign(`hostry-lan-v1\n${method}\n${path}\n${ts}\n${await sha256Hex(body)}`);
-      return { "Hostry-Device-Assertion": b64url(enc.encode(JSON.stringify({ cred: c.cred, ts, sig }))) };
-    },
-    async verify(reqHeaders, resp, bodyText) {
-      const fail = (why: string): never => {
-        throw new TransportError(0, `hub proof invalid: ${why}`, false);
-      };
-      const raw = resp.headers.get("Hostry-Hub-Proof");
-      if (!raw) return fail("missing");
-      const assertion = JSON.parse(dec.decode(fromB64url(reqHeaders["Hostry-Device-Assertion"] ?? ""))) as { sig: string };
-      const proof = JSON.parse(dec.decode(fromB64url(raw))) as { cred: CredentialEnvelope; sig: string };
-      const idKey = await importPublicKey(c.identityPub);
-      if (!(await verifyRaw(idKey, `hostry-cred-v1\n${canonicalize(proof.cred.cred)}`, proof.cred.sig))) return fail("credential not signed by identity");
-      const hub = proof.cred.cred;
-      if (hub.kind !== "hub" || hub.outlet_id !== c.outlet || hub.tenant_id !== c.cred.cred.tenant_id) return fail("not this outlet's hub");
-      const key = await importPublicKey(hub.pub);
-      if (!(await verifyRaw(key, `hostry-hub-v1\n${assertion.sig}\n${await sha256Hex(bodyText)}`, proof.sig))) return fail("signature");
-    },
-  };
 }

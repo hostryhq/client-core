@@ -344,6 +344,42 @@
       },
       "statement_hash": "4d7927df8c22edca9a8eb3a23028d7169c610df17cb9e27b66419fbbb28af720",
       "statement_jcs": "{\"at\":\"2026-11-24T14:00:00Z\",\"by\":\"dev-a\",\"kid\":\"dev-a-1\",\"origin\":\"dev-a\",\"series\":[{\"code\":\"A7K\",\"fy\":\"2627\",\"last_number\":123,\"series_id\":\"0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6c\"},{\"code\":\"A7M\",\"fy\":\"2627\",\"last_number\":0,\"series_id\":\"0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a95\"}],\"sig\":\"s8xB72YWt00tUPYlcUrf8xetVoql-N1hGOQmG5Lm4QygmdCQGnh82yWb9hy0s_W0Mb_HD1uqdVzK-XRjItriEA\",\"streams\":[{\"h\":\"2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881\",\"seq\":42,\"stream\":\"outlet:o1\"},{\"h\":\"a1fce4363854ff888cff4b8e7875d600c2682390412a8cf79b37d0b11148b0fa\",\"seq\":3,\"stream\":\"brand:b1\"}]}"
+    },
+    {
+      "case": "recordDeviceDrained example (openapi/identity/v1; signed with this example key; the statement is the request example verbatim)",
+      "pub": "BEZCLK0_-neA7UYsw-_72I5u98KWilFrTfoCq_NnqAlSswGR9KDggu8eQifrmSzas-yv6bVfIjwssN5WZJ7aT5M",
+      "statement": {
+        "origin": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+        "streams": [
+          {
+            "stream": "outlet:0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+            "seq": 42,
+            "h": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881"
+          }
+        ],
+        "series": [
+          {
+            "series_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6c",
+            "code": "A7K",
+            "fy": "2627",
+            "last_number": 123
+          },
+          {
+            "series_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a95",
+            "code": "A7M",
+            "fy": "2627",
+            "last_number": 0
+          }
+        ],
+        "by": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+        "kid": "dev-4a5e-1",
+        "at": "2026-11-24T13:05:11Z",
+        "sig": "I1iZD5bJnESIqEKRB-O5TnkNEQIuFegu1wmIpyWILETe3G9qVsiZG09kSS-sXMmscgoRDbwmJ9GRdrgFcyJmAQ"
+      },
+      "signed_message": "hostry-drain-v1\n{\"at\":\"2026-11-24T13:05:11Z\",\"by\":\"0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e\",\"kid\":\"dev-4a5e-1\",\"origin\":\"0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e\",\"series\":[{\"code\":\"A7K\",\"fy\":\"2627\",\"last_number\":123,\"series_id\":\"0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6c\"},{\"code\":\"A7M\",\"fy\":\"2627\",\"last_number\":0,\"series_id\":\"0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a95\"}],\"streams\":[{\"h\":\"2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881\",\"seq\":42,\"stream\":\"outlet:0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61\"}]}",
+      "statement_jcs": "{\"at\":\"2026-11-24T13:05:11Z\",\"by\":\"0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e\",\"kid\":\"dev-4a5e-1\",\"origin\":\"0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e\",\"series\":[{\"code\":\"A7K\",\"fy\":\"2627\",\"last_number\":123,\"series_id\":\"0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6c\"},{\"code\":\"A7M\",\"fy\":\"2627\",\"last_number\":0,\"series_id\":\"0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a95\"}],\"sig\":\"I1iZD5bJnESIqEKRB-O5TnkNEQIuFegu1wmIpyWILETe3G9qVsiZG09kSS-sXMmscgoRDbwmJ9GRdrgFcyJmAQ\",\"streams\":[{\"h\":\"2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881\",\"seq\":42,\"stream\":\"outlet:0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61\"}]}",
+      "statement_hash": "2685e1ddba39a1aab590f3e09d56601f1bed7f289c4fab3e72a208284ffb00a0",
+      "sig_valid": true
     }
   ],
   "approval_proof": {
@@ -662,5 +698,169 @@
         "pii_served": false
       }
     ]
+  },
+  "lan_handshake": {
+    "note": "ADR-0002 A3.1, A3.4. Test keys only. Credential = compact ES256 JWS (typ hostry-cred+jws) over JCS(credential), signed by the identity key. spki = lower-case hex SHA-256 of the TLS certificate's DER SubjectPublicKeyInfo. Proof message = tag, nonce_d, nonce_h, device_id, hub_id, spki joined by newline; ES256 over the UTF-8 message (r||s, base64url), by the hub key (tag hostry-lan-hub-v1) or the device key (hostry-lan-device-v1). Nonces are 32 random bytes, base64url without padding. credential_cases are judged against `now` (unix seconds).",
+    "now": 1795000000,
+    "identity_key": {
+      "kid": "k-2026-09",
+      "pub": "BFG_D71RmstYB-yinw4Ds7soXmXHv-zKwdYCa_gInD-R_4VukMBCma8Zyjp-8d_JsnZjoWqILg61a--SbW2Z5lY"
+    },
+    "tls_spki_der": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAElOiaBmnk5QZ6BZ8mMQ4iczoPRzx6XU5FPik7uaspL4DIqzjURGpoEVtVXBPjSU70doDMPFOn4sPLRem4-lxJZg",
+    "spki": "b2b347011ece0b42dc2b9bbac3911c0c9c4d4cdc46d6f21e2dafa94a159eee6b",
+    "relay_spki": "a022b2b43a18284501eb229c889c5e29092cd9316ade68ef90ba020752a10c56",
+    "nonce_d": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+    "nonce_h": "ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8",
+    "hub": {
+      "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5f",
+      "pub": "BNpDcOEI_ag7aaqvlRIXqnnCa1zQMaWqGwEbRalbgKghjfnpSGf_MArPaKvaohx8_l8SKyqNQiB_WtwdjX6QTbY",
+      "credential": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImstMjAyNi0wOSIsInR5cCI6Imhvc3RyeS1jcmVkK2p3cyJ9.eyJicmFuZF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2YSIsImRldmljZV9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1ZiIsImtpZCI6ImRldi00YTVmLTEiLCJraW5kIjoiaHViIiwibm90X2FmdGVyIjoxNzk2MjA5NjAwLCJvdXRsZXRfaWQiOiIwMTkwYTFiMi1jM2Q0LTdlNWYtOGE5Yi0wYzFkMmUzZjRhNjEiLCJwdWIiOiJCTnBEY09FSV9hZzdhYXF2bFJJWHFubkNhMXpRTWFXcUd3RWJSYWxiZ0tnaGpmbnBTR2ZfTUFyUGFLdmFvaHg4X2w4U0t5cU5RaUJfV3R3ZGpYNlFUYlkiLCJzdG9yZSI6InByb3RlY3RlZCIsInRlbmFudF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2MCJ9.RiFMk_mAYKHGDuVZGS3C63J2My_EvTXgSaj4gj6yCQlxzgGdp27CblZUfx4N7qd2sOswXIWAqibGIilzYPrJfw",
+      "claims": {
+        "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5f",
+        "tenant_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+        "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+        "brand_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
+        "kind": "hub",
+        "kid": "dev-4a5f-1",
+        "pub": "BNpDcOEI_ag7aaqvlRIXqnnCa1zQMaWqGwEbRalbgKghjfnpSGf_MArPaKvaohx8_l8SKyqNQiB_WtwdjX6QTbY",
+        "store": "protected",
+        "not_after": 1796209600
+      }
+    },
+    "device": {
+      "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+      "pub": "BLp2jqRlp6MwdLpzSkp9WF8Yr-V1OqFZlDAzsJTn0DI8KaXdmASFqGgwHyKvSMiH0j8xkaXv4fr21dzNlk-6aNE",
+      "credential": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImstMjAyNi0wOSIsInR5cCI6Imhvc3RyeS1jcmVkK2p3cyJ9.eyJicmFuZF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2YSIsImRldmljZV9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1ZSIsImtpZCI6ImRldi00YTVlLTEiLCJraW5kIjoicG9zIiwibm90X2FmdGVyIjoxNzk2MjA5NjAwLCJvdXRsZXRfaWQiOiIwMTkwYTFiMi1jM2Q0LTdlNWYtOGE5Yi0wYzFkMmUzZjRhNjEiLCJwdWIiOiJCTHAyanFSbHA2TXdkTHB6U2twOVdGOFlyLVYxT3FGWmxEQXpzSlRuMERJOEthWGRtQVNGcUdnd0h5S3ZTTWlIMGo4eGthWHY0ZnIyMWR6TmxrLTZhTkUiLCJzdG9yZSI6InByb3RlY3RlZCIsInRlbmFudF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2MCJ9.ukv2gzFsnrBjYt7tvoqbMWNxi05WsspjNZvMmsGEA6ics5iTiYOM3eSADnxVHaaCTqnri7-ZAxlSh44NhxI4zQ",
+      "claims": {
+        "device_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e",
+        "tenant_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60",
+        "outlet_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+        "brand_id": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6a",
+        "kind": "pos",
+        "kid": "dev-4a5e-1",
+        "pub": "BLp2jqRlp6MwdLpzSkp9WF8Yr-V1OqFZlDAzsJTn0DI8KaXdmASFqGgwHyKvSMiH0j8xkaXv4fr21dzNlk-6aNE",
+        "store": "protected",
+        "not_after": 1796209600
+      }
+    },
+    "proof_cases": [
+      {
+        "case": "hub proof over the spki the device saw",
+        "role": "hub",
+        "signer_pub": "BNpDcOEI_ag7aaqvlRIXqnnCa1zQMaWqGwEbRalbgKghjfnpSGf_MArPaKvaohx8_l8SKyqNQiB_WtwdjX6QTbY",
+        "message": "hostry-lan-hub-v1\nAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8\nICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8\n0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e\n0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5f\nb2b347011ece0b42dc2b9bbac3911c0c9c4d4cdc46d6f21e2dafa94a159eee6b",
+        "sig": "pT0H8HaXo-ZFzAyhL1_IIRy8KPoDG01L4puTm20-zkmLU87p94TxFA-XAuirJ5boGwBFeM5LtBPrUDWEpvvnUg",
+        "valid": true
+      },
+      {
+        "case": "device proof over the spki the hub sees",
+        "role": "device",
+        "signer_pub": "BLp2jqRlp6MwdLpzSkp9WF8Yr-V1OqFZlDAzsJTn0DI8KaXdmASFqGgwHyKvSMiH0j8xkaXv4fr21dzNlk-6aNE",
+        "message": "hostry-lan-device-v1\nAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8\nICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8\n0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e\n0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5f\nb2b347011ece0b42dc2b9bbac3911c0c9c4d4cdc46d6f21e2dafa94a159eee6b",
+        "sig": "I9g1pPmq7ORHhlRZZJHOliDfvKjn5vUkBmdeOkXLpcOvvJ2t4qBwluvkXjOt6XiRLC273yEKiofNwL874TxqJQ",
+        "valid": true
+      },
+      {
+        "case": "relay: the hub proof checked against the relay's own spki (the device saw the relay certificate)",
+        "role": "hub",
+        "signer_pub": "BNpDcOEI_ag7aaqvlRIXqnnCa1zQMaWqGwEbRalbgKghjfnpSGf_MArPaKvaohx8_l8SKyqNQiB_WtwdjX6QTbY",
+        "message": "hostry-lan-hub-v1\nAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8\nICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8\n0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e\n0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5f\na022b2b43a18284501eb229c889c5e29092cd9316ade68ef90ba020752a10c56",
+        "sig": "pT0H8HaXo-ZFzAyhL1_IIRy8KPoDG01L4puTm20-zkmLU87p94TxFA-XAuirJ5boGwBFeM5LtBPrUDWEpvvnUg",
+        "valid": false
+      },
+      {
+        "case": "a device proof presented as the hub's (domain tags differ)",
+        "role": "hub",
+        "signer_pub": "BLp2jqRlp6MwdLpzSkp9WF8Yr-V1OqFZlDAzsJTn0DI8KaXdmASFqGgwHyKvSMiH0j8xkaXv4fr21dzNlk-6aNE",
+        "message": "hostry-lan-hub-v1\nAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8\nICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8\n0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e\n0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5f\nb2b347011ece0b42dc2b9bbac3911c0c9c4d4cdc46d6f21e2dafa94a159eee6b",
+        "sig": "I9g1pPmq7ORHhlRZZJHOliDfvKjn5vUkBmdeOkXLpcOvvJ2t4qBwluvkXjOt6XiRLC273yEKiofNwL874TxqJQ",
+        "valid": false
+      },
+      {
+        "case": "hub proof checked against the wrong key",
+        "role": "hub",
+        "signer_pub": "BLp2jqRlp6MwdLpzSkp9WF8Yr-V1OqFZlDAzsJTn0DI8KaXdmASFqGgwHyKvSMiH0j8xkaXv4fr21dzNlk-6aNE",
+        "message": "hostry-lan-hub-v1\nAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8\nICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8\n0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5e\n0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5f\nb2b347011ece0b42dc2b9bbac3911c0c9c4d4cdc46d6f21e2dafa94a159eee6b",
+        "sig": "pT0H8HaXo-ZFzAyhL1_IIRy8KPoDG01L4puTm20-zkmLU87p94TxFA-XAuirJ5boGwBFeM5LtBPrUDWEpvvnUg",
+        "valid": false
+      }
+    ],
+    "credential_cases": [
+      {
+        "case": "valid hub credential",
+        "credential": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImstMjAyNi0wOSIsInR5cCI6Imhvc3RyeS1jcmVkK2p3cyJ9.eyJicmFuZF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2YSIsImRldmljZV9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1ZiIsImtpZCI6ImRldi00YTVmLTEiLCJraW5kIjoiaHViIiwibm90X2FmdGVyIjoxNzk2MjA5NjAwLCJvdXRsZXRfaWQiOiIwMTkwYTFiMi1jM2Q0LTdlNWYtOGE5Yi0wYzFkMmUzZjRhNjEiLCJwdWIiOiJCTnBEY09FSV9hZzdhYXF2bFJJWHFubkNhMXpRTWFXcUd3RWJSYWxiZ0tnaGpmbnBTR2ZfTUFyUGFLdmFvaHg4X2w4U0t5cU5RaUJfV3R3ZGpYNlFUYlkiLCJzdG9yZSI6InByb3RlY3RlZCIsInRlbmFudF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2MCJ9.wpkrQExmV8WJPM3Ck9e72qmpyeK5DF3R1X9Y6TivdjcYrT1yTfI2vgEjeUyhFSXYyURY18hiAeL685zP7cGyBg",
+        "expect_kind": "hub",
+        "expect_outlet": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+        "valid": true,
+        "reason": null
+      },
+      {
+        "case": "payload altered after signing",
+        "credential": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImstMjAyNi0wOSIsInR5cCI6Imhvc3RyeS1jcmVkK2p3cyJ9.eyJicmFuZF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2YSIsImRldmljZV9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1ZiIsImtpZCI6ImRldi00YTVmLTEiLCJraW5kIjoicG9zIiwibm90X2FmdGVyIjoxNzk2MjA5NjAwLCJvdXRsZXRfaWQiOiIwMTkwYTFiMi1jM2Q0LTdlNWYtOGE5Yi0wYzFkMmUzZjRhNjEiLCJwdWIiOiJCTnBEY09FSV9hZzdhYXF2bFJJWHFubkNhMXpRTWFXcUd3RWJSYWxiZ0tnaGpmbnBTR2ZfTUFyUGFLdmFvaHg4X2w4U0t5cU5RaUJfV3R3ZGpYNlFUYlkiLCJzdG9yZSI6InByb3RlY3RlZCIsInRlbmFudF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2MCJ9.m2HQ6CS2HqWdhmQuOcfafEPfTzObtciqzX2q885vouMgQK5wampcJ_GCe4i4NaZIh6JJNg8-lYo-T_g-4PprPA",
+        "expect_kind": "pos",
+        "expect_outlet": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+        "valid": false,
+        "reason": "signature"
+      },
+      {
+        "case": "signed by a key that is not identity's",
+        "credential": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImstMjAyNi0wOSIsInR5cCI6Imhvc3RyeS1jcmVkK2p3cyJ9.eyJicmFuZF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2YSIsImRldmljZV9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1ZiIsImtpZCI6ImRldi00YTVmLTEiLCJraW5kIjoiaHViIiwibm90X2FmdGVyIjoxNzk2MjA5NjAwLCJvdXRsZXRfaWQiOiIwMTkwYTFiMi1jM2Q0LTdlNWYtOGE5Yi0wYzFkMmUzZjRhNjEiLCJwdWIiOiJCTnBEY09FSV9hZzdhYXF2bFJJWHFubkNhMXpRTWFXcUd3RWJSYWxiZ0tnaGpmbnBTR2ZfTUFyUGFLdmFvaHg4X2w4U0t5cU5RaUJfV3R3ZGpYNlFUYlkiLCJzdG9yZSI6InByb3RlY3RlZCIsInRlbmFudF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2MCJ9.uURFiTz30oKdCUf-FYkkV0yicPU4PsMHzeJnE47UQFhwQ-57LcE6XQOx_alhgny_7LcIEDu7U_g2e3cNnVIeZw",
+        "expect_kind": "hub",
+        "expect_outlet": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+        "valid": false,
+        "reason": "signature"
+      },
+      {
+        "case": "expired (not_after before now)",
+        "credential": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImstMjAyNi0wOSIsInR5cCI6Imhvc3RyeS1jcmVkK2p3cyJ9.eyJicmFuZF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2YSIsImRldmljZV9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1ZiIsImtpZCI6ImRldi00YTVmLTEiLCJraW5kIjoiaHViIiwibm90X2FmdGVyIjoxNzk0OTk5OTk5LCJvdXRsZXRfaWQiOiIwMTkwYTFiMi1jM2Q0LTdlNWYtOGE5Yi0wYzFkMmUzZjRhNjEiLCJwdWIiOiJCTnBEY09FSV9hZzdhYXF2bFJJWHFubkNhMXpRTWFXcUd3RWJSYWxiZ0tnaGpmbnBTR2ZfTUFyUGFLdmFvaHg4X2w4U0t5cU5RaUJfV3R3ZGpYNlFUYlkiLCJzdG9yZSI6InByb3RlY3RlZCIsInRlbmFudF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2MCJ9.MtqtJthX5r4qo44XM0B2bWyksTrzIFtIunHTePIMCLB4aLqV3znJfAd2rsvnLY08N5OQ0F7AFtFHMZWfLD6ssw",
+        "expect_kind": "hub",
+        "expect_outlet": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+        "valid": false,
+        "reason": "expired"
+      },
+      {
+        "case": "credential of another outlet",
+        "credential": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImstMjAyNi0wOSIsInR5cCI6Imhvc3RyeS1jcmVkK2p3cyJ9.eyJicmFuZF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2YSIsImRldmljZV9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1ZiIsImtpZCI6ImRldi00YTVmLTEiLCJraW5kIjoiaHViIiwibm90X2FmdGVyIjoxNzk1MDg2NDAwLCJvdXRsZXRfaWQiOiIwMTkwYTFiMi1jM2Q0LTdlNWYtOGE5Yi0wYzFkMmUzZjRhOTkiLCJwdWIiOiJCTnBEY09FSV9hZzdhYXF2bFJJWHFubkNhMXpRTWFXcUd3RWJSYWxiZ0tnaGpmbnBTR2ZfTUFyUGFLdmFvaHg4X2w4U0t5cU5RaUJfV3R3ZGpYNlFUYlkiLCJzdG9yZSI6InByb3RlY3RlZCIsInRlbmFudF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2MCJ9.9FLCMqmJjR8nA6sdqK1qb5c37guOw4dR4oEOH5op9Ubu-UVVw0eyf-c46nXWR9GBdN0yOt2Sf7blFlJ60baUFQ",
+        "expect_kind": "hub",
+        "expect_outlet": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+        "valid": false,
+        "reason": "outlet"
+      },
+      {
+        "case": "a pos credential where a hub is required",
+        "credential": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImstMjAyNi0wOSIsInR5cCI6Imhvc3RyeS1jcmVkK2p3cyJ9.eyJicmFuZF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2YSIsImRldmljZV9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE1ZSIsImtpZCI6ImRldi00YTVlLTEiLCJraW5kIjoicG9zIiwibm90X2FmdGVyIjoxNzk2MjA5NjAwLCJvdXRsZXRfaWQiOiIwMTkwYTFiMi1jM2Q0LTdlNWYtOGE5Yi0wYzFkMmUzZjRhNjEiLCJwdWIiOiJCTHAyanFSbHA2TXdkTHB6U2twOVdGOFlyLVYxT3FGWmxEQXpzSlRuMERJOEthWGRtQVNGcUdnd0h5S3ZTTWlIMGo4eGthWHY0ZnIyMWR6TmxrLTZhTkUiLCJzdG9yZSI6InByb3RlY3RlZCIsInRlbmFudF9pZCI6IjAxOTBhMWIyLWMzZDQtN2U1Zi04YTliLTBjMWQyZTNmNGE2MCJ9.36dPvRuhuGojZ1OgHOi0qF0wOWr385XfYaVZOUdDLutN5TZQpXdWIW8tDwHE6UPPhbEsO5y2Nv0RhhcK7ytduA",
+        "expect_kind": "hub",
+        "expect_outlet": "0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a61",
+        "valid": false,
+        "reason": "kind"
+      }
+    ],
+    "session": {
+      "ttl_seconds": 900,
+      "token_bytes": 32,
+      "header": "Hostry-Lan-Session",
+      "token_cases": [
+        {
+          "token": "AwoRGB8mLTQ7QklQV15lbHN6gYiPlp2kq7K5wMfO1dw",
+          "valid": true
+        },
+        {
+          "token": "AwoRGB8mLTQ7QklQV15lbHN6gYiPlp2kq7K5wMfO1Q",
+          "valid": false
+        },
+        {
+          "token": "AwoRGB8mLTQ7QklQV15lbHN6gYiPlp2kq7K5wMfO1dzj",
+          "valid": false
+        },
+        {
+          "token": "AwoRGB8mLTQ7QklQV15lbHN6gYiPlp2kq7K5wMfO1d=",
+          "valid": false
+        },
+        {
+          "token": "",
+          "valid": false
+        }
+      ]
+    }
   }
 }

@@ -266,7 +266,7 @@ export class SyncRunner implements SyncClient {
 
     // `pii_incomplete` (ADR-0014 A3.1 item 4): ask this upstream again from just below the oldest op missing a value.
     // The re-served slots are held already, so they only fill the missing fields; a kds has nothing to ask for.
-    const missing = await e.piiIncomplete();
+    const missing = await e.piiIncomplete({ fetchable: true });
     if (missing.length > 0) {
       const from: Record<string, Record<string, number>> = {};
       for (const s of e.streams) from[s] = await e.vector(s);

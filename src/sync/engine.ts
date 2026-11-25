@@ -22,6 +22,7 @@ import {
   verifySeal,
   type SealVerifier,
   type Signer,
+  type StoreProtection,
 } from "./crypto";
 import { HlcClock, MAX_FUTURE_MS, unpackHlc } from "./hlc";
 import { MAX_OP_BODY_BYTES, MAX_PII_BYTES, OpTooLargeError, splitPii, utf8Bytes, withPii, type PiiObject } from "./pii";
@@ -79,6 +80,14 @@ export type EngineConfig = {
    * `personal` and `hub` do; a `kds` never does and never fetches it. Default `pos`.
    */
   deviceKind?: DeviceKind;
+  /**
+   * `store` claim of this device's own credential (ADR-0002 A3.5). Another origin's pii is accepted and kept only when it
+   * is `protected`; an `unprotected` device drops it and shows the field as pending, its own pii unaffected. Absent counts as
+   * `unprotected`.
+   */
+  storeClaim?: StoreProtection;
+  /** The named dev/test/ci switch that lifts the placement rule (A3.5 item 2). Never set in a release build. */
+  placementOff?: boolean;
   /** Wall clock in ms; injectable. */
   now?: () => number;
   clockMode?: ClockMode;
@@ -224,6 +233,8 @@ export class SyncEngine {
   private readonly onPiiErased: ((e: { ref: OpRef; values: PiiValues }) => void) | undefined;
   private erasedNow: Array<{ ref: OpRef; values: PiiValues }> = [];
   readonly deviceKind: DeviceKind;
+  readonly storeClaim: StoreProtection;
+  private readonly placementOff: boolean;
   private packVersion: number;
   private readonly clockMode: ClockMode;
   private readonly sealIntervalMs: number;
@@ -261,6 +272,8 @@ export class SyncEngine {
     this.random = cfg.randomBytes ?? systemRandom;
     this.onPiiErased = cfg.onPiiErased;
     this.deviceKind = cfg.deviceKind ?? "pos";
+    this.storeClaim = cfg.storeClaim ?? "unprotected";
+    this.placementOff = cfg.placementOff === true;
     if (!Number.isInteger(cfg.packVersion) || cfg.packVersion < 1) throw new Error("packVersion must be an integer >= 1");
     this.packVersion = cfg.packVersion;
     this.clockMode = cfg.clockMode ?? "sync";
@@ -1173,14 +1186,19 @@ export class SyncEngine {
     if (!tx.get(T.piiack, opId(ref))) tx.put(T.piiack, { id: opId(ref), tenant_id: this.tenantId, ...ref });
   }
 
+  /** The placement rule (ADR-0002 A3.5 item 2): may this node keep pii of `origin`? Its own always; another's only when `protected`. */
+  private keepsPiiOf(origin: string): boolean {
+    return servesPii(this.deviceKind) && (origin === this.deviceId || this.storeClaim === "protected" || this.placementOff);
+  }
+
   /**
    * Takes the personal data a re-served op brings for fields this node holds a commitment for and no value (ADR-0014
    * A3.1 item 4). Only fields that verify against the commitment are kept; an erased op and a `kds` take nothing.
    */
   private async fillPii(tx: StoreTx, row: OpRow, it: WireItem): Promise<void> {
-    if (!servesPii(this.deviceKind) || row.body === undefined || tx.get(T.meta, piiErasedId(opRefOf(row.id))) !== undefined) return;
     const op = rowOp(row);
-    if (!op?.pii_c || missingPiiFields(op.pii_c, row.pii).length === 0) return;
+    if (!op || !this.keepsPiiOf(op.origin) || row.body === undefined || tx.get(T.meta, piiErasedId(opRefOf(row.id))) !== undefined) return;
+    if (!op.pii_c || missingPiiFields(op.pii_c, row.pii).length === 0) return;
     const opened = await openPii(it.pii, op.pii_c);
     if (!opened.verified) return;
     tx.put(T.op, { ...row, pii: mergePii(row.pii as PiiWire | undefined, opened.verified) });
@@ -1197,13 +1215,14 @@ export class SyncEngine {
    * `pii_incomplete`. The row applies and the field shows as pending; the next contact with any upstream fetches it
    * (the runner pulls with the vector just below the op). A `kds` expects no value and has none.
    */
-  async piiIncomplete(): Promise<Array<OpRef & { fields: Array<{ e: string; id: string; f: string }> }>> {
+  async piiIncomplete(o: { fetchable?: boolean } = {}): Promise<Array<OpRef & { fields: Array<{ e: string; id: string; f: string }> }>> {
     if (!servesPii(this.deviceKind)) return [];
     const out: Array<OpRef & { fields: Array<{ e: string; id: string; f: string }> }> = [];
     for (const row of (await this.store.list(T.op)) as OpRow[]) {
       if (row.state !== "applied" || row.body === undefined || !row.body.includes('"pii_c"')) continue;
       const op = rowOp(row);
       if (!op?.pii_c || (await this.store.get(T.meta, piiErasedId(op))) !== undefined) continue;
+      if (o.fetchable && !this.keepsPiiOf(op.origin)) continue; // placement refuses it: asking again would only loop
       const fields = missingPiiFields(op.pii_c, row.pii);
       if (fields.length) out.push({ origin: op.origin, stream: op.stream, seq: op.seq, fields });
     }
@@ -1328,7 +1347,7 @@ export class SyncEngine {
     const ref: OpRef = { origin: op.origin, stream: op.stream, seq: op.seq };
     // Personal data is kept only if it matches the commitments of the sealed body; an erased op keeps none.
     const erased = tx.get(T.meta, piiErasedId(ref)) !== undefined;
-    const opened = erased || it.pii === undefined || !servesPii(this.deviceKind) ? undefined : await openPii(it.pii, op.pii_c);
+    const opened = erased || it.pii === undefined || !this.keepsPiiOf(op.origin) ? undefined : await openPii(it.pii, op.pii_c);
     const row: OpRow = {
       id: opRowId(ref),
       tenant_id: this.tenantId,

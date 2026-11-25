@@ -19,6 +19,10 @@
     "./testing": {
       "types": "./dist/testing.d.ts",
       "import": "./dist/testing.js"
+    },
+    "./node": {
+      "types": "./dist/sync/lan-node.d.ts",
+      "import": "./dist/sync/lan-node.js"
     }
   },
   "files": [

@@ -272,7 +272,7 @@ function applyMutation(tx: StoreTx, ctx: ApplyCtx, op: OpEnvelope, m: Mutation, 
       return;
     }
     case "rank": {
-      if (m.k !== "insert" && m.k !== "set") {
+      if (m.k !== "insert" && m.k !== "set" && m.k !== "rank") {
         out.ignored.push(`${m.e}: ${m.k} ignored`);
         return;
       }

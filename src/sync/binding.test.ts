@@ -208,7 +208,7 @@ describe("KR1: stale cloud seals are refreshed after an op-key rotation", () => 
       streams: [OUTLET],
       signer: await SoftwareSigner.generate(`k-${id}`),
       verifier: ring,
-      packVersion: "p1",
+      packVersion: 1,
     });
     return e;
   };

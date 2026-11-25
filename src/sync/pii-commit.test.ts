@@ -200,7 +200,7 @@ describe("erasure reaches rows, field candidates, conflict records and the print
     // Reopen rx with a listener (a process restart over the same store).
     const { SyncEngine } = await import("./engine");
     const eng = await SyncEngine.open({
-      store: rx.store, schemas: restaurantRegistry(), deviceId: "rx", outletStream: OUTLET, streams: [OUTLET], signer: rx.signer, verifier: w.ring, packVersion: "p1", now: w.clock.now,
+      store: rx.store, schemas: restaurantRegistry(), deviceId: "rx", outletStream: OUTLET, streams: [OUTLET], signer: rx.signer, verifier: w.ring, packVersion: 1, now: w.clock.now,
       onPiiErased: (e) => seen.push(...piiStrings(e.values)),
     });
     eng.session = { actor: "m1", sid: "s-rx" };

@@ -26,7 +26,8 @@ import { HlcClock, MAX_FUTURE_MS, unpackHlc } from "./hlc";
 import { MAX_OP_BODY_BYTES, MAX_PII_BYTES, OpTooLargeError, splitPii, utf8Bytes, withPii, type PiiObject } from "./pii";
 import { commitPii, openPii, stripSalts, systemRandom, type PiiValues, type RandomBytes } from "./pii-commit";
 import type { SchemaRegistry, DocType } from "./schema";
-import { allocateNumber, putGrants, type SeriesGrant } from "./series";
+import { drainSigningMessage, drainStatementHash, type DrainStatement, type UnsignedDrainStatement } from "./drain";
+import { allocateNumber, financialYear, putGrants, type SeriesGrant } from "./series";
 import type {
   Attestation,
   ChainConflict,
@@ -51,6 +52,12 @@ export class KeyLostError extends Error {
   }
 }
 
+export class DrainingError extends Error {
+  constructor() {
+    super("this device is in drain mode: it records nothing new (ADR-0005 A3.3)");
+  }
+}
+
 export type EngineConfig = {
   store: LocalStore;
   schemas: SchemaRegistry;
@@ -62,7 +69,7 @@ export type EngineConfig = {
   streams?: string[];
   signer: Signer;
   verifier: SealVerifier;
-  packVersion: string;
+  packVersion: number;
   /** Wall clock in ms; injectable. */
   now?: () => number;
   clockMode?: ClockMode;
@@ -97,8 +104,15 @@ export type RecordSpec = {
   actor?: string;
   sid?: string;
   approval?: string;
-  /** Opaque PIN-derived proof (ADR-0005); stamped by the auth layer. */
+  /** Opaque PIN-derived proof (ADR-0005); stamped by the auth layer. Sent only on `session.open` and `approval.grant`, where `pinV` is required (A3.1); ignored on any other intent. */
   proof?: string;
+  /** PIN version the proof was made under (A3.1). */
+  pinV?: number;
+  /**
+   * The opening time a `session.open` proof binds: take it from `stampTime()` before the proof is made. Used as the
+   * op's `at` on `session.open` only; ignored elsewhere (A3.1).
+   */
+  at?: string;
   /**
    * Personal data beside the op, outside its hash, as entity -> row id -> field -> value. Fields the entity schema
    * declares `pii` are moved here from the mutations automatically, so a builder normally passes nothing. Typed
@@ -135,6 +149,9 @@ const MAX_STALE_SEALS = 200;
 const MAX_PII_ACKS = 500;
 const PII_ERASE_INTENT = "sync.pii.erase";
 const PII_ERASE_RECORD = "pii_erase";
+const SESSION_OPEN = "session.open";
+/** The only intents whose op carries `proof` and `pin_v` (ADR-0005 A3.1). */
+const PROOF_INTENTS = new Set([SESSION_OPEN, "approval.grant"]);
 const piiErasedId = (r: OpRef): string => `pii_erased:${opId(r)}`;
 
 type CcRow = Row & { origin: string; stream: string; seq: number; held: string; seen?: string; src: "cloud" | "relay"; reported: boolean };
@@ -195,7 +212,7 @@ export class SyncEngine {
   private readonly random: RandomBytes;
   private readonly onPiiErased: ((e: { ref: OpRef; values: PiiValues }) => void) | undefined;
   private erasedNow: Array<{ ref: OpRef; values: PiiValues }> = [];
-  private readonly packVersion: string;
+  private packVersion: number;
   private readonly clockMode: ClockMode;
   private readonly sealIntervalMs: number;
 
@@ -203,6 +220,7 @@ export class SyncEngine {
   private deliv = new Map<string, Deliv>();
   private held: HeldItem[] = [];
   private refused = new Set<string>();
+  private draining = false;
   private conflictCount = 0;
   private chainConflictCount = 0;
   private clockqCount = 0;
@@ -230,6 +248,7 @@ export class SyncEngine {
     this.newId = cfg.newId ?? (() => uuidv7(this.now));
     this.random = cfg.randomBytes ?? systemRandom;
     this.onPiiErased = cfg.onPiiErased;
+    if (!Number.isInteger(cfg.packVersion) || cfg.packVersion < 1) throw new Error("packVersion must be an integer >= 1");
     this.packVersion = cfg.packVersion;
     this.clockMode = cfg.clockMode ?? "sync";
     this.sealIntervalMs = cfg.sealIntervalMs ?? 5 * 60 * 1000;
@@ -252,6 +271,7 @@ export class SyncEngine {
     e.reoffer = ((await store.get(T.meta, "reoffer"))?.v as boolean | undefined) ?? false;
     e.reofferedEpoch = (await store.get(T.meta, "reoffered_epoch"))?.v as string | undefined;
     e.refused = new Set(((await store.get(T.meta, "refused"))?.list as string[] | undefined) ?? []);
+    e.draining = (await store.get(T.meta, "drain"))?.v === true;
     e.held = ((await store.get(T.held, "own"))?.items as HeldItem[] | undefined) ?? [];
     for (const s of e.streams) {
       const h = (await store.get(T.head, `${s}|${cfg.deviceId}`)) as Head | undefined;
@@ -295,10 +315,15 @@ export class SyncEngine {
    */
   async record(spec: RecordSpec): Promise<OpEnvelope> {
     if (this.keyLost) throw new KeyLostError();
+    if (this.draining) throw new DrainingError();
     const stream = spec.stream ?? this.outletStream;
     const actor = spec.actor ?? this.session?.actor;
     const sid = spec.sid ?? this.session?.sid;
     if (!actor || !sid) throw new Error("record: no session (actor and sid are stamped on every op)");
+    // A proof travels once, on the op that carries it, with the PIN version it was made under (ADR-0005 A3.1).
+    const carriesProof = spec.proof !== undefined && PROOF_INTENTS.has(spec.intent);
+    if (carriesProof && (!Number.isInteger(spec.pinV) || (spec.pinV as number) < 1)) throw new Error(`record: ${spec.intent} with a proof needs pinV (integer >= 1)`);
+    if (spec.intent === SESSION_OPEN && spec.at !== undefined && new Date(spec.at).toISOString() !== spec.at) throw new Error("record: session.open at must be an RFC 3339 UTC time with milliseconds");
 
     const op = await this.store.transact(async (tx) => {
       const head: Head =
@@ -337,10 +362,10 @@ export class SyncEngine {
         sid,
         pack_v: this.packVersion,
         ...(spec.approval ? { approval: spec.approval } : {}),
-        ...(spec.proof ? { proof: spec.proof } : {}),
+        ...(carriesProof ? { proof: spec.proof, pin_v: spec.pinV } : {}),
         intent: spec.intent,
         intent_v: spec.intentV ?? 1,
-        at: new Date(nowMs).toISOString(),
+        at: spec.intent === SESSION_OPEN && spec.at !== undefined ? spec.at : new Date(nowMs).toISOString(),
         // `doc` is the first number (what a reader that knows one number sees); `docs` lists all of them when there are several.
         ...(allocated.length ? { doc: allocated[0]! } : {}),
         ...(allocated.length > 1 ? { docs: allocated } : {}),
@@ -563,6 +588,97 @@ export class SyncEngine {
       tx.put(T.meta, { id: "clock", tenant_id: this.tenantId, offset, src: kind });
     });
     this.emit();
+  }
+
+  // ---- drain (ADR-0005 A3.3) -----------------------------------------------------------------
+
+  get isDraining(): boolean {
+    return this.draining;
+  }
+
+  /** Enters drain mode for good: the device records nothing new, so what it signs stays true. Survives a restart. */
+  async beginDrain(): Promise<void> {
+    this.draining = true;
+    await this.store.transact((tx) => {
+      tx.put(T.meta, { id: "drain", tenant_id: this.tenantId, v: true });
+    });
+    this.emit();
+  }
+
+  /**
+   * The signed `hostry-drain-v1` statement: the head of every stream in which the log holds an op of `origin`
+   * (default this device), and the last number of every series in the pack, 0 when never used. Signed with the
+   * device key; for a key-lost device `origin` is the old one and `by`/`rec` name the adopting device and the
+   * recovery. Built once: the cloud refuses a second, different statement for an origin, so later calls return
+   * the stored one. Throws when a series in the pack carries no `seriesId`.
+   */
+  async drainStatement(opts: { origin?: string; rec?: string } = {}): Promise<DrainStatement> {
+    const origin = opts.origin ?? this.deviceId;
+    const key = `drain_statement:${origin}`;
+    const kept = (await this.store.get(T.meta, key))?.statement as DrainStatement | undefined;
+    if (kept) return kept;
+    if (this.keyLost) throw new KeyLostError();
+    const streams: DrainStatement["streams"] = [];
+    for (const stream of this.streams) {
+      const seq = (await this.vector(stream))[origin] ?? 0;
+      if (seq < 1) continue;
+      const h = await this.hashAt({ origin, stream, seq });
+      if (h === undefined) throw new Error(`drain: op ${origin}/${stream}/${seq} not held`);
+      streams.push({ stream, seq, h });
+    }
+    streams.sort((a, b) => (a.stream < b.stream ? -1 : 1));
+    const counters = (await this.store.list(T.series)) as Array<Row & { next: number }>;
+    const fyNow = financialYear(this.correctedNow());
+    const series: DrainStatement["series"] = [];
+    for (const g of (await this.store.list(T.grant)) as Array<Row & SeriesGrant>) {
+      if (!g.seriesId) throw new Error(`drain: series ${g.code} has no series_id in the pack`);
+      const rows = counters.filter((c) => c.id.startsWith(`${g.code}|${g.docType}|`));
+      if (rows.length === 0) series.push({ series_id: g.seriesId, code: g.code, fy: fyNow, last_number: 0 });
+      for (const c of rows) series.push({ series_id: g.seriesId, code: g.code, fy: c.id.split("|")[2]!, last_number: c.next });
+    }
+    series.sort((a, b) => (a.series_id + a.fy < b.series_id + b.fy ? -1 : 1));
+    const unsigned: UnsignedDrainStatement = {
+      origin,
+      streams,
+      series,
+      by: this.deviceId,
+      ...(opts.rec !== undefined ? { rec: opts.rec } : {}),
+      kid: this.signer.kid,
+      at: new Date(this.correctedNow()).toISOString().replace(/\.\d{3}Z$/, "Z"),
+    };
+    const statement: DrainStatement = { ...unsigned, sig: await this.signer.sign(drainSigningMessage(unsigned)) };
+    await this.store.transact((tx) => {
+      tx.put(T.meta, { id: key, tenant_id: this.tenantId, statement });
+    });
+    return statement;
+  }
+
+  /**
+   * True when `hash` is the hash of the statement this device signed and every op it holds is still covered by it:
+   * the shell wipes only on an order quoting such a hash (ADR-0005 A3.3 item 6).
+   */
+  async ownsDrainStatement(hash: string): Promise<boolean> {
+    const s = (await this.store.get(T.meta, `drain_statement:${this.deviceId}`))?.statement as DrainStatement | undefined;
+    if (!s || (await drainStatementHash(s)) !== hash) return false;
+    for (const stream of this.streams) {
+      const stated = s.streams.find((x) => x.stream === stream)?.seq ?? 0;
+      if (((await this.vector(stream))[this.deviceId] ?? 0) !== stated) return false;
+    }
+    return true;
+  }
+
+  /** Sets the pack version stamped on new ops (a pack refresh); an integer >= 1. */
+  setPackVersion(v: number): void {
+    if (!Number.isInteger(v) || v < 1) throw new Error("packVersion must be an integer >= 1");
+    this.packVersion = v;
+  }
+
+  /**
+   * The time the next op will carry, as the engine stamps it (corrected clock, RFC 3339 UTC, ms). The shell takes it
+   * as the opening time before it makes a session proof and hands it back as `at` of `session.open` (A3.1).
+   */
+  stampTime(): string {
+    return new Date(this.correctedNow()).toISOString();
   }
 
   // ---- own-op read-back (A1.2) ---------------------------------------------------------------

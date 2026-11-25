@@ -357,7 +357,6 @@ export class FakeNode {
       tenant_id: this.o.tenantId,
       actor: "cloud",
       sid: "cloud",
-      pack_v: "0",
       intent,
       intent_v: 1,
       at: new Date(ms).toISOString(),

@@ -19,6 +19,7 @@ export { DEMO_SCHEMAS, SchemaRegistry, demoRegistry, reviewFields, type DocType,
 export { restaurantRegistry, restaurantSchemas, restaurantFields, restaurantIdRule, type EntityDef } from "./restaurant";
 export { SeriesError, financialYear, formatNumber, type SeriesGrant, type SeriesState } from "./series";
 export { detect, seriesGaps, type SeriesGap, type Violation } from "./detectors";
+export { DRAIN_TAG, drainSigningMessage, drainStatementHash, type DrainStatement } from "./drain";
 export { visible, type ConflictRow } from "./apply";
 export {
   KeyLostError,

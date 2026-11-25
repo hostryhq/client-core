@@ -1,4 +1,5 @@
 import { canonicalize } from "./canonical";
+import type { DrainStatement } from "./drain";
 import { b64url, fromB64url, importPublicKey, sha256Hex, verifyRaw, type CredentialEnvelope, type Signer } from "./crypto";
 import type { Attestation, ChainConflict, Endorsement, HeldCode, OpRef, Seal, SlotHash, VersionVector, WireItem } from "./types";
 
@@ -45,7 +46,7 @@ export type HelloResponse = {
   unbound_h?: SlotHash[];
 };
 
-export type PushRequest = { items: WireItem[]; seals?: Seal[]; attestations?: Attestation[] };
+export type PushRequest = { items: WireItem[]; seals?: Seal[]; attestations?: Attestation[]; /** Only on the last, empty quarantine upload of a revoked device (ADR-0005 A3.3). */ drain_statement?: DrainStatement };
 
 export type PushResponse = {
   epoch?: string;
@@ -78,6 +79,8 @@ export interface SyncTransport {
   hello(req: HelloRequest): Promise<HelloResponse>;
   push(req: PushRequest): Promise<PushResponse>;
   pull(req: PullRequest): Promise<PullResponse>;
+  /** Cloud only (a hub answers 404): the one call a drain token may make (`/sync/v1/quarantine-upload`). */
+  uploadQuarantine?(req: PushRequest): Promise<PushResponse>;
 }
 
 export function toWireVector(perStream: Record<string, VersionVector>): WireVector {
@@ -144,9 +147,14 @@ export class HttpTransport implements SyncTransport {
     return this.post("/sync/v1/pull", req);
   }
 
-  private async post<T>(path: string, payload: unknown): Promise<T> {
+  async uploadQuarantine(req: PushRequest): Promise<PushResponse> {
+    // The key follows the content, so a retry of the same upload is a replay, never a second one.
+    return this.post("/sync/v1/quarantine-upload", req, { "idempotency-key": await sha256Hex(canonicalize(req)) });
+  }
+
+  private async post<T>(path: string, payload: unknown, headers: Record<string, string> = {}): Promise<T> {
     const body = JSON.stringify(payload);
-    const extra = (await this.cfg.auth?.authorize("POST", path, body)) ?? {};
+    const extra = { ...headers, ...((await this.cfg.auth?.authorize("POST", path, body)) ?? {}) };
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), this.cfg.timeoutMs ?? 10_000);
     try {

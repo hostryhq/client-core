@@ -44,15 +44,17 @@ export type OpEnvelope = {
   actor: string;
   /** Id of the session.open op this op belongs to. */
   sid: string;
-  /** Offline pack version the device held. */
-  pack_v: string;
+  /** Offline pack version the device held: a JSON integer >= 1 on every device-origin op; cloud-origin ops carry none (ADR-0005 A3.1). */
+  pack_v?: number;
   /** Approval id, when the action needed one. */
   approval?: string;
   /** Opaque PIN-derived session or action proof (ADR-0005 s7-8); only the cloud checks it. */
   proof?: string;
+  /** The PIN version the proof was made under: exactly where `proof` is (session.open: the actor's; approval.grant: the approver's). */
+  pin_v?: number;
   intent: string;
   intent_v: number;
-  /** RFC 3339 UTC. */
+  /** RFC 3339 UTC. On `session.open` it is the opening time the session proof binds (ADR-0005 A3.1). */
   at: string;
   /** The legal document number this op allocates (S7), if any. The series code is the part before the first slash. */
   doc?: { type: string; number: string };

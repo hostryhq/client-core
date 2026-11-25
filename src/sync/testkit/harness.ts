@@ -94,7 +94,7 @@ export async function makeWorld(
       streams,
       signer,
       verifier: ring,
-      packVersion: "p1",
+      packVersion: 1,
       clockMode,
       now: () => clock.now() + skewMs,
       newId,

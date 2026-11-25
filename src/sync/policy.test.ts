@@ -163,6 +163,24 @@ describe("conflict policy per entity", () => {
     expect((await detect(x.rx.store)).map((v) => v.kind)).toEqual(["duplicate_finalisation"]);
   });
 
+  it("a refund entity (positive amount) closes an overpayment the same as a negative payment (soak T7)", async () => {
+    const { w, a, b } = await trio();
+    await a.engine.recordMuts("bill.finalize", [{ e: "bill", id: "b1", k: "insert", f: { order_id: "o1", total_paise: 50_000 } }]);
+    await deliver(b.engine, [await authorBatch(a)]);
+    await a.engine.recordMuts("pay", [{ e: "payment", id: "p1", k: "insert", f: { bill_id: "b1", amount_paise: 50_000 } }]);
+    await b.engine.recordMuts("pay", [{ e: "payment", id: "p2", k: "insert", f: { bill_id: "b1", amount_paise: 50_000 } }]);
+    const x = await hashAfter(w, ["A", "B"], a, b);
+    expect((await detect(x.rx.store)).map((v) => v.kind)).toEqual(["overpayment"]);
+    // A partial refund leaves it open; a refund of the rest closes it. Refunds of another bill do not count.
+    await b.engine.recordMuts("refund", [{ e: "refund", id: "r1", k: "insert", f: { bill_id: "b1", payment_id: "p2", amount_paise: 20_000 } }]);
+    await b.engine.recordMuts("refund", [{ e: "refund", id: "r9", k: "insert", f: { bill_id: "other", payment_id: "px", amount_paise: 99_000 } }]);
+    await deliver(x.rx.engine, [await authorBatch(b)]);
+    expect((await detect(x.rx.store)).map((v) => v.kind)).toEqual(["overpayment"]);
+    await b.engine.recordMuts("refund", [{ e: "refund", id: "r2", k: "insert", f: { bill_id: "b1", payment_id: "p2", amount_paise: 30_000 } }]);
+    await deliver(x.rx.engine, [await authorBatch(b)]);
+    expect(await detect(x.rx.store)).toEqual([]);
+  });
+
   it("older clients ignore entities and fields they do not know but keep the op and advance the vector", async () => {
     const w = await makeWorld();
     const newer = new SchemaRegistry([...DEMO_SCHEMAS, { name: "loyalty_tier", policy: "lww" }]);

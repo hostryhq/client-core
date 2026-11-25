@@ -88,6 +88,8 @@ export const DEMO_SCHEMAS: EntitySchema[] = [
   { name: "bill", policy: "append", docType: "tax_invoice", guarded: true },
   { name: "credit_note", policy: "append", docType: "credit_note", guarded: true },
   { name: "payment", policy: "append", guarded: true },
+  /** Money returned for a payment: positive `amount_paise`, `bill_id`, `payment_id`. */
+  { name: "refund", policy: "append", guarded: true },
   /** Cloud-origin record of a refused configuration op (intent `sync.void`); id names the target. */
   { name: "sync_void", policy: "append" },
   /** A manager's confirmation of a concurrent-edit conflict; id is the conflict id. */

@@ -18,6 +18,10 @@ export const T = {
   series: "_s_series",
   clockq: "_s_clockq",
   ph: "_s_ph",
+  /** Slots taken by hash with no binding yet (A2.8): row per slot. */
+  unbound: "_s_unbound",
+  /** Recorded chain conflicts, one row per (origin, stream, kind of upstream) (A2.8 item 1.4). */
+  cc: "_s_cc",
 } as const;
 
 export const opId = (r: OpRef): string => `${r.stream}|${r.origin}|${r.seq}`;

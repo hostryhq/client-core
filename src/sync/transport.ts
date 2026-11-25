@@ -1,6 +1,6 @@
 import { canonicalize } from "./canonical";
 import { b64url, fromB64url, importPublicKey, sha256Hex, verifyRaw, type CredentialEnvelope, type Signer } from "./crypto";
-import type { Attestation, Endorsement, HeldCode, OpRef, Seal, VersionVector, WireItem } from "./types";
+import type { Attestation, ChainConflict, Endorsement, HeldCode, OpRef, Seal, SlotHash, VersionVector, WireItem } from "./types";
 
 /**
  * Wire types of Sync Protocol v1. They mirror svc-sync `syncproto` (the Go side owns the format; the
@@ -21,6 +21,10 @@ export type HelloRequest = {
   epoch?: string;
   /** The cloud vector this node last saw. */
   cloud_vector?: WireVector;
+  /** Slots taken by hash with no binding yet; listed at every direct cloud hello (A2.8 item 1.3). */
+  unbound?: OpRef[];
+  /** Chain conflicts recorded and not yet reported; sent at a direct cloud hello (A2.8 item 1.4). */
+  chain_conflicts?: ChainConflict[];
 };
 
 export type HelloResponse = {
@@ -35,6 +39,8 @@ export type HelloResponse = {
   min_supported_version: string;
   snapshot_required: boolean;
   streams: string[];
+  /** The cloud's own hash for each slot listed in `unbound` that it holds. Equal clears the mark. */
+  unbound_h?: SlotHash[];
 };
 
 export type PushRequest = { items: WireItem[]; seals?: Seal[]; attestations?: Attestation[] };
@@ -47,7 +53,7 @@ export type PushResponse = {
   drained?: boolean;
 };
 
-export type PullRequest = { vector: WireVector; streams?: string[]; placeholders?: OpRef[]; limit?: number };
+export type PullRequest = { vector: WireVector; streams?: string[]; placeholders?: OpRef[]; /** Stored cloud-origin seals under a dropped op-signing key, at most 200 (A2.8 item 2). */ stale_seals?: OpRef[]; limit?: number };
 
 export type PullResponse = {
   epoch?: string;
@@ -57,6 +63,8 @@ export type PullResponse = {
   endorsements?: Endorsement[];
   attestations?: Attestation[];
   creds?: CredentialEnvelope[];
+  /** Answer to `stale_seals`: the seals as the upstream holds them now. */
+  seal_refresh?: Seal[];
   more: boolean;
   /** The complete current list of the caller's own held slots (A1.2). */
   own_held: HeldSlot[];

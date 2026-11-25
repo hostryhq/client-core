@@ -21,6 +21,8 @@ export type IntentDef = {
   documents: string[];
   /** Entity name to the mutation kinds the intent may use. */
   entities: Record<string, string[]>;
+  /** Protocol records that are not synced entities (`session`, `approval`, `series_close`, ...): insert only. */
+  records: string[];
 };
 
 export type IntentErrorCode =
@@ -54,7 +56,7 @@ export const intentDef = (name: string): IntentDef => {
 export function validateOp(intent: string, muts: readonly Mutation[], numbers: readonly string[]): void {
   const def = intentDef(intent);
   for (const m of muts) {
-    const kinds = def.entities[m.e];
+    const kinds = def.entities[m.e] ?? (def.records.includes(m.e) ? ["insert"] : undefined);
     if (!kinds) throw new IntentError("entity_not_allowed", `${intent} may not touch ${m.e}`);
     if (!kinds.includes(m.k)) throw new IntentError("kind_not_allowed", `${intent} may not ${m.k} ${m.e}`);
     const known = restaurantFields(m.e);

@@ -13,3 +13,4 @@ export {
   type DocumentEnv,
 } from "./documents";
 export { availabilitySpec, itemOutletId, orderLineAddSpec, orderLineQtySpec, priceEntryId, priceSetSpec, stampOfField } from "./catalog";
+export { approvalActionHash, approvalGrantSpec, sessionOpenSpec, type ApprovalFields, type SessionType } from "./control";

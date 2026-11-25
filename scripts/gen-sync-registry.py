@@ -78,6 +78,7 @@ for fn in sorted(os.listdir(idir)):
             "numbering": i.get("numbering", "none"),
             "documents": i.get("documents", []),
             "entities": i.get("entities") or {},
+            "records": i.get("records") or [],
         }
 with open(os.path.join(root, "src", "ops", "intents.generated.ts"), "w", encoding="utf-8") as out:
     out.write(HEADER)

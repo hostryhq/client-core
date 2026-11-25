@@ -42,7 +42,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "seating": [
         "rank"
       ]
-    }
+    },
+    "records": []
   },
   "bill.manual_entry": {
     "v": 1,
@@ -76,7 +77,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "payment": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "payment.record": {
     "v": 1,
@@ -98,7 +100,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "payment": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "payment.refund": {
     "v": 1,
@@ -119,7 +122,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "refund": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "creditnote.issue": {
     "v": 1,
@@ -149,7 +153,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "credit_note_tax_line": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "bill.rebill": {
     "v": 1,
@@ -191,7 +196,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "bill_tax_line": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "drawer.cash_move": {
     "v": 1,
@@ -212,7 +218,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "cash_event": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "drawer.open_no_sale": {
     "v": 1,
@@ -233,7 +240,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "cash_event": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "shift.open": {
     "v": 1,
@@ -254,7 +262,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "shift": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "shift.close": {
     "v": 1,
@@ -278,7 +287,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "shift_close": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "shift.close.any": {
     "v": 1,
@@ -302,7 +312,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "shift_close": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "day.open": {
     "v": 1,
@@ -326,7 +337,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "day_open": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "day.close": {
     "v": 1,
@@ -350,7 +362,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "day_close": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "bill.reprint": {
     "v": 1,
@@ -372,7 +385,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "bill_reprint": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "settings.outlet.edit": {
     "v": 1,
@@ -443,7 +457,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "del",
         "undel"
       ]
-    }
+    },
+    "records": []
   },
   "settings.reason.edit": {
     "v": 1,
@@ -468,7 +483,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "del",
         "undel"
       ]
-    }
+    },
+    "records": []
   },
   "floor.manage": {
     "v": 1,
@@ -499,7 +515,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "del",
         "undel"
       ]
-    }
+    },
+    "records": []
   },
   "menu.category.edit": {
     "v": 1,
@@ -524,7 +541,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "del",
         "undel"
       ]
-    }
+    },
+    "records": []
   },
   "menu.item.edit": {
     "v": 1,
@@ -560,7 +578,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "del",
         "undel"
       ]
-    }
+    },
+    "records": []
   },
   "menu.item.archive": {
     "v": 1,
@@ -583,7 +602,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "del",
         "undel"
       ]
-    }
+    },
+    "records": []
   },
   "menu.modifier.edit": {
     "v": 1,
@@ -614,7 +634,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "del",
         "undel"
       ]
-    }
+    },
+    "records": []
   },
   "menu.price.set": {
     "v": 1,
@@ -639,7 +660,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "del",
         "undel"
       ]
-    }
+    },
+    "records": []
   },
   "menu.price.outlet_set": {
     "v": 1,
@@ -661,7 +683,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "item_outlet": [
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "menu.availability.set": {
     "v": 1,
@@ -688,7 +711,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "del",
         "undel"
       ]
-    }
+    },
+    "records": []
   },
   "sync.void": {
     "v": 1,
@@ -707,7 +731,10 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
     ],
     "numbering": "none",
     "documents": [],
-    "entities": {}
+    "entities": {},
+    "records": [
+      "sync_void"
+    ]
   },
   "sync.pii.erase": {
     "v": 1,
@@ -726,7 +753,10 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
     ],
     "numbering": "none",
     "documents": [],
-    "entities": {}
+    "entities": {},
+    "records": [
+      "pii_erase"
+    ]
   },
   "menu.tax_class.set": {
     "v": 1,
@@ -750,7 +780,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "category": [
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "tax.rule_set.publish": {
     "v": 1,
@@ -774,7 +805,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "tax_rule": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "settings.tax_profile.set": {
     "v": 1,
@@ -800,7 +832,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "insert",
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "settings.numbering.set": {
     "v": 1,
@@ -822,7 +855,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "insert",
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "settings.discount_limit.set": {
     "v": 1,
@@ -844,7 +878,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "insert",
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "day.revision.record": {
     "v": 1,
@@ -865,7 +900,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "business_day_revision": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "menu.import.apply": {
     "v": 1,
@@ -899,7 +935,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "insert",
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "session.open": {
     "v": 1,
@@ -919,7 +956,10 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
     ],
     "numbering": "none",
     "documents": [],
-    "entities": {}
+    "entities": {},
+    "records": [
+      "session"
+    ]
   },
   "approval.grant": {
     "v": 1,
@@ -937,7 +977,10 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
     ],
     "numbering": "none",
     "documents": [],
-    "entities": {}
+    "entities": {},
+    "records": [
+      "approval"
+    ]
   },
   "series.activate": {
     "v": 1,
@@ -955,7 +998,10 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
     ],
     "numbering": "none",
     "documents": [],
-    "entities": {}
+    "entities": {},
+    "records": [
+      "series_activation"
+    ]
   },
   "series.close": {
     "v": 1,
@@ -973,7 +1019,10 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
     ],
     "numbering": "none",
     "documents": [],
-    "entities": {}
+    "entities": {},
+    "records": [
+      "series_close"
+    ]
   },
   "device.clock.confirm": {
     "v": 1,
@@ -993,7 +1042,10 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
     ],
     "numbering": "none",
     "documents": [],
-    "entities": {}
+    "entities": {},
+    "records": [
+      "clock_confirmation"
+    ]
   },
   "seating.open": {
     "v": 1,
@@ -1015,7 +1067,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "seating": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "check.create": {
     "v": 1,
@@ -1037,7 +1090,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "check": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "order.create": {
     "v": 1,
@@ -1059,7 +1113,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "order.line.add": {
     "v": 1,
@@ -1084,7 +1139,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line_modifier": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "order.line.edit": {
     "v": 1,
@@ -1107,7 +1163,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "set",
         "delta"
       ]
-    }
+    },
+    "records": []
   },
   "order.line.void": {
     "v": 1,
@@ -1129,7 +1186,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line_cancel": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "order.line.cancel": {
     "v": 1,
@@ -1154,7 +1212,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line_cancel": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "order.line.cancel.grace": {
     "v": 1,
@@ -1179,7 +1238,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line_cancel": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "order.items.move": {
     "v": 1,
@@ -1204,7 +1264,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "kot": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "order.table.move": {
     "v": 1,
@@ -1226,7 +1287,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "seating_move": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "order.table.merge": {
     "v": 1,
@@ -1251,7 +1313,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "seating": [
         "rank"
       ]
-    }
+    },
+    "records": []
   },
   "bill.new": {
     "v": 1,
@@ -1273,7 +1336,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "check": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "bill.split": {
     "v": 1,
@@ -1300,7 +1364,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
         "set",
         "delta"
       ]
-    }
+    },
+    "records": []
   },
   "bill.merge": {
     "v": 1,
@@ -1328,7 +1393,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line": [
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "bill.cancel": {
     "v": 1,
@@ -1350,7 +1416,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "check_cancel": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "bill.request": {
     "v": 1,
@@ -1372,7 +1439,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "bill_request": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "bill.present": {
     "v": 1,
@@ -1394,7 +1462,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "check_present": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "bill.present.change": {
     "v": 1,
@@ -1416,7 +1485,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "check_present_change": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "bill.discount.apply": {
     "v": 1,
@@ -1441,7 +1511,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line": [
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "bill.discount.over_limit": {
     "v": 1,
@@ -1466,7 +1537,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line": [
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "bill.line.comp": {
     "v": 1,
@@ -1488,7 +1560,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line": [
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "bill.line.comp.allowance": {
     "v": 1,
@@ -1510,7 +1583,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line": [
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "bill.service_charge.remove": {
     "v": 1,
@@ -1532,7 +1606,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "check": [
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "bill.customer_details.edit": {
     "v": 1,
@@ -1554,7 +1629,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "check": [
         "set"
       ]
-    }
+    },
+    "records": []
   },
   "kot.send": {
     "v": 1,
@@ -1582,7 +1658,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line": [
         "rank"
       ]
-    }
+    },
+    "records": []
   },
   "kds.recall": {
     "v": 1,
@@ -1605,7 +1682,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "kot": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "seating.close": {
     "v": 1,
@@ -1627,7 +1705,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "seating": [
         "rank"
       ]
-    }
+    },
+    "records": []
   },
   "kot.handover": {
     "v": 1,
@@ -1649,7 +1728,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "kot_handover": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "kot.reprint": {
     "v": 1,
@@ -1671,7 +1751,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "kot_print": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "kot.print.ack": {
     "v": 1,
@@ -1693,7 +1774,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "kot_print": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "kds.status": {
     "v": 1,
@@ -1716,7 +1798,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "kot_line": [
         "rank"
       ]
-    }
+    },
+    "records": []
   },
   "check.close_internal": {
     "v": 1,
@@ -1741,7 +1824,8 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "internal_consumption": [
         "insert"
       ]
-    }
+    },
+    "records": []
   },
   "menu.open_item": {
     "v": 1,
@@ -1763,6 +1847,7 @@ export const INTENT_DEFS: Record<string, IntentDef> = {
       "order_line": [
         "insert"
       ]
-    }
+    },
+    "records": []
   }
 };

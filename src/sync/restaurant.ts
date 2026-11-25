@@ -53,6 +53,10 @@ const PROTOCOL_SCHEMAS: EntitySchema[] = [
   { name: "sync_void", policy: "append" },
   { name: "conflict_ack", policy: "append" },
   { name: "series_activation", policy: "append" },
+  /** Record of `session.open` (control.yaml): the gateway types the session from its `type`. */
+  { name: "session", policy: "append" },
+  /** Record of `approval.grant`: approver, permission, requester, action_hash, target, reason. */
+  { name: "approval", policy: "append" },
 ];
 
 export const restaurantSchemas = (): EntitySchema[] => [...RESTAURANT_ENTITY_DEFS.map(toSchema), ...PROTOCOL_SCHEMAS];

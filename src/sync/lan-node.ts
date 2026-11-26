@@ -1,7 +1,7 @@
 import { Agent, request } from "node:https";
 import { X509Certificate } from "node:crypto";
 import { connect as tlsConnect, type TLSSocket } from "node:tls";
-import { spkiHash, type LanChannel, type LanChannelResponse } from "./lan";
+import { LanError, spkiHash, type LanChannel, type LanChannelResponse } from "./lan";
 
 /**
  * Node implementation of the LAN channel (ADR-0002 A3.1 item 8): `node:tls`, TLS 1.3 only, any certificate accepted, `spki`
@@ -44,7 +44,7 @@ export function nodeLanChannel(cfg: NodeLanChannelConfig): LanChannel {
             if (!cert.raw) throw new Error("no peer certificate");
             const der = new Uint8Array(new X509Certificate(cert.raw).publicKey.export({ type: "spki", format: "der" }));
             const spki = await spkiHash(der);
-            if (pin !== undefined && spki !== pin) throw new Error("hub certificate differs from the verified one");
+            if (pin !== undefined && spki !== pin) throw new LanError("spki_changed", "hub certificate differs from the verified one");
             spkiOf.set(s, spki);
             s.removeAllListeners("error");
             cb(null, s);

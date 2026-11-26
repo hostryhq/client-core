@@ -1,0 +1,56 @@
+[
+  {
+    "salt_b64u": "AQEBAQEBAQEBAQEBAQEBAQ",
+    "value": "+910000000000",
+    "jcs": "\"+910000000000\"",
+    "c": "45a9f099be2206e43ba32914ade438417a94b81e3597d4dba838f726dd7deded"
+  },
+  {
+    "salt_b64u": "AgICAgICAgICAgICAgICAg",
+    "value": "Asha \"Q\" é\u2028\n",
+    "jcs": "\"Asha \\\"Q\\\" é\u2028\\n\"",
+    "c": "a7c0b4e913d77a32116222ba3e56a3e2cab97c1e8372b8d06e7a1c52dba84e65"
+  },
+  {
+    "salt_b64u": "AwMDAwMDAwMDAwMDAwMDAw",
+    "value": true,
+    "jcs": "true",
+    "c": "2cca530b06a2b56f41fb5bf4cf34cdbc5fcce76fc18239cef71c5be3f95a34c7"
+  },
+  {
+    "salt_b64u": "BAQEBAQEBAQEBAQEBAQEBA",
+    "value": false,
+    "jcs": "false",
+    "c": "4287866a60e7354e7f6c27ef0e3ebe2575d8d977746f23b85fe47e478d1fef70"
+  },
+  {
+    "salt_b64u": "BQUFBQUFBQUFBQUFBQUFBQ",
+    "value": 0,
+    "jcs": "0",
+    "c": "72cdcd4b51b294a41f1bd25da765c2a7aec23533112ec4331a8e592f98d47a94"
+  },
+  {
+    "salt_b64u": "BgYGBgYGBgYGBgYGBgYGBg",
+    "value": -7,
+    "jcs": "-7",
+    "c": "67c0239041adf30c4b1781ef8e7788b1b3c73c58278065fac3f2af8d6688517c"
+  },
+  {
+    "salt_b64u": "BwcHBwcHBwcHBwcHBwcHBw",
+    "value": 9007199254740991,
+    "jcs": "9007199254740991",
+    "c": "28c9f4738c67b2168fc13767ec5cd0327fbaae42418c32b383f865d0a34c44cf"
+  },
+  {
+    "salt_b64u": "CAgICAgICAgICAgICAgICA",
+    "value": "",
+    "jcs": "\"\"",
+    "c": "ed58b979a8ecacf84761f5d88378bd20df70f2e306291cf15a6babee3a7e1902"
+  },
+  {
+    "salt_b64u": "CQkJCQkJCQkJCQkJCQkJCQ",
+    "value": "日本",
+    "jcs": "\"日本\"",
+    "c": "152f60643e69f378c360a8dafa15498bdaefd8b721e29e4ad7a7fc9222e7b47d"
+  }
+]

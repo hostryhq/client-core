@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { X509Certificate } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { createServer, type Server } from "node:https";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -37,27 +38,31 @@ describe.skipIf(!haveOpenssl())("Node LAN channel over real TLS 1.3", () => {
   const servers: Server[] = [];
   afterAll(() => servers.forEach((s) => s.close()));
 
-  async function listen(c: { key: string; cert: string }, handler: (path: string, body: string, headers: Record<string, string>) => Promise<{ status: number; text: string }>): Promise<string> {
-    const s = createServer({ key: c.key, cert: c.cert, minVersion: "TLSv1.3" }, (req, res) => {
+  const mkHandler =
+    (get: () => (path: string, body: string, headers: Record<string, string>) => Promise<{ status: number; text: string }>) =>
+    (req: IncomingMessage, res: ServerResponse): void => {
       const chunks: Buffer[] = [];
       req.on("data", (d: Buffer) => chunks.push(d));
       req.on("end", () => {
         const headers = Object.fromEntries(Object.entries(req.headers).map(([k, v]) => [k, String(v)]));
-        void handler(req.url ?? "", Buffer.concat(chunks).toString("utf8"), headers).then((r) => {
+        void get()(req.url ?? "", Buffer.concat(chunks).toString("utf8"), headers).then((r) => {
           res.writeHead(r.status, { "content-type": "application/json" });
           res.end(r.text);
         });
       });
-    });
+    };
+
+  async function listen(c: { key: string; cert: string }, handler: (path: string, body: string, headers: Record<string, string>) => Promise<{ status: number; text: string }>): Promise<string> {
+    const s = createServer({ key: c.key, cert: c.cert, minVersion: "TLSv1.3" }, mkHandler(() => handler));
     await new Promise<void>((r) => s.listen(0, "127.0.0.1", r));
     servers.push(s);
     return `https://127.0.0.1:${(s.address() as AddressInfo).port}`;
   }
 
-  async function world(hubCert: { key: string; cert: string }) {
-    const identity = await SoftwareSigner.generate("id-1");
-    const hubKey = await SoftwareSigner.generate("hub-k");
-    const devKey = await SoftwareSigner.generate("dev-k");
+  async function world(hubCert: { key: string; cert: string }, keys?: { identity: SoftwareSigner; hubKey: SoftwareSigner; devKey: SoftwareSigner }) {
+    const identity = keys?.identity ?? (await SoftwareSigner.generate("id-1"));
+    const hubKey = keys?.hubKey ?? (await SoftwareSigner.generate("hub-k"));
+    const devKey = keys?.devKey ?? (await SoftwareSigner.generate("dev-k"));
     const base = { tenant_id: "t1", outlet_id: "o1", brand_id: "b1", not_after: 4_000_000_000, store: "protected" as const };
     const devClaims: Credential = { ...base, device_id: "devA", kind: "pos", kid: "dev-k", pub: devKey.publicB64 };
     const hubClaims: Credential = { ...base, device_id: "hub-1", kind: "hub", kid: "hub-k", pub: hubKey.publicB64 };
@@ -79,7 +84,7 @@ describe.skipIf(!haveOpenssl())("Node LAN channel over real TLS 1.3", () => {
       new LanTransport({ channel: nodeLanChannel({ baseUrl, timeoutMs: 5000 }), credential: devJws, deviceId: "devA", signer: devKey, identityKeys: () => ({ [identity.kid]: identity.publicB64 }), tenantId: "t1", outletId: "o1" });
     // The server side: the hub's own handler, as the Go hub would be (it knows its own certificate).
     const serve = (path: string, body: string, headers: Record<string, string>) => hub.channel().post(path, body, headers["hostry-lan-session"] ? { "Hostry-Lan-Session": headers["hostry-lan-session"] } : {});
-    return { hub, transport, serve };
+    return { hub, transport, serve, keys: { identity, hubKey, devKey } };
   }
 
   it("reads the real certificate, proves the hub, and carries the token afterwards", async () => {
@@ -90,6 +95,30 @@ describe.skipIf(!haveOpenssl())("Node LAN channel over real TLS 1.3", () => {
     expect((await lan.hello({ protocol: 1 })).role).toBe("hub");
     expect((await lan.hello({ protocol: 1 })).role).toBe("hub");
     expect(w.hub.log.map((l) => l.token)).toEqual([false, false, true, true]);
+  });
+
+  it("F27: a hub restart with a new TLS key drops the pinned session and shakes hands again", async () => {
+    const certA = selfSigned("restartA");
+    const w1 = await world(certA);
+    let handler = w1.serve;
+    const s1 = createServer({ key: certA.key, cert: certA.cert, minVersion: "TLSv1.3" }, mkHandler(() => handler));
+    await new Promise<void>((r) => s1.listen(0, "127.0.0.1", r));
+    const port = (s1.address() as AddressInfo).port;
+    const lan = w1.transport(`https://127.0.0.1:${port}`);
+    expect((await lan.hello({ protocol: 1 })).role).toBe("hub");
+    expect(lan.connected).toBe(true);
+    // Restart: all connections die, a new key, a new hub instance (no memory of the old session token).
+    s1.closeAllConnections();
+    await new Promise<void>((r) => s1.close(() => r()));
+    const certB = selfSigned("restartB");
+    const w2 = await world(certB, w1.keys);
+    handler = w2.serve;
+    const s2 = createServer({ key: certB.key, cert: certB.cert, minVersion: "TLSv1.3" }, mkHandler(() => handler));
+    await new Promise<void>((r) => s2.listen(port, "127.0.0.1", r));
+    servers.push(s2);
+    expect((await lan.hello({ protocol: 1 })).role).toBe("hub");
+    expect(w2.hub.activeSessions()).toBe(1);
+    expect((await lan.hello({ protocol: 1 })).role).toBe("hub");
   });
 
   it("LT1: a relay with its own certificate in front of the hub is refused and only hello crosses", async () => {

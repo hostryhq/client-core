@@ -154,6 +154,8 @@ export type LanTransportConfig = {
 type Session = { token: string; spki: string; hubId: string; expiresAtMs: number };
 /** Re-handshake this long before the token lapses, so a request does not race the hub's clock. */
 const SESSION_SLACK_MS = 30_000;
+/** At most this many re-handshakes per call after the hub's certificate changed. */
+const MAX_REHANDSHAKES = 2;
 
 /**
  * `SyncTransport` for the LAN hub. The handshake runs lazily at the first call, the session token rides on every request, and a
@@ -202,9 +204,20 @@ export class LanTransport implements SyncTransport {
   }
 
   private async call<T>(path: string, payload: unknown): Promise<T> {
+    // A hub restart makes a new TLS key (ADR-0002 A3.1), so the session's `spki` pin no longer matches. The pin is per session; the
+    // identity-signed credential proof is the trust, so drop the session and shake hands again, a bounded number of times.
     for (let attempt = 0; ; attempt++) {
       const s = await this.ensureSession();
-      const res = await this.send(path, JSON.stringify(payload), { [LAN_SESSION_HEADER]: s.token }, s.spki);
+      let res: LanChannelResponse;
+      try {
+        res = await this.send(path, JSON.stringify(payload), { [LAN_SESSION_HEADER]: s.token }, s.spki);
+      } catch (e) {
+        if (e instanceof LanError && e.code === "spki_changed" && attempt < MAX_REHANDSHAKES) {
+          this.session = undefined;
+          continue;
+        }
+        throw e;
+      }
       if (res.status === 401 && isSessionExpired(res.text) && attempt === 0) {
         this.session = undefined;
         continue;
@@ -212,6 +225,7 @@ export class LanTransport implements SyncTransport {
       if (res.status < 200 || res.status >= 300) throw new TransportError(res.status, `${path}: HTTP ${res.status} ${res.text.slice(0, 200)}`, res.status === 429 || res.status >= 500);
       if (res.spki !== undefined && res.spki !== s.spki) {
         this.session = undefined;
+        if (attempt < MAX_REHANDSHAKES) continue;
         throw new LanError("spki_changed", `${path}: the hub's certificate changed under an open session`);
       }
       try {

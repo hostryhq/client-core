@@ -5,6 +5,8 @@
  * api-specs/sync/; replace these hand-written types with generated ones when that lands.
  */
 
+import type { PiiCommit } from "./pii-commit";
+
 /** 16-char lowercase hex: 48-bit Unix ms plus 16-bit counter. Sorts as text. */
 export type Hlc = string;
 
@@ -42,34 +44,109 @@ export type OpEnvelope = {
   actor: string;
   /** Id of the session.open op this op belongs to. */
   sid: string;
-  /** Offline pack version the device held. */
-  pack_v: string;
+  /** Offline pack version the device held: a JSON integer >= 1 on every device-origin op; cloud-origin ops carry none (ADR-0005 A3.1). */
+  pack_v?: number;
   /** Approval id, when the action needed one. */
   approval?: string;
+  /** Opaque PIN-derived session or action proof (ADR-0005 s7-8); only the cloud checks it. */
+  proof?: string;
+  /** The PIN version the proof was made under: exactly where `proof` is (session.open: the actor's; approval.grant: the approver's). */
+  pin_v?: number;
   intent: string;
   intent_v: number;
-  /** RFC 3339 UTC. */
+  /** RFC 3339 UTC. On `session.open` it is the opening time the session proof binds (ADR-0005 A3.1). */
   at: string;
+  /** The legal document number this op allocates (S7), if any. The series code is the part before the first slash. */
+  doc?: { type: string; number: string };
+  /**
+   * Every legal number the op allocates, in allocation order, when there is more than one (bill.rebill: the credit
+   * note, then the replacement bills). `doc` is then `docs[0]`. Absent for zero or one number, so existing ops and
+   * vectors are byte-identical. Additive; svc-sync and go-common must read it before a gateway accepts a re-bill
+   * (ADR needed: op envelope with several document numbers).
+   */
+  docs?: Array<{ type: string; number: string }>;
   muts: Mutation[];
-  /** Personal data; outside the op hash. */
-  pii?: Record<string, unknown>;
+  /** Salted per-field commitments of the op's personal data (pii-commit.ts); the values travel beside the op. */
+  pii_c?: PiiCommit;
+};
+
+/**
+ * An op or a placeholder on the wire (svc-sync `syncproto.Item`). `body` is the canonical JSON text of the
+ * op without `pii`; every relay forwards those exact bytes and `h` is SHA-256 of them. No `body` means
+ * placeholder: the slot advances the vector but its content is not delivered. `pii` is outside the hash.
+ */
+export type WireItem = {
+  origin: string;
+  stream: string;
+  seq: number;
+  h: string;
+  body?: string;
+  pii?: unknown;
 };
 
 /** Highest contiguous seq held, per `origin` (per stream). Resume is by version vector. */
 export type VersionVector = Record<string, number>;
 
-/** Verdicts the gateway can return for a pushed op (ADR-0002 S11); nothing is silently dropped. */
-export type OpState = "accepted" | "accepted_flagged" | "quarantined" | "voided";
+/** Where one of this device's own ops is (ADR-0002 S12 item 6). "Sent to kitchen" needs `at_hub` or `in_cloud`. */
+export type DeliveryState = "local" | "at_hub" | "in_cloud";
+
+/**
+ * The only things a device is told about a held op of its own (ADR-0002 A1.2, provisional). Never a flag
+ * or a proof verdict: a flagged op is "simply accepted" to its origin. A voided op arrives as `sync.void`.
+ */
+export type HeldCode = "pending" | "held_manager" | "held_support";
+export type HeldItem = { stream: string; seq: number; code: HeldCode };
+
+/** Sync indicator states; match `sync.*` in docs/design/tokens.json (icon + label, never colour alone). */
+export type SyncState = "synced" | "pending" | "offline" | "conflict";
 
 /** What every screen that matters shows (offline-first-sync invariant 9). */
 export type SyncStatus = {
+  /** Some upstream (hub or cloud) answered on the last round. */
   online: boolean;
-  /** Ops written locally and not yet acknowledged upstream. */
+  /** Own ops written locally and not yet at any upstream (`local`). */
   pendingOps: number;
-  /** Ops needing attention (quarantined or voided); never dropped silently. */
+  /** Own ops at the hub but not yet confirmed by the cloud. */
+  atHubOps: number;
+  /** Own ops held for a manager or support, or refused (voided), plus open conflicts; never dropped silently. */
   attentionOps: number;
+  /** Own configuration ops the cloud is still checking (`pending`). */
+  checkingOps: number;
+  /** Which upstream is in use. */
+  upstream: "hub" | "cloud" | "none";
+  /** Single state for the indicator: conflict > offline > pending > synced. */
+  state: SyncState;
+  /** Device clock differs from upstream time by more than 2 minutes: show the "clock wrong" banner. */
+  clockWrong: boolean;
+  /** The device key is unusable; nothing is recorded until recovery (ADR-0002 A1.3). */
+  keyLost: boolean;
   lastSyncAt?: string;
 };
+
+/** A seal: the origin's signature over the hash of its op at `seq` (ADR-0002 S17). */
+export type Seal = { origin: string; stream: string; seq: number; h: string; kid: string; sig: string };
+
+/** Identity of an op. */
+export type OpRef = { origin: string; stream: string; seq: number };
+
+/** Fixes the tail of a key-lost origin; signed by the adopting device's new key (ADR-0002 A1.3 item 4). */
+export type Attestation = { origin: string; stream: string; seq: number; h: string; by: string; rec: string; kid: string; sig: string };
+
+/**
+ * Gateway endorsement of one op of the released unsealed tail of a key-lost origin (ADR-0002 A2.1). Not a
+ * seal: own domain tag, own list. Valid only together with the identity-signed `recovers` credential and
+ * the adopting device's attestation.
+ */
+export type Endorsement = { origin: string; stream: string; seq: number; h: string; rec: string; kid: string; sig: string };
+
+/** A slot with a hash: what the cloud states for a slot a node listed as `unbound` (A2.8 item 1.3). */
+export type SlotHash = { origin: string; stream: string; seq: number; h: string };
+
+/**
+ * A recorded chain conflict (A2.8 item 1.4): the hash this node holds at the slot and the one an upstream
+ * (or the cloud's answer) contradicted it with. `src` is the kind of upstream that contradicted it.
+ */
+export type ChainConflict = { origin: string; stream: string; seq: number; held: string; seen?: string };
 
 export type Unsubscribe = () => void;
 

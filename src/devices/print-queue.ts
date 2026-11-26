@@ -95,6 +95,14 @@ export class PrintQueue {
     return true;
   }
 
+  /** Drop every job the predicate matches (personal data erased, order kept for the rest). Returns how many. */
+  purge(match: (job: PrintJob) => boolean): number {
+    const n = this.jobs.length;
+    this.jobs = this.jobs.filter((j) => !match(j));
+    if (this.jobs.length !== n) this.changed();
+    return n - this.jobs.length;
+  }
+
   /** Try jobs in order; stop at the first failure or backoff so print order is preserved. Returns jobs printed. */
   async flush(): Promise<number> {
     let printed = 0;

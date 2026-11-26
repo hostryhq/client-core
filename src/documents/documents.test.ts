@@ -4,7 +4,8 @@ import { TaxError } from "../tax";
 import { issueCreditNote, rebill, taxInputOfBill, type OriginalBill } from "./credit";
 import { finalizeBill, manualBookEntry, presentCheck, triggerForPresent } from "./finalize";
 import { ctx, deps, DINE_IN, line, NOW_MS } from "./fixtures";
-import { billMutations, rebillMutations } from "./mutations";
+import { billMutations, rebillApprovedMutations, rebillMutations } from "./mutations";
+import { boundValues } from "../ops";
 import { toBillDoc, toCreditNoteDoc } from "./print";
 import { DocumentError } from "./types";
 import { calculateBill } from "../tax";
@@ -242,6 +243,18 @@ describe("re-bill", () => {
     const kinds = rebillMutations(r).map((m) => m.e);
     expect(kinds.filter((k) => k === "credit_note")).toHaveLength(1);
     expect(kinds.filter((k) => k === "bill")).toHaveLength(1);
+  });
+
+  it("bill.rebill.approved records every value its approval binds, the credit note row first (the approval's target)", () => {
+    const o = original();
+    const r = rebill(deps(), ctx(), o, [{ header: { order_type: "dine_in" as const, id: "check-1" }, lines: two }], { reasonCodeId: "r1" });
+    const muts = rebillApprovedMutations(r);
+    expect(muts[0]).toMatchObject({ e: "credit_note", id: r.credit.note.id, k: "insert" });
+    const { values, missing } = boundValues("bill.rebill.approved", muts);
+    expect(missing).toEqual([]);
+    expect(values).toEqual({ bill_id: o.bill.id, rebill_group_id: r.rebillGroupId, total_paise: r.credit.note.total_paise, replacement_total_paise: r.bills.reduce((s, b) => s + b.bill.total_paise, 0) });
+    // the plain re-bill does not record the derived sum
+    expect(boundValues("bill.rebill.approved", rebillMutations(r)).missing).toEqual(["replacement_total_paise"]);
   });
 
   it("a split makes two bills; a bad replacement refuses everything before any number is taken", () => {

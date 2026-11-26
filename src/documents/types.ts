@@ -230,7 +230,8 @@ export type DocumentErrorCode =
   | "nothing_to_credit"
   | "missing_packing_class"
   | "rebill_needs_replacement"
-  | "original_not_reproducible";
+  | "original_not_reproducible"
+  | "bill_not_found";
 
 export class DocumentError extends Error {
   constructor(

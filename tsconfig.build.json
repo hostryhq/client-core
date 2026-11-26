@@ -5,8 +5,12 @@
     "declaration": true,
     "outDir": "dist",
     "rootDir": "src",
-    "types": []
+    "types": ["node"]
   },
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/printing/fixtures.ts", "src/documents/fixtures.ts"]
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/printing/fixtures.ts",
+    "src/documents/fixtures.ts"
+  ]
 }

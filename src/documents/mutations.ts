@@ -44,3 +44,15 @@ export function creditNoteMutations(c: CreditNoteResult): Mutation[] {
 export function rebillMutations(r: RebillResult): Mutation[] {
   return [...creditNoteMutations(r.credit), ...r.bills.flatMap(billMutations)];
 }
+
+/**
+ * `bill.rebill.approved` (a re-bill after payment or past the allowance, taken with a manager's approval): the same mutations as
+ * `rebillMutations`, plus `replacement_total_paise` on the credit note row, the sum of the replacement bills' totals. The approval's
+ * action hash binds `bill_id`, `rebill_group_id`, `total_paise` (the credit note, the value withdrawn) and this sum, so it cannot be
+ * cited for another bill or a different replacement value (api-specs sync/intents/billing.yaml). The credit note row is the first
+ * row inserted, so it is the approval's `target`.
+ */
+export function rebillApprovedMutations(r: RebillResult): Mutation[] {
+  const replacement = r.bills.reduce((s, b) => s + b.bill.total_paise, 0);
+  return rebillMutations(r).map((m, i) => (i === 0 ? { ...m, f: { ...m.f, replacement_total_paise: replacement } } : m));
+}
